@@ -227,8 +227,9 @@ mengetik `GC` di dialog konfirmasi. Tidak ada auto-GC dari aplikasi.
 
 1. **Dry-run pertama.** `rules.Plan()` hanya membaca; UI menampilkan "akan membebaskan X".
    Eksekusi hanya lewat `clean.Execute(plan, mode)` dengan `plan` yang sudah ditampilkan.
-2. **Whitelist root.** Cleanup hanya menerima item yang path-nya anak langsung dari root pada katalog
-   (cek `filepath.Dir(item) == root`), bukan path bebas dari UI.
+2. **Whitelist root.** Cleanup hanya menerima item yang berada di dalam root katalog, dengan
+   kedalaman ≤ `Rule.Depth` (default 1 = anak langsung). Root itu sendiri hanya boleh bila item
+   bertanda `Whole` (mis. satu direktori `~/.gradle/caches`). UI tidak pernah mengirim path bebas.
 3. **Protected list** (tidak pernah dihapus, walau dipilih):
    `/`, `/nix`, `/nix/store`, `/nix/var`, `/etc`, `/usr`, `/bin`, `/sbin`, `/boot`, `/var/lib`,
    `/home`, `~`, `~/Documents`, `~/Pictures`, `~/Videos`, `~/Music`, `~/Projects` (root-nya),

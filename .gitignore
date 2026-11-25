@@ -11,3 +11,4 @@ frontend/dist/assets/
 
 *.log
 .DS_Store
+frontend/test/node_modules/

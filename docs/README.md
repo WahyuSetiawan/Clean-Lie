@@ -1,7 +1,7 @@
 # Cleanlie — Dokumentasi
 
-Cleaner GUI untuk NixOS (Go + Wails v2). Status: **M0 selesai** — window, navigasi, dan binding
-diagnostik sudah jalan; engine scan/clean masuk M1–M2.
+Cleaner GUI untuk NixOS (Go + Wails v2). Status: **M2 selesai** — engine scan, dry-run CLI,
+layar Bersihkan, eksekusi trash/permanen, dan audit log sudah jalan. Aksi root masuk M3.
 
 | Dokumen | Isi |
 |---|---|
@@ -10,6 +10,8 @@ diagnostik sudah jalan; engine scan/clean masuk M1–M2.
 | [`tasks/cleanlie-v1.md`](tasks/cleanlie-v1.md) | Task breakdown M0–M6 (37 task) + acceptance criteria + definisi selesai |
 | [`wireframe/index.html`](wireframe/index.html) | **Wireframe interaktif** — acuan visual UI v1 (data ukur nyata, semua aksi simulasi) |
 | [`wireframe/README.md`](wireframe/README.md) | Cara buka wireframe, pemetaan layar → task, aturan visual |
+| [`implementation/m1-engine.md`](implementation/m1-engine.md) | Catatan implementasi engine: walker, katalog rule, CLI dry-run |
+| [`implementation/m2-clean.md`](implementation/m2-clean.md) | Guard, trash freedesktop, deteksi proses, eksekutor, audit, wiring UI |
 
 ## Buka wireframe
 

@@ -1,0 +1,11 @@
+{
+  "name": "cleanlie-ui-smoke",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node ui-smoke.mjs"
+  },
+  "devDependencies": {
+    "jsdom": "^26.0.0"
+  }
+}
