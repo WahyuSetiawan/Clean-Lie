@@ -34,6 +34,10 @@ let scans = 0;
 let cleaned = null;
 let nixStatusCalls = 0;
 let nixDeadCalls = 0;
+let androidStatusCalls = 0;
+let androidDeleted = null;
+let androidUninstalled = null;
+let androidWiped = null;
 let gcConfirm = null;
 
 const nixStatus = {
@@ -50,6 +54,21 @@ const nixStatus = {
   ]
 };
 const nixDead = { count: 500, bytes: 9000000000, source: 'nix-store --gc --print-dead', durationMs: 30000 };
+
+const androidStatus = {
+  avdBytes: 14000000000, sdkBytes: 13000000000,
+  sdkPath: '/home/u/Android/Sdk', avdHome: '/home/u/.android/avd',
+  emulatorRunning: false, scannedAt: 'now', durationMs: 120, errors: [],
+  avds: [
+    { name: 'test_devices', api: '36', abi: 'x86_64', bytes: 5300000000, lastUsed: '2026-06-02 10:00', ageDays: 169, running: false, suggested: true },
+    { name: 'voi_api35', api: '35', abi: 'x86_64', bytes: 8900000000, lastUsed: '2026-11-18 10:00', ageDays: 7, running: false, suggested: false }
+  ],
+  packages: [
+    { kind: 'system-image', id: 'system-images;android-35;google_apis;x86_64', bytes: 3500000000, ageDays: 154, usedBy: [], suggested: true },
+    { kind: 'system-image', id: 'system-images;android-36;google_apis;x86_64', bytes: 4300000000, ageDays: 154, usedBy: ['test_devices'], suggested: false },
+    { kind: 'ndk', id: 'ndk;27.0.12077973', bytes: 2000000000, ageDays: 154, usedBy: [], suggested: false }
+  ]
+};
 
 const dom = new JSDOM(html, {
   runScripts: 'dangerously',
@@ -84,7 +103,22 @@ const dom = new JSDOM(html, {
         return { action: 'gc', command: [], preview: 'pkexec nix-collect-garbage -d', exitCode: 0, used: 'pkexec', durationMs: 1200, stdout: 'deleted 500 paths' };
       },
       NixDeleteGenerations: async req => ({ action: 'delete-generations', preview: 'nix-env ...', exitCode: 0, used: 'user', durationMs: 100, deleted: req.numbers.length }),
-      VacuumJournal: async () => ({ action: 'vacuum-journal', exitCode: 0, durationMs: 50 })
+      VacuumJournal: async () => ({ action: 'vacuum-journal', exitCode: 0, durationMs: 50 }),
+      AndroidStatus: async () => { androidStatusCalls++; return androidStatus; },
+      AndroidRefresh: async () => true,
+      AndroidPreview: async (kind, target) => 'avdmanager ' + kind + ' ' + target,
+      AndroidDeleteAVD: async name => {
+        androidDeleted = name;
+        return { action: 'delete-avd', target: name, preview: 'avdmanager delete avd -n ' + name, exitCode: 0, freed: 5300000000, deleted: true };
+      },
+      AndroidUninstallPackage: async id => {
+        androidUninstalled = id;
+        return { action: 'uninstall', target: id, preview: 'sdkmanager --uninstall ' + id, exitCode: 0, freed: 3500000000, deleted: true };
+      },
+      AndroidWipeAVD: async name => {
+        androidWiped = name;
+        return { action: 'wipe', target: name, preview: 'emulator -avd ' + name + ' -wipe-data', exitCode: 0, freed: 0 };
+      }
     } } };
   }
 });
@@ -149,7 +183,49 @@ try {
   assert.match($('m-title').textContent, /Selesai: GC/);
   assert.equal(gcConfirm, 'GC');
 
-  console.log('UI smoke OK: scan, gate permanen, trash, hasil, rescan, Nix, GC');
+  // Layar Android: default tidak ada centang, saran hanya item yang disarankan.
+  d.querySelector('#nav button[data-view="android"]').click();
+  await sleep(80);
+  assert.equal(androidStatusCalls, 1, 'AndroidStatus dipanggil sekali');
+  assert.equal(d.querySelectorAll('#android-avds tr').length, 2, '2 AVD tampil');
+  assert.equal(d.querySelectorAll('#android-sysimg tr').length, 2, '2 system image tampil');
+  assert.equal(d.querySelectorAll('#android-tools tr').length, 1, 'NDK tampil');
+  assert.equal(d.querySelectorAll('#android-avds input[type="checkbox"]:checked').length, 0, 'default tidak ada centang');
+  assert.equal($('android-delete').disabled, true, 'hapus terkunci tanpa pilihan');
+
+  $('android-suggest').click();
+  assert.equal(d.querySelectorAll('#android-avds input[type="checkbox"]:checked').length, 1, 'hanya AVD lama yang dicentang');
+  assert.equal(d.querySelectorAll('#android-sysimg input[type="checkbox"]:checked').length, 1, 'hanya system image tak dipakai yang dicentang');
+  assert.match($('android-selected').textContent, /2 dipilih/);
+  assert.equal($('android-delete').disabled, false, 'hapus terbuka setelah pilih saran');
+
+  $('android-delete').click();
+  await sleep(50);
+  assert.match($('m-title').textContent, /Hapus 2 item Android/);
+  assert.equal($('m-ok').disabled, true, 'hapus Android terkunci tanpa checkbox');
+  $('ad-confirm').click();
+  assert.equal($('m-ok').disabled, false, 'checkbox membuka kunci');
+  $('m-ok').click();
+  await sleep(80);
+  assert.equal(androidDeleted, 'test_devices', 'AVD dikirim lewat nama');
+  assert.equal(androidUninstalled, 'system-images;android-35;google_apis;x86_64', 'SDK dikirim lewat ID');
+  assert.match($('m-title').textContent, /Selesai: Hapus item/);
+  assert.match($('m-body').textContent, /8\.20 GiB/);
+
+  // Wipe lewat tombol baris, dengan gate eksplisit.
+  $('m-cancel').click();
+  await sleep(50);
+  d.querySelector('#android-avds button[data-ad-act="wipe"]').click();
+  await sleep(50);
+  assert.match($('m-title').textContent, /Wipe 1 AVD/);
+  assert.equal($('m-ok').disabled, true, 'wipe terkunci tanpa checkbox');
+  $('ad-wipe-confirm').click();
+  $('m-ok').click();
+  await sleep(50);
+  assert.equal(androidWiped, 'test_devices', 'wipe memakai nama AVD');
+  assert.match($('m-title').textContent, /Selesai: Wipe data/);
+
+  console.log('UI smoke OK: scan, gate permanen, trash, hasil, rescan, Nix, GC, Android');
 } finally {
   w.close();
 }

@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"os"
 	"os/exec"
 	"strings"
 	"time"
@@ -47,6 +48,11 @@ func Preview(cmd []string) string {
 // Run menjalankan perintah dengan timeout. Timeout <= 0 berarti hanya
 // mengikuti context pemanggil (tetap disarankan memberi batas).
 func Run(ctx context.Context, cmd []string, timeout time.Duration) Result {
+	return RunEnv(ctx, cmd, timeout, nil)
+}
+
+// RunEnv seperti Run, tetapi menambahkan env ke environment proses.
+func RunEnv(ctx context.Context, cmd []string, timeout time.Duration, env []string) Result {
 	res := Result{Command: cmd, Preview: Preview(cmd)}
 	if len(cmd) == 0 {
 		res.ExitCode = -1
@@ -67,6 +73,9 @@ func Run(ctx context.Context, cmd []string, timeout time.Duration) Result {
 
 	start := time.Now()
 	c := exec.CommandContext(ctx, cmd[0], cmd[1:]...)
+	if len(env) > 0 {
+		c.Env = append(os.Environ(), env...)
+	}
 	var stdout, stderr bytes.Buffer
 	c.Stdout = &stdout
 	c.Stderr = &stderr
