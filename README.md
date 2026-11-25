@@ -95,7 +95,7 @@ guard yang sama dengan layar Bersihkan; UI hanya mengirim ID hasil analisis, buk
 cd frontend/test && npm install && npm test
 ```
 
-jsdom menjalankan `frontend/dist/index.html` dengan binding Go tiruan: scan → pilih → gate
+jsdom menjalankan `frontend/dist/index.html` (aset `dist/ui/*` di-inline otomatis) dengan binding Go tiruan: scan → pilih → gate
 permanen → trash → hasil → layar Nix → gate `GC` → hasil GC → layar Android → pilih saran →
 gate hapus/uninstall → hasil → wipe → hasil → dashboard → analisis (tree, drill-down, file
 besar, duplikat, artefak). Ini juga menjaga agar `window.go` (binding Wails) tidak tertimpa.
