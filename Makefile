@@ -4,7 +4,7 @@ COMMIT   ?= $(shell git rev-parse --short HEAD 2>/dev/null || echo unknown)
 TAGS     := desktop,production,webkit2_41
 LDFLAGS  := -s -w -X main.version=$(VERSION) -X main.commit=$(COMMIT)
 
-.PHONY: dev build run test lint fmt tidy clean
+.PHONY: dev build run test lint fmt tidy clean verify
 
 dev:
 	wails dev
@@ -16,10 +16,10 @@ run: build
 	./bin/$(APP)
 
 test:
-	go test ./...
+	go test -tags $(TAGS) ./...
 
 lint:
-	go vet ./...
+	go vet -tags $(TAGS) ./...
 
 fmt:
 	gofmt -w .
@@ -29,3 +29,6 @@ tidy:
 
 clean:
 	rm -rf bin/ build/ frontend/dist/assets
+
+verify: build
+	./scripts/verify-sizes.sh ./bin/$(APP)
