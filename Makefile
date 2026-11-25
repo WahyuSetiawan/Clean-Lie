@@ -1,0 +1,31 @@
+APP      := cleanlie
+VERSION  ?= 0.1.0
+COMMIT   ?= $(shell git rev-parse --short HEAD 2>/dev/null || echo unknown)
+TAGS     := desktop,production,webkit2_41
+LDFLAGS  := -s -w -X main.version=$(VERSION) -X main.commit=$(COMMIT)
+
+.PHONY: dev build run test lint fmt tidy clean
+
+dev:
+	wails dev
+
+build:
+	go build -tags $(TAGS) -trimpath -ldflags "$(LDFLAGS)" -o bin/$(APP) .
+
+run: build
+	./bin/$(APP)
+
+test:
+	go test ./...
+
+lint:
+	go vet ./...
+
+fmt:
+	gofmt -w .
+
+tidy:
+	go mod tidy
+
+clean:
+	rm -rf bin/ build/ frontend/dist/assets
