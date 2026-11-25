@@ -13,7 +13,7 @@
 |---|---|---|
 | **M0** scaffold | ✅ 2026-11-25 | `nix develop -c make build` → `bin/cleanlie` 8.8 MB; `nix build .#cleanlie` sukses; window jalan 6 s tanpa crash; binding `Diagnostics()` tampil di layar Pengaturan |
 | M1 engine | ✅ 2026-11-25 | `--dry-run --json` 150 item/9 grup; `scripts/verify-sizes.sh` 15 item terbesar delta ≤ 1%; 4 paket test hijau |
-| M2 hapus + Bersihkan | ⏳ | — |
+| M2 hapus + Bersihkan | ✅ 2026-11-25 | `internal/clean` + layar Bersihkan nyata; UI smoke (jsdom) scan→gate→trash→hasil hijau; restore trash nyata lolos; 5 paket Go hijau |
 | M3–M6 | ⏳ | — |
 
 ## Aturan main
@@ -132,7 +132,7 @@
 - **Files:** `internal/clean/trash.go`, `trash_test.go`
 
 ### T2.2 — `internal/clean`: guard & protected
-- `isProtected` (daftar plan §6.3), depth < 2, whitelist root (item harus anak langsung root rule).
+- `isProtected` (daftar plan §6.3), depth < 2, whitelist root (item di dalam root, kedalaman ≤ `Rule.Depth`).
 - **Acceptance:** test menolak `/`, `~`, `~/.config`, `~/.ssh`, item di luar root; mengizinkan `~/.cache/opencode`.
 
 ### T2.3 — `internal/clean`: eksekutor + verifikasi freed
@@ -162,6 +162,25 @@
 ### T2.8 — Laporan hasil
 - Setelah eksekusi: freed aktual, item gagal + alasan, tombol "Buka trash", "Salin log".
 - **Acceptance:** freed di UI == `before-after` di log; gagal tampil, bukan silent.
+
+### Catatan implementasi M2 (2026-11-25)
+
+- **Hasil:** layar Bersihkan memakai scan nyata (bukan data demo), default hanya item `safe`,
+  gate checkbox untuk hapus permanen, hasil menampilkan `freed` terukur + alasan gagal/skip.
+- **Guard:** path absolut → di dalam root katalog → kedalaman ≤ `Item.Depth` → bukan protected →
+  proses tidak berjalan. UI hanya mengirim ID; path diambil dari cache scan terakhir.
+- **Trash:** `gio trash` dulu, fallback manual `~/.local/share/Trash` + `.trashinfo`; beda
+  filesystem → `ErrCrossDevice` dan UI menawarkan permanen. Restore lewat gio terverifikasi.
+- **Freed:** `before` dari item, `after` diukur ulang; perintah sukses tapi ukuran tetap → `kept`.
+- **Audit:** `~/.local/state/cleanlie/history.jsonl` (0600, append-only), reader toleran baris korup.
+- **Deviasi plan §6.2:** whitelist memakai kedalaman relatif root (bukan hanya `Dir(path)==root`)
+  karena system image Android 3 level. `TestDefaultCatalogValidates` memvalidasi 151 item nyata.
+- **Bug laten M0 yang ditemukan smoke test:** fungsi navigasi global `go()` menimpa `window.go`
+  (binding Wails) sehingga diagnostik/integrasi selalu jatuh ke mode demo. Fungsi diganti
+  `navigate()`; test jsdom menjaga agar binding tidak tertimpa.
+- **Test baru:** `internal/clean` (guard, trash, executor, audit, proses), `app_clean_test.go`,
+  `frontend/test/ui-smoke.mjs` (jsdom, opsional, tanpa Node saat build).
+- **Belum:** aksi root (M3), cache browser per profil & saran AVD (M4).
 
 ---
 

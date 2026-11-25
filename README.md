@@ -2,9 +2,11 @@
 
 Disk cleaner & analyzer GUI untuk NixOS. Go + Wails v2, UI statis (tanpa Node).
 
-> Status: **M1 — engine**. Window, navigasi, katalog rule, dan `--dry-run --json`
-> sudah jalan. Eksekusi hapus masuk M2. Lihat [`docs/tasks/cleanlie-v1.md`](docs/tasks/cleanlie-v1.md)
-> dan [`docs/implementation/m1-engine.md`](docs/implementation/m1-engine.md).
+> Status: **M2 — bersihkan**. Scan katalog, dry-run CLI, dan eksekusi hapus (trash/perm)
+> sudah jalan lewat layar Bersihkan. Aksi root (GC/generasi) masuk M3. Lihat
+> [`docs/tasks/cleanlie-v1.md`](docs/tasks/cleanlie-v1.md),
+> [`docs/implementation/m1-engine.md`](docs/implementation/m1-engine.md), dan
+> [`docs/implementation/m2-clean.md`](docs/implementation/m2-clean.md).
 
 ## Kenapa
 
@@ -49,19 +51,32 @@ Wrapper sudah membawa PATH untuk `nix`, `journalctl`, `pkexec`, `gio`, `xdg-open
 make verify                           # bandingkan ukuran vs `du` (toleransi 2%)
 ```
 
-Semua mode di atas read-only. Perintah resmi tool (mis. `npm cache clean --force`)
-muncul di laporan sebagai saran; eksekusinya baru ada di M2.
+Semua mode di atas read-only. Eksekusi hapus ada di GUI (layar **Bersihkan**): pilih item,
+konfirmasi dialog, lalu `gio trash` (default) atau permanen dengan checkbox. Hasil menyimpan
+`freed` terukur dan audit log di `~/.local/state/cleanlie/history.jsonl`.
+
+## Test UI (opsional, tanpa build Node)
+
+```sh
+cd frontend/test && npm install && npm test
+```
+
+jsdom menjalankan `frontend/dist/index.html` dengan binding Go tiruan: scan → pilih → gate
+permanen → trash → hasil. Ini juga menjaga agar `window.go` (binding Wails) tidak tertimpa.
 
 ## Struktur
 
 ```
 main.go                 # wails.Run + embed frontend/dist + dispatch CLI
 cli.go                  # --dry-run / --scan-only / --json
-app.go                  # binding Go → window.go.main.App
+app.go                  # binding Go → window.go.main.App (Diagnostics)
+app_clean.go            # ScanJunk/CancelScan/Clean/History + event progress
 internal/fsx/           # walker paralel (blok disk, hardlink, one-fs) + usage/statfs
 internal/rules/         # katalog rule + Plan read-only (linux, devtools, android, nix)
+internal/clean/         # guard, trash freedesktop, deteksi proses, eksekutor, audit
 internal/tools/         # jalankan perintah resmi dengan preview + timeout
 frontend/dist/          # UI statis (sumber desain: docs/wireframe)
+frontend/test/          # smoke test jsdom (opsional, bukan bagian build)
 flake.nix               # devShell + package
 docs/plan|tasks|wireframe|implementation
 ```

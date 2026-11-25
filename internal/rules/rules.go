@@ -65,6 +65,9 @@ type Item struct {
 	ID           string   `json:"id"`
 	Group        string   `json:"group"`
 	Path         string   `json:"path"`
+	Root         string   `json:"root"`
+	Whole        bool     `json:"whole"`
+	Depth        int      `json:"depth,omitempty"`
 	Label        string   `json:"label"`
 	Bytes        int64    `json:"bytes"`
 	Files        int64    `json:"files"`
@@ -164,6 +167,7 @@ func ExpandHome(p string) string {
 type candidate struct {
 	rule  Rule
 	path  string
+	root  string
 	label string
 }
 
@@ -203,7 +207,7 @@ func Plan(ctx context.Context, list []Rule, opts PlanOptions) (Report, error) {
 			}
 			if !seen[root] {
 				seen[root] = true
-				candidates = append(candidates, candidate{rule: r, path: root, label: label})
+				candidates = append(candidates, candidate{rule: r, path: root, root: root, label: label})
 			}
 			continue
 		}
@@ -217,7 +221,7 @@ func Plan(ctx context.Context, list []Rule, opts PlanOptions) (Report, error) {
 				continue
 			}
 			seen[p] = true
-			candidates = append(candidates, candidate{rule: r, path: p, label: filepath.Base(p)})
+			candidates = append(candidates, candidate{rule: r, path: p, root: root, label: filepath.Base(p)})
 		}
 	}
 
@@ -295,10 +299,21 @@ feed:
 		if m.bytes <= 0 {
 			continue
 		}
+		id := c.rule.ID
+		if !c.rule.Whole && c.rule.Probe == nil {
+			if rel, err := filepath.Rel(c.root, c.path); err == nil {
+				id += ":" + filepath.ToSlash(rel)
+			} else {
+				id += ":" + c.path
+			}
+		}
 		item := Item{
-			ID:           c.rule.ID + "/" + c.label,
+			ID:           id,
 			Group:        c.rule.Group,
 			Path:         c.path,
+			Root:         c.root,
+			Whole:        c.rule.Whole || c.rule.Probe != nil,
+			Depth:        c.rule.Depth,
 			Label:        c.label,
 			Bytes:        m.bytes,
 			Files:        m.files,

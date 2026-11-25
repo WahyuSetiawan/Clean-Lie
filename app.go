@@ -6,7 +6,10 @@ import (
 	"os/exec"
 	"runtime"
 	"strings"
+	"sync"
 	"time"
+
+	"github.com/Juragan-Koding/cleanlie/internal/rules"
 )
 
 // App adalah jembatan Go ↔ UI. Untuk M0 isinya hanya diagnostik;
@@ -16,6 +19,11 @@ type App struct {
 	version   string
 	commit    string
 	startedAt time.Time
+
+	scanMu     sync.Mutex
+	scanCancel context.CancelFunc
+	scanItems  map[string]rules.Item
+	cleanMu    sync.Mutex
 }
 
 func NewApp(version, commit string) *App {
