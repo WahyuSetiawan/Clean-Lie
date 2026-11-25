@@ -1,0 +1,13 @@
+{
+  "$schema": "https://wails.io/schemas/config.v2.json",
+  "name": "cleanlie",
+  "outputfilename": "cleanlie",
+  "frontend:install": "",
+  "frontend:build": "",
+  "frontend:dev:watcher": "",
+  "frontend:dev:serverUrl": "",
+  "author": {
+    "name": "Juragan Koding",
+    "email": "juragankoding@users.noreply.github.com"
+  }
+}
