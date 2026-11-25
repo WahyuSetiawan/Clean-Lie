@@ -30,6 +30,10 @@ journal 4.0 G.
 | **Analisis** | Tab Disk usage (bar + peta), File besar, Duplikat, File lama, Artefak build | T5.1–T5.6 |
 | **Pengaturan** | Tema/bahasa, mode hapus, target journal, ambang analisis, root artefak, pengecualian, status polkit, riwayat | T6.1–T6.3 |
 
+Angka pada layar Nix di wireframe adalah contoh desain. Aplikasi mengisi kartu dan tabel
+dengan data nyata (`--nix-status` / `--nix-dead`); nilai di wireframe tidak dipakai sebagai
+klaim ukuran.
+
 ## Yang bisa dicoba di wireframe
 
 - Klik sidebar → pindah layar (routing `#/dashboard`, `#/cleanup`, …).

@@ -14,7 +14,8 @@
 | **M0** scaffold | ✅ 2026-11-25 | `nix develop -c make build` → `bin/cleanlie` 8.8 MB; `nix build .#cleanlie` sukses; window jalan 6 s tanpa crash; binding `Diagnostics()` tampil di layar Pengaturan |
 | M1 engine | ✅ 2026-11-25 | `--dry-run --json` 150 item/9 grup; `scripts/verify-sizes.sh` 15 item terbesar delta ≤ 1%; 4 paket test hijau |
 | M2 hapus + Bersihkan | ✅ 2026-11-25 | `internal/clean` + layar Bersihkan nyata; UI smoke (jsdom) scan→gate→trash→hasil hijau; restore trash nyata lolos; 5 paket Go hijau |
-| M3–M6 | ⏳ | — |
+| M3 Nix | ✅ 2026-11-25 | `--nix-status` 129 generasi/47.208 path/70,4 GB NAR; `--nix-dead` **624 path** == `nix-collect-garbage --dry-run` **624**; 7 paket Go hijau; UI smoke gate `GC` hijau |
+| M4–M6 | ⏳ | — |
 
 ## Aturan main
 
@@ -187,26 +188,35 @@
 ## M3 — Nix (gate: GC dry-run == CLI)
 
 ### T3.1 — Parser generasi
-- `nix-env -p <profile> --list-generations` untuk system, user, home-manager; tandai current.
-- **Acceptance:** jumlah generasi == output CLI; fixture string asli di test.
+- `nix-env -p <profile> --list-generations` untuk user dan home-manager; system memakai symlink `system-<N>-link` + mtime karena `nix-env` gagal membuka `system.lock` sebagai non-root.
+- **Acceptance:** jumlah generasi == output CLI (dibandingkan sebagai root); fixture string asli di test.
 
 ### T3.2 — Ukuran closure per generasi
-- `nix path-info -Sh <profile>-<N>-link` (parse), fallback `-S`.
-- **Acceptance:** angka == `nix path-info -Sh` manual; generasi yang link-nya hilang ditandai.
+- `nix path-info -S` per batch 300 path unik (bukan `-Sh` per generasi); fallback kosong bila gagal.
+- **Acceptance:** angka == `nix path-info -Sh` manual; generasi yang link-nya hilang ditandai `linkMissing`.
 
 ### T3.3 — Dry-run GC
-- `nix-collect-garbage --dry-run` → parse "N store paths deleted, X MiB freed"; timeout 5 menit + progress.
-- **Acceptance:** angka == CLI persis; tidak ada perubahan store setelah dry-run.
+- `nix-store --gc --print-dead` → daftar path; ukuran dari `nix path-info --json` per 300 path. Fallback `nix-collect-garbage --dry-run` (jumlah saja).
+- **Acceptance:** jumlah path == `nix-collect-garbage --dry-run` persis; tidak ada perubahan store setelah dry-run.
 
 ### T3.4 — `internal/privileged`: hybrid pkexec
-- Deteksi agent (`pgrep -f 'polkit.*agent|hyprpolkitagent'`), `pkexec` dengan path absolut, fallback perintah `sudo` siap-copy + tombol Copy.
+- Deteksi agent dengan memindai `/proc/*/cmdline` (`hyprpolkitagent`, atau `polkit` + `agent`), `pkexec` dengan path absolut, fallback perintah `sudo` siap-copy + tombol Copy.
 - **Acceptance:** tanpa agent → UI menampilkan perintah, exit code & stderr terlihat; dengan agent → prompt muncul.
-- **Files:** `internal/privileged/{detect,exec}.go`
+- **Files:** `internal/privileged/privileged.go` (+ test)
 
 ### T3.5 — Layar Nix
 - Kartu store size, dead paths (dry-run), tabel generasi (profile/gen/tanggal/closure/aksi), tombol GC & hapus generasi.
 - Konfirmasi hapus generasi: ketik `GC`; tombol disabled sampai cocok.
 - **Acceptance:** hapus generasi home-manager lama (`>30d`) mengurangi list; generasi current tidak pernah bisa dipilih.
+
+### Catatan implementasi M3 (2026-11-25)
+
+- Package baru: `internal/nix` (`nix.go`, `parse.go`, `actions.go`), `internal/privileged`; binding `app_nix.go`; CLI `--nix-status` / `--nix-dead`.
+- Angka nyata: store 70.425.698.432 byte NAR / 47.208 path / 129 generasi; dead 624 path / 9.720.894.784 byte; journal 4.187.593.113 byte; status 7,5 s; dead 31,6 s.
+- Gate M3 lolos: `--nix-dead` **624** == `nix-collect-garbage --dry-run` **624**.
+- Tidak ada agent polkit di mesin target → semua aksi root berhenti di `NeedsSudo` + `sudoCommand`; UI menampilkan tombol Salin, bukan klaim berhasil.
+- Deviasi: tanggal system dari mtime; closure batch `-S`; ukuran dead dari NAR path-info; deteksi agent lewat `/proc`; satu file privileged.
+- Detail: [`../implementation/m3-nix.md`](../implementation/m3-nix.md).
 
 ---
 

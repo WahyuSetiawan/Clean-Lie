@@ -211,17 +211,22 @@ Semua perintah ditampilkan lebih dulu (command preview: perintah + path + ukuran
 ### 5.7 Nix (modul sendiri)
 | Fitur | Perintah / sumber data | Root? |
 |---|---|---|
-| Ukuran store | `du -sh /nix/store` (atau `nix path-info -S`) | tidak |
-| Estimasi reclaimable (dead paths) | `nix-collect-garbage --dry-run` (parse "N store paths deleted, X MiB freed") | tidak (dry-run) |
-| Generasi system | `nix-env -p /nix/var/nix/profiles/system --list-generations` + `nix path-info -Sh <link>` | baca: tidak, hapus: ya |
-| Generasi user | `nix-env --list-generations` | tidak |
-| Generasi home-manager | `nix-env -p ~/.local/state/nix/profiles/home-manager --list-generations` | tidak |
-| Hapus generasi lama | `nix-env -p <profile> --delete-generations old` (atau `+<N>d`) | system: root |
+| Ukuran store | `nix path-info --json --all` → jumlah `narSize` (≈5 s; `du` 75 s) | tidak |
+| Estimasi reclaimable (dead paths) | `nix-store --gc --print-dead` + `nix path-info --json` per 300 path (≈32 s, byte NAR); fallback `nix-collect-garbage --dry-run` (jumlah saja) | tidak (dry-run) |
+| Generasi system | symlink `/nix/var/nix/profiles/system-<N>-link` + mtime; `nix path-info -S` batch untuk closure | baca: tidak, hapus: ya |
+| Generasi user | `~/.local/state/nix/profiles/profile` + `nix-env -p <path> --list-generations` | tidak |
+| Generasi home-manager | `~/.local/state/nix/profiles/home-manager` + `nix-env -p <path> --list-generations` | tidak |
+| Hapus generasi lama | UI memilih nomor non-current → `nix-env -p <profile> --delete-generations <N...>` | system: root |
 | GC store | `nix-collect-garbage -d` (root) / `nix store gc` (user roots saja) | ya |
 | GC terjadwal | `nix.gc.automatic` di konfigurasi NixOS (aplikasi hanya menampilkan status) | — |
 
 Aturan keras: GC dan hapus generasi **selalu** dua langkah — tampilkan dry-run + angka, user harus
 mengetik `GC` di dialog konfirmasi. Tidak ada auto-GC dari aplikasi.
+
+Catatan implementasi (2026-11-25): `nix-env` pada profile system gagal sebagai non-root
+(`system.lock`), jadi tanggal system diambil dari mtime link. `nix-collect-garbage --dry-run`
+tidak memberi ukuran byte; gate M3 membandingkan **jumlah path** dengan `--nix-dead` (624 == 624).
+Store dan dead-path memakai NAR size, bukan allocated block. Detail: `implementation/m3-nix.md`.
 
 ## 6. Model keamanan
 
@@ -245,7 +250,8 @@ mengetik `GC` di dialog konfirmasi. Tidak ada auto-GC dari aplikasi.
    Bisa dipakai untuk "undo hint" (path asal di trash).
 8. **Root minimal — hybrid pkexec/sudo (dikunci).** Hanya 3 aksi yang butuh root: hapus generasi
    system, GC system, vacuum journal system. Alur:
-   1. Saat start, deteksi polkit agent (`pgrep -f 'polkit.*agent|hyprpolkitagent'`).
+   1. Saat start, deteksi polkit agent dengan memindai `/proc/*/cmdline` (`hyprpolkitagent`, atau
+   `polkit` + `agent`).
    2. Agent ada → jalankan via `pkexec` dengan **path absolut** (env pkexec di-strip, PATH nix hilang).
    3. Agent tidak ada / pkexec gagal (exit 126/127) → tampilkan dialog berisi perintah `sudo` siap-copy
       + tombol **Copy**, dan tombol **Coba pkexec lagi**. Jangan pernah gagal senyap.

@@ -32,6 +32,24 @@ const report = {
 
 let scans = 0;
 let cleaned = null;
+let nixStatusCalls = 0;
+let nixDeadCalls = 0;
+let gcConfirm = null;
+
+const nixStatus = {
+  storePath: '/nix/store', storeBytes: 70000000000, storePaths: 40000,
+  journalBytes: 4000000000, freeBytes: 10000000000, totalBytes: 200000000000,
+  agent: false, gcCommand: 'sudo nix-collect-garbage -d', errors: [],
+  profiles: [
+    { name: 'system', path: '/nix/var/nix/profiles/system', count: 1, current: 52 },
+    { name: 'home-manager', path: '/home/u/.local/state/nix/profiles/home-manager', count: 1, current: 412 }
+  ],
+  generations: [
+    { profile: 'system', profilePath: '/nix/var/nix/profiles/system', number: 52, date: '2026-11-25 01:21:31', ageDays: 0, current: true, closureBytes: 26000000000 },
+    { profile: 'home-manager', profilePath: '/home/u/.local/state/nix/profiles/home-manager', number: 411, date: '2026-10-01 08:00:00', ageDays: 55, current: false, suggested: true, closureBytes: 1000000000 }
+  ]
+};
+const nixDead = { count: 500, bytes: 9000000000, source: 'nix-store --gc --print-dead', durationMs: 30000 };
 
 const dom = new JSDOM(html, {
   runScripts: 'dangerously',
@@ -57,7 +75,16 @@ const dom = new JSDOM(html, {
       CancelScan: async () => true,
       CopyText: async () => {},
       OpenTrash: async () => {},
-      History: async () => []
+      History: async () => [],
+      NixStatus: async () => { nixStatusCalls++; return nixStatus; },
+      NixDeadPaths: async () => { nixDeadCalls++; return nixDead; },
+      NixPreview: async () => 'pkexec /nix/var/nix/profiles/system --delete-generations 411',
+      NixCollectGarbage: async confirm => {
+        gcConfirm = confirm;
+        return { action: 'gc', command: [], preview: 'pkexec nix-collect-garbage -d', exitCode: 0, used: 'pkexec', durationMs: 1200, stdout: 'deleted 500 paths' };
+      },
+      NixDeleteGenerations: async req => ({ action: 'delete-generations', preview: 'nix-env ...', exitCode: 0, used: 'user', durationMs: 100, deleted: req.numbers.length }),
+      VacuumJournal: async () => ({ action: 'vacuum-journal', exitCode: 0, durationMs: 50 })
     } } };
   }
 });
@@ -100,7 +127,29 @@ try {
   assert.equal(cleaned.mode, 'trash');
   assert.equal(scans, 2, 'scan ulang setelah eksekusi');
 
-  console.log('UI smoke OK: scan, gate permanen, trash, hasil, rescan');
+  // Layar Nix
+  d.querySelector('#nav button[data-view="nix"]').click();
+  await sleep(400);
+  assert.equal(nixStatusCalls, 1, 'NixStatus dipanggil sekali');
+  assert.equal(nixDeadCalls, 1, 'NixDeadPaths dipanggil sekali');
+  assert.equal(d.querySelectorAll('#nix-gens tr').length, 2, '2 generasi tampil');
+  assert.match($('nix-store-size').textContent, /65\.19 GiB/);
+  assert.match($('nix-dead-size').textContent, /8\.38 GiB/);
+  assert.equal(d.querySelectorAll('#nix-gens button[data-nix-del]').length, 1, 'current tidak punya tombol hapus');
+
+  $('nix-gc').click();
+  await sleep(50);
+  assert.match($('m-title').textContent, /garbage collection/i);
+  assert.equal($('m-ok').disabled, true, 'GC terkunci sebelum ketik GC');
+  $('gc-confirm').value = 'GC';
+  $('gc-confirm').dispatchEvent(new w.Event('input', { bubbles: true }));
+  assert.equal($('m-ok').disabled, false, 'GC terbuka setelah ketik GC');
+  $('m-ok').click();
+  await sleep(300);
+  assert.match($('m-title').textContent, /Selesai: GC/);
+  assert.equal(gcConfirm, 'GC');
+
+  console.log('UI smoke OK: scan, gate permanen, trash, hasil, rescan, Nix, GC');
 } finally {
   w.close();
 }

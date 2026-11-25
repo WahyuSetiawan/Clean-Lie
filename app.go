@@ -9,6 +9,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/Juragan-Koding/cleanlie/internal/nix"
 	"github.com/Juragan-Koding/cleanlie/internal/rules"
 )
 
@@ -24,6 +25,13 @@ type App struct {
 	scanCancel context.CancelFunc
 	scanItems  map[string]rules.Item
 	cleanMu    sync.Mutex
+
+	nixMu       sync.Mutex
+	nixStatus   *nix.Status
+	nixStatusAt time.Time
+	nixDeadMu   sync.Mutex
+	nixDead     *nix.Dead
+	nixDeadAt   time.Time
 }
 
 func NewApp(version, commit string) *App {
