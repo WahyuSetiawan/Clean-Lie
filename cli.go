@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Juragan-Koding/cleanlie/internal/analysis"
 	"github.com/Juragan-Koding/cleanlie/internal/android"
 	"github.com/Juragan-Koding/cleanlie/internal/fsx"
 	"github.com/Juragan-Koding/cleanlie/internal/nix"
@@ -29,6 +30,8 @@ func runCLI(args []string) (handled bool, code int) {
 		case "--dry-run", "-dry-run", "--json", "-json", "--scan-only", "-scan-only",
 			"--nix-status", "-nix-status", "--nix-dead", "-nix-dead",
 			"--android-status", "-android-status",
+			"--analysis-tree", "-analysis-tree", "--analysis-overview", "-analysis-overview",
+			"--analysis-dups", "-analysis-dups",
 			"--version", "-version", "--help", "-help", "-h":
 			headless = true
 		}
@@ -40,16 +43,20 @@ func runCLI(args []string) (handled bool, code int) {
 	fs := flag.NewFlagSet("cleanlie", flag.ContinueOnError)
 	fs.SetOutput(os.Stderr)
 	var (
-		jsonOut  = fs.Bool("json", false, "cetak laporan sebagai JSON")
-		dryRun   = fs.Bool("dry-run", false, "pindai dan tampilkan rencana (tidak menghapus)")
-		scanOnly = fs.Bool("scan-only", false, "pindai satu direktori")
-		path     = fs.String("path", "", "direktori yang dipindai untuk --scan-only")
-		group    = fs.String("group", "", "batasi ke satu group (mis. dev.node)")
-		workers  = fs.Int("workers", 0, "jumlah worker pemindaian (0 = otomatis)")
-		showVer  = fs.Bool("version", false, "cetak versi")
-		nixStat  = fs.Bool("nix-status", false, "cetak status Nix sebagai JSON")
-		nixDead  = fs.Bool("nix-dead", false, "hitung dead paths Nix sebagai JSON")
-		andStat  = fs.Bool("android-status", false, "status AVD/SDK Android sebagai JSON")
+		jsonOut    = fs.Bool("json", false, "cetak laporan sebagai JSON")
+		dryRun     = fs.Bool("dry-run", false, "pindai dan tampilkan rencana (tidak menghapus)")
+		scanOnly   = fs.Bool("scan-only", false, "pindai satu direktori")
+		path       = fs.String("path", "", "direktori yang dipindai untuk --scan-only")
+		group      = fs.String("group", "", "batasi ke satu group (mis. dev.node)")
+		workers    = fs.Int("workers", 0, "jumlah worker pemindaian (0 = otomatis)")
+		showVer    = fs.Bool("version", false, "cetak versi")
+		nixStat    = fs.Bool("nix-status", false, "cetak status Nix sebagai JSON")
+		nixDead    = fs.Bool("nix-dead", false, "hitung dead paths Nix sebagai JSON")
+		andStat    = fs.Bool("android-status", false, "status AVD/SDK Android sebagai JSON")
+		anTree     = fs.Bool("analysis-tree", false, "tree disk usage sebagai JSON")
+		anOverview = fs.Bool("analysis-overview", false, "file besar/lama/artefak sebagai JSON")
+		anDups     = fs.Bool("analysis-dups", false, "file duplikat sebagai JSON")
+		anDepth    = fs.Int("depth", 2, "kedalaman tree analisis")
 	)
 	fs.Usage = func() {
 		fmt.Fprintf(os.Stderr, `Cleanlie %s
@@ -62,6 +69,9 @@ Pemakaian:
   cleanlie --nix-status            status store, generasi, journal (JSON)
   cleanlie --nix-dead              dry-run GC: jumlah + ukuran dead paths
   cleanlie --android-status        status AVD/SDK Android (JSON)
+  cleanlie --analysis-tree         tree disk usage (JSON; --path, --depth)
+  cleanlie --analysis-overview     file besar, lama, artefak (JSON)
+  cleanlie --analysis-dups         file duplikat (JSON)
   cleanlie --version
 
 Opsi:
@@ -79,6 +89,37 @@ Opsi:
 
 	if *andStat {
 		printJSON(android.ReadStatus(context.Background(), android.Options{}))
+		return true, 0
+	}
+	if *anTree || *anOverview || *anDups {
+		root := *path
+		if root == "" {
+			root = rules.Home()
+		}
+		anOpts := analysis.Options{Root: root, Depth: *anDepth}
+		switch {
+		case *anTree:
+			tr, err := analysis.ScanTree(context.Background(), anOpts)
+			if err != nil {
+				fmt.Fprintln(os.Stderr, "cleanlie:", err)
+				return true, 1
+			}
+			printJSON(tr)
+		case *anOverview:
+			ov, err := analysis.ScanOverview(context.Background(), anOpts)
+			if err != nil {
+				fmt.Fprintln(os.Stderr, "cleanlie:", err)
+				return true, 1
+			}
+			printJSON(ov)
+		case *anDups:
+			d, err := analysis.FindDuplicates(context.Background(), anOpts)
+			if err != nil {
+				fmt.Fprintln(os.Stderr, "cleanlie:", err)
+				return true, 1
+			}
+			printJSON(d)
+		}
 		return true, 0
 	}
 

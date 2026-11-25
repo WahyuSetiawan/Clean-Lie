@@ -2,12 +2,13 @@
 
 Disk cleaner & analyzer GUI untuk NixOS. Go + Wails v2, UI statis (tanpa Node).
 
-> Status: **M4 — Android**. Scan katalog, dry-run CLI, eksekusi hapus (trash/perm), audit,
-> layar Nix (store, generasi, dead paths, GC, vacuum journal, fallback pkexec/sudo), dan
-> layar Android (AVD/SDK, saran >90 hari, hapus/wipe/uninstall) sudah jalan. Berikutnya
-> M5 Analisis + Dashboard. Lihat
+> Status: **M5 — Analisis + Dashboard**. Scan katalog, dry-run CLI, eksekusi hapus
+> (trash/perm), audit, layar Nix (store, generasi, dead paths, GC, vacuum journal,
+> fallback pkexec/sudo), layar Android (AVD/SDK, saran >90 hari, hapus/wipe/uninstall),
+> layar Analisis (tree, file besar, duplikat, file lama, artefak), dan Dashboard nyata
+> sudah jalan. Berikutnya M6 Polish & packaging. Lihat
 > [`docs/tasks/cleanlie-v1.md`](docs/tasks/cleanlie-v1.md),
-> [`docs/implementation/`](docs/implementation/) (m1–m4), dan
+> [`docs/implementation/`](docs/implementation/) (m1–m5), dan
 > [`CHANGELOG.md`](CHANGELOG.md).
 
 ## Kenapa
@@ -51,6 +52,9 @@ Wrapper sudah membawa PATH untuk `nix`, `journalctl`, `pkexec`, `gio`, `xdg-open
 ./bin/cleanlie --nix-status           # store, generasi, journal (JSON; ~8 s)
 ./bin/cleanlie --nix-dead             # dry-run GC: jumlah + ukuran dead path (JSON; ~32 s)
 ./bin/cleanlie --android-status       # AVD + paket SDK (JSON; ~0,14 s)
+./bin/cleanlie --analysis-tree         # tree disk usage (JSON; ~5 s; --path, --depth)
+./bin/cleanlie --analysis-overview     # file besar/lama/artefak (JSON; ~19 s)
+./bin/cleanlie --analysis-dups         # file duplikat (JSON; ~51 s)
 ./bin/cleanlie --version
 
 make verify                           # bandingkan ukuran vs `du` (toleransi 2%)
@@ -71,6 +75,11 @@ Gate M4: hapus AVD lewat fixture harus menghilangkan folder `.avd` + `.ini` dan 
 `freed > 0`; pada mesin target `test_devices` 5,01 GiB terdeteksi, sedangkan saran otomatis
 hanya `system-images;android-35;google_apis;x86_64` (3,50 GiB, 154 hari, tidak dipakai).
 
+Layar **Analisis** dan **Dashboard** read-only saat memindai. Tree `~` depth 2 pada mesin
+target 179.182.256.128 B (selisih 0,0013% dari `du --exclude=.git`), `~/.cache` 1,7 s;
+duplikat 1.715 grup/16,70 GiB (tampil 100 grup teratas). Tombol trash di analisis memakai
+guard yang sama dengan layar Bersihkan; UI hanya mengirim ID hasil analisis, bukan path.
+
 ## Test UI (opsional, tanpa build Node)
 
 ```sh
@@ -79,23 +88,25 @@ cd frontend/test && npm install && npm test
 
 jsdom menjalankan `frontend/dist/index.html` dengan binding Go tiruan: scan → pilih → gate
 permanen → trash → hasil → layar Nix → gate `GC` → hasil GC → layar Android → pilih saran →
-gate hapus/uninstall → hasil → wipe → hasil. Ini juga menjaga agar `window.go`
-(binding Wails) tidak tertimpa.
+gate hapus/uninstall → hasil → wipe → hasil → dashboard → analisis (tree, drill-down, file
+besar, duplikat, artefak). Ini juga menjaga agar `window.go` (binding Wails) tidak tertimpa.
 
 ## Struktur
 
 ```
 main.go                 # wails.Run + embed frontend/dist + dispatch CLI
-cli.go                  # --dry-run / --scan-only / --json / --nix-status / --nix-dead / --android-status
-app.go                  # binding Go → window.go.main.App (Diagnostics)
+cli.go                  # --dry-run / --scan-only / --json / Nix / Android / analisis
+app.go                  # binding Go → window.go.main.App (Diagnostics + cache)
 app_clean.go            # ScanJunk/CancelScan/Clean/History + event progress
 app_nix.go              # NixStatus/NixDeadPaths/NixPreview/aksi + cache 2 menit
 app_android.go          # AndroidStatus/Refresh/DeleteAVD/Uninstall/Wipe/Preview
+app_analysis.go         # tree/overview/duplikat, cache 60 s, target ID, trash analisis
 internal/fsx/           # walker paralel (blok disk, hardlink, one-fs) + usage/statfs
 internal/rules/         # katalog rule + Plan read-only (linux, devtools, android, nix)
 internal/clean/         # guard, trash freedesktop, deteksi proses, eksekutor, audit
 internal/nix/           # generasi, closure, dead paths, aksi GC/vacuum
 internal/android/       # parser AVD/SDK + aksi avdmanager/sdkmanager/wipe
+internal/analysis/      # tree, file besar/lama, artefak, duplikat (read-only)
 internal/privileged/    # pkexec dengan path absolut, fallback sudo siap-copy
 internal/tools/         # jalankan perintah resmi dengan preview + timeout
 frontend/dist/          # UI statis (sumber desain: docs/wireframe)

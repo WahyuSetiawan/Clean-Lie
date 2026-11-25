@@ -9,6 +9,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/Juragan-Koding/cleanlie/internal/analysis"
 	"github.com/Juragan-Koding/cleanlie/internal/android"
 	"github.com/Juragan-Koding/cleanlie/internal/nix"
 	"github.com/Juragan-Koding/cleanlie/internal/rules"
@@ -37,6 +38,16 @@ type App struct {
 	androidMu       sync.Mutex
 	androidStatus   *android.Status
 	androidStatusAt time.Time
+
+	analysisMu          sync.Mutex
+	analysisCancel      context.CancelFunc
+	analysisTrees       map[string]analysis.Tree
+	analysisTreesAt     map[string]time.Time
+	analysisOverviews   map[string]analysis.Overview
+	analysisOverviewsAt map[string]time.Time
+	analysisDups        map[string]analysis.Duplicates
+	analysisDupsAt      map[string]time.Time
+	analysisTargets     map[string]analysisTarget
 }
 
 func NewApp(version, commit string) *App {

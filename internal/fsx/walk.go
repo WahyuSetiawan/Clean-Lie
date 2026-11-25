@@ -42,6 +42,10 @@ type Options struct {
 	Skip map[string]bool
 	// TopN > 0 mengumpulkan N file terbesar.
 	TopN int
+	// Inodes dipakai bersama agar hard link lintas subtree dihitung sekali.
+	Inodes *sync.Map
+	// SkipNames melewati entri dengan nama tertentu (mis. .git).
+	SkipNames map[string]bool
 	// Progress dipanggil setiap selesai satu direktori (boleh nil).
 	Progress func(Progress)
 }
@@ -72,7 +76,7 @@ type scanner struct {
 	opts    Options
 	rootDev uint64
 	sem     chan struct{}
-	inodes  sync.Map
+	inodes  *sync.Map
 
 	size  atomic.Int64
 	files atomic.Int64
@@ -94,6 +98,9 @@ func Walk(ctx context.Context, root string, opts Options) (Result, error) {
 	if err := syscall.Lstat(root, &st); err != nil {
 		return Result{}, err
 	}
+	if opts.Inodes == nil {
+		opts.Inodes = &sync.Map{}
+	}
 	if st.Mode&syscall.S_IFMT != syscall.S_IFDIR {
 		size := int64(st.Blocks) * blockSize
 		return Result{Size: size, Files: 1}, nil
@@ -104,6 +111,7 @@ func Walk(ctx context.Context, root string, opts Options) (Result, error) {
 		opts:    opts,
 		rootDev: uint64(st.Dev),
 		sem:     make(chan struct{}, opts.Workers),
+		inodes:  opts.Inodes,
 	}
 	s.scan(root)
 
@@ -146,6 +154,9 @@ func (s *scanner) scan(dir string) {
 		}
 		p := filepath.Join(dir, name)
 		if s.opts.Skip[p] {
+			continue
+		}
+		if s.opts.SkipNames != nil && s.opts.SkipNames[name] {
 			continue
 		}
 

@@ -17,4 +17,5 @@ UI statis tanpa bundler: `dist/index.html` di-embed ke binary lewat `//go:embed 
 | M2 | layar Bersihkan tersambung ke scan & hapus |
 | M3 | layar Nix: store, generasi, dead paths, GC, vacuum, fallback sudo |
 | M4 | layar Android: AVD, SDK, saran >90 hari, hapus/uninstall/wipe |
-| M5–M6 | analisis, dashboard, settings, i18n, packaging |
+| M5 | layar Analisis (tree, file besar, duplikat, file lama, artefak) + Dashboard nyata |
+| M6 | settings, i18n, packaging |

@@ -39,6 +39,9 @@ let androidDeleted = null;
 let androidUninstalled = null;
 let androidWiped = null;
 let gcConfirm = null;
+let analysisTreeCalls = 0;
+let analysisCleanReq = null;
+let analysisOpened = null;
 
 const nixStatus = {
   storePath: '/nix/store', storeBytes: 70000000000, storePaths: 40000,
@@ -118,7 +121,48 @@ const dom = new JSDOM(html, {
       AndroidWipeAVD: async name => {
         androidWiped = name;
         return { action: 'wipe', target: name, preview: 'emulator -avd ' + name + ' -wipe-data', exitCode: 0, freed: 0 };
-      }
+      },
+      DiskStatus: async () => ({ total: 200000000000, free: 80000000000, used: 120000000000 }),
+      AnalysisTree: async (root, depth) => {
+        analysisTreeCalls++;
+        return {
+          root: { name: root.split('/').pop(), path: root, bytes: 3000000000, files: 4, dir: true, children: [
+            { name: '.cache', path: root + '/.cache', bytes: 2000000000, files: 2, dir: true },
+            { name: '.npm', path: root + '/.npm', bytes: 1000000000, files: 2, dir: true }
+          ]},
+          depth: depth || 1, bytes: 3000000000, files: 4, dirs: 2, errors: 0, durationMs: 12
+        };
+      },
+      AnalysisOverview: async root => ({
+        root, files: 10, dirs: 3, errors: 0, durationMs: 20,
+        large: [
+          { path: root + '/big.iso', bytes: 1200000000, modTime: '2026-01-01 10:00', ageDays: 300 },
+          { path: root + '/small.iso', bytes: 200000000, modTime: '2026-11-01 10:00', ageDays: 24 }
+        ],
+        stale: [
+          { path: root + '/old.log', bytes: 500000, modTime: '2024-01-01 10:00', ageDays: 600 }
+        ],
+        artifacts: [
+          { project: root + '/proj', name: 'node_modules', path: root + '/proj/node_modules', bytes: 700000000, modTime: '2026-10-01 10:00', ageDays: 55, active: false, protected: false },
+          { project: root + '/baru', name: 'target', path: root + '/baru/target', bytes: 900000000, modTime: '2026-11-25 10:00', ageDays: 0, active: true, protected: false }
+        ]
+      }),
+      AnalysisDuplicates: async root => ({
+        root, groups: [{ size: 1048576, wasted: 2097152, files: [
+          { path: root + '/a.bin', bytes: 1048576, modTime: '2026-01-01 10:00', ageDays: 300, keep: true },
+          { path: root + '/b.bin', bytes: 1048576, modTime: '2026-02-01 10:00', ageDays: 280, keep: false },
+          { path: root + '/c.bin', bytes: 1048576, modTime: '2026-03-01 10:00', ageDays: 250, keep: false }
+        ]}],
+        groupCount: 1, wasted: 2097152, candidates: 3, hashed: 3, errors: 0, durationMs: 40
+      }),
+      AnalysisRefresh: async () => true,
+      AnalysisClean: async req => {
+        analysisCleanReq = req;
+        return { mode: 'trash', before: 1200000000, after: 0, freed: 1200000000, items: req.ids.map(id => ({
+          id, path: id.split(':').slice(1).join(':'), label: 'x', status: 'removed', bytesBefore: 1200000000, bytesAfter: 0, freed: 1200000000
+        })), auditPath: '/home/u/.local/state/cleanlie/history.jsonl' };
+      },
+      OpenInFileManager: async p => { analysisOpened = p; }
     } } };
   }
 });
@@ -164,7 +208,7 @@ try {
   // Layar Nix
   d.querySelector('#nav button[data-view="nix"]').click();
   await sleep(400);
-  assert.equal(nixStatusCalls, 1, 'NixStatus dipanggil sekali');
+  assert.ok(nixStatusCalls >= 1, 'NixStatus dipanggil');
   assert.equal(nixDeadCalls, 1, 'NixDeadPaths dipanggil sekali');
   assert.equal(d.querySelectorAll('#nix-gens tr').length, 2, '2 generasi tampil');
   assert.match($('nix-store-size').textContent, /65\.19 GiB/);
@@ -225,7 +269,48 @@ try {
   assert.equal(androidWiped, 'test_devices', 'wipe memakai nama AVD');
   assert.match($('m-title').textContent, /Selesai: Wipe data/);
 
-  console.log('UI smoke OK: scan, gate permanen, trash, hasil, rescan, Nix, GC, Android');
+  // Dashboard + Analisis M5.
+  d.querySelector('#nav button[data-view="dashboard"]').click();
+  await sleep(300);
+  assert.notEqual($('dash-disk-used').textContent, '—', 'disk dashboard terisi');
+  assert.match($('dash-cache-size').textContent, /2 MiB/, 'cache dev dari report');
+  assert.match($('dash-nix-size').textContent, /65\.19 GiB/, 'Nix store dari NixStatus');
+  assert.equal(d.querySelectorAll('#dash-reclaim tr').length, 3, 'reclaim top item');
+
+  d.querySelector('#nav button[data-view="analysis"]').click();
+  await sleep(300);
+  assert.equal(d.querySelectorAll('#an-tree-body tr').length, 2, 'tree 2 folder');
+  assert.match($('an-crumb').textContent, /\.cache|~/, 'breadcrumb terisi');
+  d.querySelector('#an-tree-body tr[data-an-path]').click();
+  await sleep(250);
+  assert.ok(analysisTreeCalls >= 2, 'drill-down memuat tree baru');
+  $('an-open').click();
+  assert.ok(analysisOpened, 'buka folder memakai binding');
+
+  d.querySelector('#tabs button[data-tab="large"]').click();
+  await sleep(250);
+  assert.equal(d.querySelectorAll('#an-large-body tr').length, 2, '2 file besar');
+  d.querySelector('#an-large-body input[type="checkbox"]').click();
+  assert.equal($('an-large-trash').disabled, false, 'trash terbuka setelah pilih');
+  $('an-large-trash').click();
+  await sleep(50);
+  assert.match($('m-title').textContent, /Pindahkan 1 item ke Trash/);
+  $('m-ok').click();
+  await sleep(300);
+  assert.equal(analysisCleanReq.mode, 'trash');
+  assert.match($('m-body').textContent, /1\.12 GiB/, 'freed terukur');
+
+  d.querySelector('#tabs button[data-tab="dup"]').click();
+  await sleep(250);
+  assert.match($('an-dup-summary').textContent, /1 grup/);
+  d.querySelector('#an-dup-body input[data-an-id]').click();
+  assert.equal($('an-dup-trash').disabled, false, 'duplikat bisa dipilih');
+  d.querySelector('#tabs button[data-tab="artifacts"]').click();
+  await sleep(50);
+  assert.equal(d.querySelectorAll('#an-art-body tr').length, 2, '2 artefak');
+  assert.equal(d.querySelectorAll('#an-art-body input[type="checkbox"]:disabled').length, 1, 'artefak aktif terkunci');
+
+  console.log('UI smoke OK: scan, gate permanen, trash, hasil, rescan, Nix, GC, Android, dashboard, analisis');
 } finally {
   w.close();
 }

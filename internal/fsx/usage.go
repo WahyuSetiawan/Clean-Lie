@@ -5,8 +5,28 @@ import (
 	"fmt"
 	"os"
 	"sort"
+	"sync"
 	"syscall"
 )
+
+// UsageSeen seperti Usage, tetapi memakai satu set inode bersama agar hard
+// link yang tersebar di beberapa subtree tidak dihitung dua kali.
+func UsageSeen(ctx context.Context, path string, seen *sync.Map) (bytes int64, files int64, err error) {
+	return UsageSeenSkip(ctx, path, seen, nil)
+}
+
+// UsageSeenSkip seperti UsageSeen, dengan nama entri yang dilewati.
+func UsageSeenSkip(ctx context.Context, path string, seen *sync.Map, skipNames map[string]bool) (bytes int64, files int64, err error) {
+	fi, err := os.Lstat(path)
+	if err != nil {
+		return 0, 0, err
+	}
+	if !fi.IsDir() {
+		return allocated(fi), 1, nil
+	}
+	res, err := Walk(ctx, path, Options{OneFS: true, Inodes: seen, SkipNames: skipNames})
+	return res.Size, res.Files, err
+}
 
 // Usage menghitung ukuran satu path (file atau direktori).
 // Untuk direktori, hard link dihitung sekali dan filesystem lain tidak diikuti.

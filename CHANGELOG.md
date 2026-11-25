@@ -4,6 +4,32 @@ Semua perubahan penting pada Cleanlie. Format mengikuti
 [Keep a Changelog](https://keepachangelog.com/id/1.1.0/) dan versi mengikuti
 [Semantic Versioning](https://semver.org/lang/id/).
 
+## [0.5.0] — 2026-11-25
+
+### Ditambahkan — M5 Analisis + Dashboard
+
+- `internal/analysis`: tree disk usage berkedalaman N, file besar, file lama, artefak build,
+  dan duplikat (group ukuran → hash 64 KiB → SHA-256). Semua read-only.
+- Tree memakai inode set bersama dan `fsx.SkipNames`, jadi hardlink lintas subtree dihitung
+  sekali dan `.git` tidak ikut di depth terakhir.
+- Binding `AnalysisTree`, `AnalysisOverview`, `AnalysisDuplicates`, `AnalysisRefresh`,
+  `AnalysisCancel`, `AnalysisClean`, `DiskStatus`; cache 60 detik; UI hanya mengirim ID.
+- Aksi trash analisis memakai guard `clean.Execute` yang sama dengan layar Bersihkan.
+- CLI `--analysis-tree` (`--path`, `--depth`), `--analysis-overview`, `--analysis-dups`.
+- Layar **Analisis**: 5 tab (Disk usage + breadcrumb/drill-down, File besar, Duplikat,
+  File lama, Artefak build), pilih aman, pindah ke trash, buka folder.
+- **Dashboard** nyata: kartu Disk/Nix/cache dev/log, diskmap home, top-5 reclaim, tool dev,
+  tombol scan ulang; tombol bersihkan memakai alur M2.
+
+### Catatan
+
+- Tree `~` depth 2 **179.182.256.128 B** vs `du --exclude=.git` selisih **0,0013%**;
+  `~/.cache` **1,70 s** (<10 s). Duplikat **1.715 grup / 16,70 GiB**, 51,3 s;
+  UI menampilkan 100 grup teratas.
+- 406–423 error permission pada overview/duplikat dicatat sebagai hitungan, bukan crash.
+- Aksi analisis hanya mode trash; gate teks `GC` tetap khusus Nix.
+- Versi aplikasi menjadi **0.5.0** (`Makefile`, `flake.nix`).
+
 ## [0.4.0] — 2026-11-25
 
 ### Ditambahkan — M4 Android
@@ -108,6 +134,4 @@ Semua perubahan penting pada Cleanlie. Format mengikuti
 
 ## Rencana berikutnya
 
-- **M5** — Analisis + Dashboard: disk usage tree, file besar, duplikat, file lama,
-  artefak build, dashboard ringkas.
 - **M6** — Pengaturan, i18n, packaging, dan verifikasi akhir v1.

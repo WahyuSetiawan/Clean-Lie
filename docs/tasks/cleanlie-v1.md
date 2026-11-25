@@ -16,7 +16,8 @@
 | M2 hapus + Bersihkan | ✅ 2026-11-25 | `internal/clean` + layar Bersihkan nyata; UI smoke (jsdom) scan→gate→trash→hasil hijau; restore trash nyata lolos; 5 paket Go hijau |
 | M3 Nix | ✅ 2026-11-25 | `--nix-status` 129 generasi/47.208 path/70,4 GB NAR; `--nix-dead` **624 path** == `nix-collect-garbage --dry-run` **624**; 7 paket Go hijau; UI smoke gate `GC` hijau |
 | M4 Android | ✅ 2026-11-25 | `--android-status` 1 AVD/5,01 GiB + SDK 13,81 GiB/13 paket; 1 saran system image; 8 paket Go hijau; UI smoke saran→gate→hapus/uninstall→wipe hijau |
-| M5–M6 | ⏳ | — |
+| M5 Analisis + dashboard | ✅ 2026-11-25 | tree `~` depth 2 **179.182.256.128 B** vs `du` selisih 0,0013%; `~/.cache` **1,70 s**; duplikat 1.715 grup/16,70 GiB; 9 paket Go hijau; UI smoke dashboard + analisis hijau |
+| M6 | ⏳ | — |
 
 ## Aturan main
 
@@ -295,6 +296,27 @@
 ### T5.7 — Dashboard
 - Kartu: Disk /, Nix store, Cache dev, Journal; top-5 reclaim; tombol "Scan ulang" & "Bersihkan yang aman".
 - **Acceptance:** angka kartu == hasil `Plan`/`NixStatus`; tombol memakai alur M2 (bukan jalur hapus baru).
+
+### Catatan implementasi M5 (2026-11-25)
+
+- **File:** `internal/analysis/{analysis,tree,overview,duplicates}.go` (satu paket;
+  `large/stale/artifacts` digabung di `overview.go`), `app_analysis.go`, `app_analysis_test.go`,
+  `internal/analysis/analysis_test.go`; `fsx.Options.Inodes/SkipNames` + `UsageSeenSkip`.
+- **Binding:** `AnalysisTree(root, depth)`, `AnalysisOverview(root)`, `AnalysisDuplicates(root)`,
+  `AnalysisRefresh()`, `AnalysisCancel()`, `AnalysisClean(req)`, `DiskStatus()`.
+  Cache 60 detik per root/depth; target ID disimpan di Go; UI tidak mengirim path.
+- **CLI:** `--analysis-tree` (+`--path`, `--depth`), `--analysis-overview`, `--analysis-dups`.
+- **Nyata:** tree `~` depth 2 **179.182.256.128 B / 3.385.788 file / 5,18 s**;
+  `du -s --block-size=1 --exclude=.git ~` 179.184.680.960 B → selisih **0,0013%**.
+  Tree `~/.cache` **1,70 s**. Overview 15–19 s. Duplikat **1.715 grup / 16,70 GiB**,
+  tampil 100 grup teratas, 51,3 s. 406/423 error permission dicatat, bukan crash.
+- **Bug yang ditemukan:** hardlink lintas subtree depth dobel (perlu inode set bersama) dan
+  `.git` di bawah folder depth terakhir ikut terhitung (perlu `SkipNames`); dua-duanya
+  sudah ditutup test.
+- **Dashboard:** memakai ulang `ScanJunk`/`NixStatus` dan `AnalysisTree(home,1)`; tombol
+  "Bersihkan yang aman" tetap alur M2 (`quick-clean` → `openClean('trash')`).
+- **Batas:** aksi analisis hanya trash; tombol batal belum ada di UI (binding tersedia).
+- Detail: [`../implementation/m5-analysis.md`](../implementation/m5-analysis.md).
 
 ---
 
