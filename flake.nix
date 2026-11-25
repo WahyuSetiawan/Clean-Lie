@@ -11,7 +11,7 @@
         "aarch64-linux"
       ];
       each = f: nixpkgs.lib.genAttrs systems (system: f nixpkgs.legacyPackages.${system});
-      version = "0.5.0";
+      version = "0.6.0";
     in
     {
       devShells = each (pkgs: {
@@ -89,6 +89,12 @@
             # PATH untuk aksi root & perintah sistem; pkexec membuang environment sesi.
             preFixup = ''
               gappsWrapperArgs+=(--prefix PATH : ${pkgs.lib.makeBinPath runtimeDeps})
+              gappsWrapperArgs+=(--set-default WEBKIT_DISABLE_COMPOSITING_MODE 1)
+            '';
+
+            postInstall = ''
+              install -Dm644 ${./packaging/cleanlie.desktop} $out/share/applications/cleanlie.desktop
+              install -Dm644 ${./packaging/cleanlie.svg} $out/share/icons/hicolor/scalable/apps/cleanlie.svg
             '';
 
             meta = {

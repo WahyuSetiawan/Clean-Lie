@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/Juragan-Koding/cleanlie/internal/rules"
@@ -38,63 +39,86 @@ func ScanOverview(ctx context.Context, opts Options) (Overview, error) {
 	topN := opts.topN()
 	largeMin := opts.largeBytes()
 
-	err := filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
-		if err != nil {
-			out.Errors++
-			if d != nil && d.IsDir() && path != root {
-				return fs.SkipDir
+	roots := []string{root}
+	for _, extra := range opts.extraRoots() {
+		if extra == root || strings.HasPrefix(extra, root+string(filepath.Separator)) {
+			continue
+		}
+		roots = append(roots, extra)
+	}
+
+	for i, walkRoot := range roots {
+		if _, err := os.Lstat(walkRoot); err != nil {
+			if i == 0 {
+				return Overview{}, err
 			}
-			return nil
+			out.Errors++
+			continue
 		}
-		if ctx.Err() != nil {
-			return ctx.Err()
-		}
-		if d.IsDir() {
-			if path == root {
+		err := filepath.WalkDir(walkRoot, func(path string, d fs.DirEntry, err error) error {
+			if err != nil {
+				out.Errors++
+				if d != nil && d.IsDir() && path != walkRoot {
+					return fs.SkipDir
+				}
 				return nil
 			}
-			if opts.skipDir(d.Name()) {
-				return fs.SkipDir
+			if ctx.Err() != nil {
+				return ctx.Err()
 			}
-			if artifactNames[d.Name()] {
-				if a := readArtifact(ctx, path, started, &out); a != nil {
-					out.Artifacts = append(out.Artifacts, *a)
+			if opts.isExcluded(path) {
+				if d.IsDir() {
+					return fs.SkipDir
 				}
-				return fs.SkipDir
+				return nil
 			}
-			out.Dirs++
+			if d.IsDir() {
+				if path == walkRoot {
+					return nil
+				}
+				if opts.skipDir(d.Name()) {
+					return fs.SkipDir
+				}
+				if artifactNames[d.Name()] {
+					if a := readArtifact(ctx, path, started, &out); a != nil {
+						out.Artifacts = append(out.Artifacts, *a)
+					}
+					return fs.SkipDir
+				}
+				out.Dirs++
+				return nil
+			}
+			if !d.Type().IsRegular() {
+				return nil
+			}
+			info, err := d.Info()
+			if err != nil {
+				out.Errors++
+				return nil
+			}
+			out.Files++
+			sz := allocated(info)
+			if sz >= largeMin {
+				pushTop(&out.Large, File{
+					Path:    path,
+					Bytes:   sz,
+					ModTime: info.ModTime().Format("2006-01-02 15:04"),
+					AgeDays: ageDays(started, info.ModTime()),
+				}, topN, false)
+			}
+			if info.ModTime().Before(cutoff) && !rules.IsProtected(path) {
+				pushTop(&out.Stale, File{
+					Path:    path,
+					Bytes:   sz,
+					ModTime: info.ModTime().Format("2006-01-02 15:04"),
+					AgeDays: ageDays(started, info.ModTime()),
+				}, topN, true)
+			}
 			return nil
-		}
-		if !d.Type().IsRegular() {
-			return nil
-		}
-		info, err := d.Info()
+		})
 		if err != nil {
-			out.Errors++
-			return nil
+			return out, err
 		}
-		out.Files++
-		sz := allocated(info)
-		if sz >= largeMin {
-			pushTop(&out.Large, File{
-				Path:    path,
-				Bytes:   sz,
-				ModTime: info.ModTime().Format("2006-01-02 15:04"),
-				AgeDays: ageDays(started, info.ModTime()),
-			}, topN, false)
-		}
-		if info.ModTime().Before(cutoff) && !rules.IsProtected(path) {
-			pushTop(&out.Stale, File{
-				Path:    path,
-				Bytes:   sz,
-				ModTime: info.ModTime().Format("2006-01-02 15:04"),
-				AgeDays: ageDays(started, info.ModTime()),
-			}, topN, true)
-		}
-		return nil
-	})
-	if err != nil {
-		return out, err
 	}
 
 	sortFiles(out.Large, false)

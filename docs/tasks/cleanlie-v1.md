@@ -17,7 +17,7 @@
 | M3 Nix | ✅ 2026-11-25 | `--nix-status` 129 generasi/47.208 path/70,4 GB NAR; `--nix-dead` **624 path** == `nix-collect-garbage --dry-run` **624**; 7 paket Go hijau; UI smoke gate `GC` hijau |
 | M4 Android | ✅ 2026-11-25 | `--android-status` 1 AVD/5,01 GiB + SDK 13,81 GiB/13 paket; 1 saran system image; 8 paket Go hijau; UI smoke saran→gate→hapus/uninstall→wipe hijau |
 | M5 Analisis + dashboard | ✅ 2026-11-25 | tree `~` depth 2 **179.182.256.128 B** vs `du` selisih 0,0013%; `~/.cache` **1,70 s**; duplikat 1.715 grup/16,70 GiB; 9 paket Go hijau; UI smoke dashboard + analisis hijau |
-| M6 | ⏳ | — |
+| M6 Settings + packaging | ✅ 2026-11-25 | config round-trip + fallback hijau; **10 paket Go** hijau; UI smoke settings/tema/i18n hijau; `nix build .#cleanlie` 0.6.0 + desktop/ikon; `desktop-file-validate` hanya hint kategori |
 
 ## Aturan main
 
@@ -349,6 +349,28 @@
 ### T6.7 — Verifikasi akhir (checklist plan §11)
 - Unit test semua paket, cross-check `du` 10 rule, GC dry-run == CLI, hapus generasi lama, hapus/wipe AVD fixture, screenshot 6 layar.
 - **Acceptance:** semua checklist §11 hijau; tidak ada item ⛔ yang bisa dieksekusi.
+
+
+### Catatan implementasi M6 (2026-11-25)
+
+- **File:** `internal/config/{config,config_test}.go`, `app_settings.go`, `app_settings_test.go`,
+  `packaging/cleanlie.desktop`, `packaging/cleanlie.svg`; perluasan `rules.PlanOptions.Excluded`
+  dan `analysis.Options.Excluded/ExtraRoots`.
+- **Config:** `~/.config/cleanlie/config.json` (XDG), tulis atomik, fallback default + warning.
+  Field: tema, bahasa, showRisky, deleteMode, autoSelectSafe, journalTarget, largeBytes,
+  staleDays, artifactRoots, excluded.
+- **Binding:** `Settings`, `SaveSettings`, `ResetSettings`. Simpan membersihkan cache analisis;
+  exclusion juga dicek ulang di `Clean`.
+- **UI:** layar Pengaturan nyata (simpan/reset, tag exclusion, status polkit, path config),
+  tema system/light/dark, fokus keyboard, reduced motion, i18n ID/EN untuk shell/settings/
+  dashboard/analysis.
+- **Packaging:** `nix build .#cleanlie` menghasilkan `bin/cleanlie` +
+  `share/applications/cleanlie.desktop` + `share/icons/hicolor/scalable/apps/cleanlie.svg`.
+- **Verifikasi:** 10 paket Go hijau; `gofmt`/`go vet` bersih; `make build` 0.6.0;
+  `nix build` + `--rebuild` sukses; UI smoke settings/tema/i18n hijau.
+- **Batas:** label dinamis M2–M4 belum semua diterjemahkan; screenshot 6 layar diganti smoke
+  test jsdom karena headless browser tidak stabil.
+- Detail: [`../implementation/m6-settings.md`](../implementation/m6-settings.md).
 
 ---
 

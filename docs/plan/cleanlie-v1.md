@@ -1,6 +1,6 @@
 # Cleanlie v1 — Plan (GUI cleaner untuk NixOS)
 
-> Status: **M5 selesai** (analisis + dashboard) · berikutnya M6 polish/packaging
+> Status: **M6 selesai** (settings, i18n, packaging) · v1 lengkap
 > Target mesin: NixOS 26.11, Hyprland/Wayland, uid 1000 (`juragankoding`)
 
 ## 1. Ringkasan
@@ -377,7 +377,7 @@ tanpa membuka window. Ini yang dipakai di integration test.
 | **M3** | `internal/nix` (parse generasi, closure size, dry-run GC) + layar **Nix** + `privileged` (pkexec) untuk GC/hapus generasi system/vacuum journal | GC dry-run = angka nyata; hapus generasi jalan | 1 d |
 | **M4** | `internal/android` (parse AVD/ini, system-images, NDK, mtime pemakaian) + layar **Android** + aksi hapus/wipe AVD & uninstall image | hapus `test_devices` membebaskan ~5 G, `avdmanager list avd` konsisten | 0.5 d |
 | **M5** ✅ | `internal/analysis` (tree, large, dup, stale) + `artifacts.go` + 4 layar analisis + dashboard kartu & top-reclaim | semua layar terisi data nyata | 1 d |
-| **M6** | Pengaturan + persistensi (default tanpa centang untuk item ⚠/⛔), laporan hasil, i18n ID/EN, tema, packaging flake (`package.cleanlie`), ikon, README | `nix build .#cleanlie` → binary + desktop item | 0.5 d |
+| **M6** ✅ | Pengaturan + persistensi (default tanpa centang untuk item ⚠/⛔), laporan hasil, i18n ID/EN, tema, packaging flake (`package.cleanlie`), ikon, README | `nix build .#cleanlie` → binary + desktop item | 0.5 d |
 
 Total ~6 hari kerja. Urutan wajib M1 → M2 sebelum M3/M4/M5 (engine & planner dipakai bersama).
 

@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Name=Cleanlie
+GenericName=Disk Cleaner
+Comment=Disk cleaner and analyzer for NixOS
+Exec=cleanlie
+Icon=cleanlie
+Terminal=false
+Categories=System;Utility;
+Keywords=disk;cleaner;storage;nix;cache;trash;
+StartupNotify=true
+StartupWMClass=cleanlie

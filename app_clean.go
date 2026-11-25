@@ -56,6 +56,7 @@ func (a *App) ScanJunk() (rules.Report, error) {
 
 	var lastEmit time.Time
 	report, err := rules.Plan(ctx, rules.DefaultRules(), rules.PlanOptions{
+		Excluded: a.settings().Excluded,
 		Progress: func(p rules.Progress) {
 			if time.Since(lastEmit) < 120*time.Millisecond {
 				return
@@ -125,6 +126,7 @@ func (a *App) Clean(req CleanRequest) (clean.Result, error) {
 	}
 
 	targets := make([]clean.Target, 0, len(req.IDs))
+	excluded := a.settings().Excluded
 	seen := map[string]bool{}
 	for _, id := range req.IDs {
 		if seen[id] {
@@ -134,6 +136,9 @@ func (a *App) Clean(req CleanRequest) (clean.Result, error) {
 		it, ok := items[id]
 		if !ok {
 			return clean.Result{}, errors.New("item tidak dikenal: " + id)
+		}
+		if excludedPath(it.Path, excluded) {
+			return clean.Result{}, errors.New("item berada di path yang dikecualikan: " + it.Path)
 		}
 		targets = append(targets, clean.Target{
 			ID:           it.ID,

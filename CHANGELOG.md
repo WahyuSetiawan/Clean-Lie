@@ -4,6 +4,32 @@ Semua perubahan penting pada Cleanlie. Format mengikuti
 [Keep a Changelog](https://keepachangelog.com/id/1.1.0/) dan versi mengikuti
 [Semantic Versioning](https://semver.org/lang/id/).
 
+## [0.6.0] — 2026-11-25
+
+### Ditambahkan — M6 Settings + packaging
+
+- `internal/config`: config persisten di `~/.config/cleanlie/config.json` (XDG), tulis
+  atomik, fallback default + warning bila file hilang/rusak. Field: tema, bahasa,
+  tampilkan item berisiko, mode hapus, auto-centang item aman, target journal, ambang
+  file besar/lama, root scan tambahan, dan path dikecualikan.
+- Binding `Settings`, `SaveSettings`, `ResetSettings`; perubahan langsung membersihkan
+  cache analisis. Path pengecualian juga menjadi guard kedua di `Clean`.
+- Layar **Pengaturan** nyata: simpan/reset, tag path dikecualikan, status polkit, path config.
+- Tema **system/light/dark** dengan `prefers-color-scheme`, fokus keyboard, reduced motion.
+- i18n **ID/EN** untuk shell, Pengaturan, Dashboard, dan Analisis; ganti bahasa tanpa reload.
+- Ambang analisis dan root scan tambahan dipakai oleh `AnalysisOverview`; exclusion dipakai
+  oleh scan katalog, tree, overview, dan duplikat.
+- `packaging/cleanlie.desktop` + ikon SVG; flake memasang keduanya ke `$out/share`.
+- README: instalasi flake, desktop entry, pengaturan, restore trash, polkit, batasan.
+
+### Catatan
+
+- Versi aplikasi menjadi **0.6.0** (`Makefile`, `flake.nix`).
+- i18n saat ini mencakup shell/settings/dashboard/analysis; beberapa label dinamis dari
+  layar M2–M4 masih berbahasa Indonesia (akan diterjemahkan bertahap).
+- Desktop entry memakai `StartupWMClass=cleanlie`; asosiasi ikon di compositor bergantung
+  pada WM class yang dilaporkan WebKitGTK.
+
 ## [0.5.0] — 2026-11-25
 
 ### Ditambahkan — M5 Analisis + Dashboard

@@ -42,6 +42,16 @@ let gcConfirm = null;
 let analysisTreeCalls = 0;
 let analysisCleanReq = null;
 let analysisOpened = null;
+let savedSettings = null;
+let resetSettingsCalls = 0;
+let settingsView = {
+  path: '/home/u/.config/cleanlie/config.json',
+  config: {
+    theme: 'system', language: 'id', showRisky: true, deleteMode: 'trash',
+    autoSelectSafe: true, journalTarget: '500M', largeBytes: 104857600,
+    staleDays: 365, artifactRoots: [], excluded: []
+  }
+};
 
 const nixStatus = {
   storePath: '/nix/store', storeBytes: 70000000000, storePaths: 40000,
@@ -162,7 +172,26 @@ const dom = new JSDOM(html, {
           id, path: id.split(':').slice(1).join(':'), label: 'x', status: 'removed', bytesBefore: 1200000000, bytesAfter: 0, freed: 1200000000
         })), auditPath: '/home/u/.local/state/cleanlie/history.jsonl' };
       },
-      OpenInFileManager: async p => { analysisOpened = p; }
+      OpenInFileManager: async p => { analysisOpened = p; },
+      Settings: async () => settingsView,
+      SaveSettings: async c => {
+        savedSettings = c;
+        settingsView = { path: settingsView.path, config: c };
+        return settingsView;
+      },
+      ResetSettings: async () => {
+        resetSettingsCalls++;
+        savedSettings = settingsView.config;
+        settingsView = {
+          path: settingsView.path,
+          config: {
+            theme: 'system', language: 'id', showRisky: true, deleteMode: 'trash',
+            autoSelectSafe: true, journalTarget: '500M', largeBytes: 104857600,
+            staleDays: 365, artifactRoots: [], excluded: []
+          }
+        };
+        return settingsView;
+      }
     } } };
   }
 });
@@ -310,7 +339,51 @@ try {
   assert.equal(d.querySelectorAll('#an-art-body tr').length, 2, '2 artefak');
   assert.equal(d.querySelectorAll('#an-art-body input[type="checkbox"]:disabled').length, 1, 'artefak aktif terkunci');
 
-  console.log('UI smoke OK: scan, gate permanen, trash, hasil, rescan, Nix, GC, Android, dashboard, analisis');
+  // M6: settings, tema, bahasa, dan persistensi.
+  d.querySelector('#nav button[data-view="settings"]').click();
+  await sleep(150);
+  assert.equal($('theme-select').value, 'system', 'tema default dari config');
+  assert.equal($('lang-select').value, 'id', 'bahasa default dari config');
+  assert.equal($('settings-path').textContent, settingsView.path, 'path config tampil');
+  assert.equal($('large-mb').value, '100', 'ambang file besar dari config');
+  assert.equal($('stale-days').value, '365', 'ambang file lama dari config');
+
+  $('lang-select').value = 'en';
+  $('lang-select').dispatchEvent(new w.Event('change', { bubbles: true }));
+  await sleep(50);
+  assert.equal($('page-title').textContent, 'Settings', 'judul halaman ikut bahasa');
+  assert.equal(d.querySelector('#nav button[data-view="cleanup"] span[data-i18n]').textContent, 'Clean', 'nav ikut bahasa');
+  assert.equal($('settings-save').textContent, 'Save settings', 'tombol ikut bahasa');
+
+  $('theme-select').value = 'light';
+  $('theme-select').dispatchEvent(new w.Event('change', { bubbles: true }));
+  assert.equal(d.documentElement.dataset.theme, 'light', 'tema terang langsung aktif');
+
+  $('excluded-input').value = '~/Downloads';
+  $('excluded-add').click();
+  assert.equal(d.querySelectorAll('#excluded-list .tag').length, 1, 'path pengecualian ditambahkan');
+  $('large-mb').value = '250';
+  $('stale-days').value = '30';
+  $('artifact-roots').value = '~/Projects, ~/work';
+  $('settings-save').click();
+  await sleep(100);
+  assert.ok(savedSettings, 'SaveSettings dipanggil');
+  assert.equal(savedSettings.language, 'en');
+  assert.equal(savedSettings.theme, 'light');
+  assert.equal(savedSettings.largeBytes, 250 * 1024 * 1024);
+  assert.equal(savedSettings.staleDays, 30);
+  assert.equal(JSON.stringify(savedSettings.artifactRoots), '["~/Projects","~/work"]');
+  assert.equal(JSON.stringify(savedSettings.excluded), '["~/Downloads"]');
+  assert.match($('settings-status').textContent, /Settings saved/);
+
+  $('settings-reset').click();
+  await sleep(100);
+  assert.equal(resetSettingsCalls, 1, 'ResetSettings dipanggil');
+  assert.equal($('theme-select').value, 'system');
+  assert.equal($('lang-select').value, 'id');
+  assert.equal($('large-mb').value, '100');
+
+  console.log('UI smoke OK: scan, gate permanen, trash, hasil, rescan, Nix, GC, Android, dashboard, analisis, settings, tema, i18n');
 } finally {
   w.close();
 }

@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="Cleanlie">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#171b21"/>
+      <stop offset="1" stop-color="#0b0d10"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#6ee7b7"/>
+      <stop offset="1" stop-color="#34d399"/>
+    </linearGradient>
+  </defs>
+  <rect width="128" height="128" rx="28" fill="url(#bg)"/>
+  <circle cx="64" cy="64" r="40" fill="none" stroke="#232932" stroke-width="2"/>
+  <ellipse cx="64" cy="86" rx="27" ry="8" fill="#12151a" stroke="#6ee7b7" stroke-width="3"/>
+  <path d="M37 86c0-4.4 12.1-8 27-8s27 3.6 27 8" fill="none" stroke="#60a5fa" stroke-width="3" stroke-linecap="round"/>
+  <path d="M82 26 54 66" stroke="url(#accent)" stroke-width="7" stroke-linecap="round"/>
+  <path d="M45 60c8-8 18-9 27-3l-8 12c-6-3-12-2-17 2z" fill="url(#accent)"/>
+  <path d="M53 72l8-11 5 15c-6 3-10 3-13 1z" fill="#0f9f6e"/>
+  <circle cx="91" cy="34" r="3.5" fill="#fbbf24"/>
+  <circle cx="99" cy="44" r="2" fill="#60a5fa"/>
+</svg>

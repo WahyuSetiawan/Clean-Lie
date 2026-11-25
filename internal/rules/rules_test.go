@@ -196,3 +196,23 @@ func TestEnumerateDepth(t *testing.T) {
 		t.Fatalf("depth 1 files = %v", got)
 	}
 }
+
+func TestPlanExcludesPaths(t *testing.T) {
+	root := t.TempDir()
+	mkfile(t, filepath.Join(root, "keep", "file"), 8192)
+	mkfile(t, filepath.Join(root, "skip", "file"), 8192)
+	list := []Rule{{ID: "root", Group: "app", Path: root, Depth: 1, Risk: RiskSafe}}
+	report, err := Plan(context.Background(), list, PlanOptions{
+		Workers:  2,
+		Excluded: []string{filepath.Join(root, "skip")},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(report.Groups) != 1 || len(report.Groups[0].Items) != 1 {
+		t.Fatalf("items = %+v", report.Groups)
+	}
+	if got := report.Groups[0].Items[0].Label; got != "keep" {
+		t.Fatalf("label = %q, mau keep", got)
+	}
+}

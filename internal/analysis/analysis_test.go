@@ -225,3 +225,61 @@ func TestScanTreeHardlinkAndNestedGit(t *testing.T) {
 		t.Fatalf("tree %d != fsx tanpa .git %d", tr.Bytes, wantTree)
 	}
 }
+
+func TestScanTreeExcluded(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "keep", "one.bin"), 256<<10, 'a')
+	writeFile(t, filepath.Join(root, "skip", "two.bin"), 512<<10, 'b')
+	tr, err := ScanTree(context.Background(), Options{Root: root, Depth: 1, Excluded: []string{filepath.Join(root, "skip")}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, child := range tr.Root.Children {
+		if child.Name == "skip" {
+			t.Fatalf("folder skip masih ada: %+v", child)
+		}
+	}
+	if tr.Bytes >= 512<<10 {
+		t.Fatalf("bytes = %d, file yang dikecualikan masih dihitung", tr.Bytes)
+	}
+}
+
+func TestScanOverviewExcluded(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "keep", "big.bin"), 2<<20, 'a')
+	writeFile(t, filepath.Join(root, "skip", "big.bin"), 3<<20, 'b')
+	ov, err := ScanOverview(context.Background(), Options{
+		Root: root, LargeBytes: 1 << 20,
+		Excluded: []string{filepath.Join(root, "skip")},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, f := range ov.Large {
+		if filepath.Dir(f.Path) == filepath.Join(root, "skip") {
+			t.Fatalf("file excluded muncul: %s", f.Path)
+		}
+	}
+}
+
+func TestScanOverviewExtraRoot(t *testing.T) {
+	root := t.TempDir()
+	extra := t.TempDir()
+	writeFile(t, filepath.Join(root, "big.bin"), 2<<20, 'a')
+	writeFile(t, filepath.Join(extra, "proj", "node_modules", "x.bin"), 1<<20, 'b')
+	ov, err := ScanOverview(context.Background(), Options{
+		Root: root, LargeBytes: 1 << 20, ExtraRoots: []string{extra},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	found := false
+	for _, a := range ov.Artifacts {
+		if a.Path == filepath.Join(extra, "proj", "node_modules") {
+			found = true
+		}
+	}
+	if !found {
+		t.Fatalf("artefak dari extra root tidak ditemukan: %+v", ov.Artifacts)
+	}
+}

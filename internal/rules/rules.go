@@ -109,6 +109,8 @@ type Report struct {
 type PlanOptions struct {
 	Workers  int
 	Progress func(Progress)
+	// Excluded adalah path absolut yang tidak boleh dipindai atau dihapus.
+	Excluded []string
 }
 
 // Progress adalah progres per item.
@@ -190,9 +192,13 @@ func Plan(ctx context.Context, list []Rule, opts PlanOptions) (Report, error) {
 
 	var candidates []candidate
 	seen := map[string]bool{}
+	excluded := normalizeExcluded(opts.Excluded)
 
 	for _, r := range sorted {
 		root := filepath.Clean(ExpandHome(r.Path))
+		if underAny(root, excluded) {
+			continue
+		}
 
 		if r.Probe == nil {
 			if _, err := os.Lstat(root); err != nil {
@@ -217,7 +223,7 @@ func Plan(ctx context.Context, list []Rule, opts PlanOptions) (Report, error) {
 			depth = 1
 		}
 		for _, p := range enumerate(root, depth, r.IncludeFiles, r.Match) {
-			if seen[p] {
+			if seen[p] || underAny(p, excluded) {
 				continue
 			}
 			seen[p] = true
@@ -445,4 +451,29 @@ func TotalByRisk(r Report) map[Risk]int64 {
 
 func (r Report) String() string {
 	return fmt.Sprintf("%d grup · %s · %d file", len(r.Groups), fsx.Human(r.Bytes), r.Files)
+}
+
+func normalizeExcluded(in []string) []string {
+	out := make([]string, 0, len(in))
+	for _, p := range in {
+		p = strings.TrimSpace(p)
+		if p == "" {
+			continue
+		}
+		p = filepath.Clean(ExpandHome(p))
+		if filepath.IsAbs(p) {
+			out = append(out, p)
+		}
+	}
+	return out
+}
+
+func underAny(path string, roots []string) bool {
+	path = filepath.Clean(path)
+	for _, root := range roots {
+		if path == root || strings.HasPrefix(path, root+string(filepath.Separator)) {
+			return true
+		}
+	}
+	return false
 }

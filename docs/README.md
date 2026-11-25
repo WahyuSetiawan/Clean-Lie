@@ -1,10 +1,10 @@
 # Cleanlie — Dokumentasi
 
-Cleaner GUI untuk NixOS (Go + Wails v2). Status: **M5 selesai** — engine scan, dry-run CLI, layar Bersihkan, eksekusi trash/permanen,
+Cleaner GUI untuk NixOS (Go + Wails v2). Status: **M6 selesai** — engine scan, dry-run CLI, layar Bersihkan, eksekusi trash/permanen,
 audit log, layar Nix (generasi, dead paths, GC, vacuum journal, fallback pkexec/sudo),
-layar Android (AVD/SDK, saran >90 hari, hapus/wipe/uninstall), serta layar **Analisis**
-(tree, file besar, duplikat, file lama, artefak) dengan **Dashboard** nyata sudah jalan.
-Berikutnya M6 Polish & packaging.
+layar Android (AVD/SDK, saran >90 hari, hapus/wipe/uninstall), layar **Analisis**
+(tree, file besar, duplikat, file lama, artefak) dengan **Dashboard** nyata, **Pengaturan**
+persisten, tema system/light/dark, i18n ID/EN, serta desktop entry + ikon sudah jalan.
 
 | Dokumen | Isi |
 |---|---|
@@ -18,7 +18,8 @@ Berikutnya M6 Polish & packaging.
 | [`implementation/m3-nix.md`](implementation/m3-nix.md) | Parser generasi, dead paths, privileged pkexec/sudo, layar Nix, gate `GC` |
 | [`implementation/m4-android.md`](implementation/m4-android.md) | Parser AVD/SDK, aksi avdmanager/sdkmanager/wipe, guard, layar Android |
 | [`implementation/m5-analysis.md`](implementation/m5-analysis.md) | Tree disk usage, overview file besar/lama/artefak, duplikat, binding/guard, dashboard |
-| [`../CHANGELOG.md`](../CHANGELOG.md) | Riwayat perubahan per milestone (M0–M5) |
+| [`implementation/m6-settings.md`](implementation/m6-settings.md) | Config persisten, tema, i18n, packaging desktop/ikon, verifikasi akhir |
+| [`../CHANGELOG.md`](../CHANGELOG.md) | Riwayat perubahan per milestone (M0–M6) |
 
 ## Buka wireframe
 
@@ -29,7 +30,8 @@ xdg-open docs/wireframe/index.html
 ## Urutan kerja
 
 M0 scaffold → M1 engine (`fsx` + `rules` + dry-run) → M2 hapus + layar Bersihkan →
-M3 Nix (generasi, GC, aksi root) → M4 Android (AVD/SDK) → M5 analisis + dashboard → M6 packaging & verifikasi.
+M3 Nix (generasi, GC, aksi root) → M4 Android (AVD/SDK) → M5 analisis + dashboard →
+M6 settings, i18n, packaging & verifikasi.
 
 ## Fakta mesin target (2026-11-22)
 
