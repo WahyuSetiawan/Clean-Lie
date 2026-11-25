@@ -1,0 +1,13 @@
+/bin/
+/build/
+/result
+/result-*
+.direnv/
+.envrc
+
+# frontend/dist is source (static UI, no bundler) — keep it tracked.
+frontend/node_modules/
+frontend/dist/assets/
+
+*.log
+.DS_Store
