@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 	"syscall"
 	"time"
 
@@ -34,6 +35,10 @@ type Options struct {
 	Now               func() time.Time
 	// SkipDirs berisi nama direktori yang tidak dimasuki (default: .git).
 	SkipDirs map[string]bool
+	// Excluded adalah path absolut yang tidak dipindai (dari Pengaturan).
+	Excluded []string
+	// ExtraRoots adalah root tambahan untuk scan artefak di luar Root.
+	ExtraRoots []string
 }
 
 func (o Options) root() string {
@@ -74,6 +79,62 @@ func (o Options) staleDays() int {
 		return DefaultStaleDays
 	}
 	return o.StaleDays
+}
+
+func (o Options) excluded() []string {
+	out := make([]string, 0, len(o.Excluded))
+	for _, p := range o.Excluded {
+		p = strings.TrimSpace(p)
+		if p == "" {
+			continue
+		}
+		if p == "~" || strings.HasPrefix(p, "~/") {
+			if home, err := os.UserHomeDir(); err == nil {
+				if p == "~" {
+					p = home
+				} else {
+					p = filepath.Join(home, p[2:])
+				}
+			}
+		}
+		if abs, err := filepath.Abs(p); err == nil {
+			out = append(out, filepath.Clean(abs))
+		}
+	}
+	return out
+}
+
+func (o Options) isExcluded(path string) bool {
+	path = filepath.Clean(path)
+	for _, root := range o.excluded() {
+		if path == root || strings.HasPrefix(path, root+string(filepath.Separator)) {
+			return true
+		}
+	}
+	return false
+}
+
+func (o Options) extraRoots() []string {
+	out := make([]string, 0, len(o.ExtraRoots))
+	for _, p := range o.ExtraRoots {
+		p = strings.TrimSpace(p)
+		if p == "" {
+			continue
+		}
+		if p == "~" || strings.HasPrefix(p, "~/") {
+			if home, err := os.UserHomeDir(); err == nil {
+				if p == "~" {
+					p = home
+				} else {
+					p = filepath.Join(home, p[2:])
+				}
+			}
+		}
+		if abs, err := filepath.Abs(p); err == nil {
+			out = append(out, filepath.Clean(abs))
+		}
+	}
+	return out
 }
 
 func (o Options) topN() int {

@@ -57,6 +57,9 @@ func ScanTree(ctx context.Context, opts Options) (Tree, error) {
 
 func treeDir(ctx context.Context, dir string, level int, opts Options, seen *sync.Map) (Node, int64, int64, int64) {
 	n := Node{Name: filepath.Base(dir), Path: dir, Dir: true}
+	if opts.isExcluded(dir) {
+		return n, 0, 0, 0
+	}
 	var files, dirs, errs int64
 	if fi, err := os.Lstat(dir); err == nil {
 		n.Bytes += allocated(fi)
@@ -84,6 +87,9 @@ func treeDir(ctx context.Context, dir string, level int, opts Options, seen *syn
 			continue
 		}
 		p := filepath.Join(dir, e.Name())
+		if opts.isExcluded(p) {
+			continue
+		}
 		if e.IsDir() {
 			child, cf, cd, ce := treeDir(ctx, p, level+1, opts, seen)
 			n.Children = append(n.Children, child)

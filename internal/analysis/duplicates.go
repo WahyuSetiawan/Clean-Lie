@@ -46,6 +46,12 @@ func FindDuplicates(ctx context.Context, opts Options) (Duplicates, error) {
 		if ctx.Err() != nil {
 			return ctx.Err()
 		}
+		if opts.isExcluded(path) {
+			if d.IsDir() {
+				return fs.SkipDir
+			}
+			return nil
+		}
 		if d.IsDir() {
 			if path != root && opts.skipDir(d.Name()) {
 				return fs.SkipDir

@@ -62,7 +62,11 @@ func (a *App) AnalysisTree(root string, depth int) (analysis.Tree, error) {
 	}
 	a.analysisMu.Unlock()
 
-	tr, err := analysis.ScanTree(a.startAnalysis(), analysis.Options{Root: root, Depth: depth})
+	tr, err := analysis.ScanTree(a.startAnalysis(), analysis.Options{
+		Root:     root,
+		Depth:    depth,
+		Excluded: a.settings().Excluded,
+	})
 	if err != nil {
 		return tr, err
 	}
@@ -89,7 +93,13 @@ func (a *App) AnalysisOverview(root string) (analysis.Overview, error) {
 	}
 	a.analysisMu.Unlock()
 
-	ov, err := analysis.ScanOverview(a.startAnalysis(), analysis.Options{Root: root})
+	ov, err := analysis.ScanOverview(a.startAnalysis(), analysis.Options{
+		Root:       root,
+		LargeBytes: a.settings().LargeBytes,
+		StaleDays:  a.settings().StaleDays,
+		Excluded:   a.settings().Excluded,
+		ExtraRoots: a.settings().ArtifactRoots,
+	})
 	if err != nil {
 		return ov, err
 	}
@@ -147,7 +157,7 @@ func (a *App) AnalysisDuplicates(root string) (analysis.Duplicates, error) {
 	}
 	a.analysisMu.Unlock()
 
-	d, err := analysis.FindDuplicates(a.startAnalysis(), analysis.Options{Root: root})
+	d, err := analysis.FindDuplicates(a.startAnalysis(), analysis.Options{Root: root, Excluded: a.settings().Excluded})
 	if err != nil {
 		return d, err
 	}

@@ -234,3 +234,11 @@ func TestRealStatus(t *testing.T) {
 	}
 	t.Logf("dead=%d bytes=%d source=%s err=%s dur=%dms", d.Count, d.Bytes, d.Source, d.Error, d.DurationMs)
 }
+
+func TestVacuumTargetNormalize(t *testing.T) {
+	for in, want := range map[string]string{"500 MB": "500M", "1gb": "1G", "2 G": "2G", "500M": "500M"} {
+		if got := normalizeVacuumTarget(in); got != want {
+			t.Fatalf("normalize(%q) = %q, mau %q", in, got, want)
+		}
+	}
+}

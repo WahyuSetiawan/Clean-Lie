@@ -11,12 +11,13 @@ import (
 
 	"github.com/Juragan-Koding/cleanlie/internal/analysis"
 	"github.com/Juragan-Koding/cleanlie/internal/android"
+	"github.com/Juragan-Koding/cleanlie/internal/config"
 	"github.com/Juragan-Koding/cleanlie/internal/nix"
 	"github.com/Juragan-Koding/cleanlie/internal/rules"
 )
 
-// App adalah jembatan Go ↔ UI. Untuk M0 isinya hanya diagnostik;
-// modul scan/clean/nix/android masuk di M1+.
+// App adalah jembatan Go ↔ UI: diagnostik, scan/clean, Nix, Android,
+// analisis, dan preferensi pengguna.
 type App struct {
 	ctx       context.Context
 	version   string
@@ -27,6 +28,11 @@ type App struct {
 	scanCancel context.CancelFunc
 	scanItems  map[string]rules.Item
 	cleanMu    sync.Mutex
+
+	cfgMu      sync.RWMutex
+	cfg        config.Config
+	cfgPath    string
+	cfgWarning string
 
 	nixMu       sync.Mutex
 	nixStatus   *nix.Status
@@ -51,7 +57,11 @@ type App struct {
 }
 
 func NewApp(version, commit string) *App {
-	return &App{version: version, commit: commit}
+	c, warn := config.Load()
+	return &App{
+		version: version, commit: commit,
+		cfg: c, cfgPath: config.Path(), cfgWarning: warn,
+	}
 }
 
 func (a *App) startup(ctx context.Context) {

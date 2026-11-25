@@ -243,6 +243,10 @@
   .toggle.on::after{left:18px;background:var(--accent)}
   .tag{display:inline-flex;align-items:center;gap:6px;background:var(--chip);border:1px solid var(--line);border-radius:7px;padding:4px 8px;font-size:11.5px;color:var(--muted)}
   .tag b{color:var(--text)}
+  .tag button{border:0;background:none;color:var(--muted);padding:0 0 0 2px;font-size:13px;line-height:1}
+  .tag button:hover{color:var(--danger)}
+  :focus-visible{outline:2px solid var(--accent-2);outline-offset:2px}
+  @media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
 
   /* ---------- modal ---------- */
   .backdrop{
@@ -285,34 +289,34 @@
   <aside class="sidebar">
     <div class="brand">
       <div class="mark">C</div>
-      <div><b>Cleanlie</b><small>cleaner untuk NixOS</small></div>
+      <div><b>Cleanlie</b><small data-i18n="brand.tagline">cleaner untuk NixOS</small></div>
     </div>
 
     <nav class="nav" id="nav">
       <button data-view="dashboard" class="active">
         <span class="ico"><svg viewBox="0 0 24 24"><path d="M3 12h7V3H3zM14 21h7v-9h-7zM3 21h7v-6H3zM14 9h7V3h-7z"/></svg></span>
-        <span>Dashboard</span>
+        <span data-i18n="nav.dashboard">Dashboard</span>
       </button>
       <button data-view="cleanup">
         <span class="ico"><svg viewBox="0 0 24 24"><path d="M4 20h16M7 20l2-9h6l2 9M9 11l2-7h2l2 7"/></svg></span>
-        <span>Bersihkan</span><span class="count">24.8G</span>
+        <span data-i18n="nav.cleanup">Bersihkan</span><span class="count" id="nav-cleanup-count">—</span>
       </button>
       <button data-view="nix">
         <span class="ico"><svg viewBox="0 0 24 24"><path d="M12 3v18M4.5 7.5l15 9M19.5 7.5l-15 9"/></svg></span>
-        <span>Nix</span><span class="count">82G</span>
+        <span>Nix</span><span class="count" id="nav-nix-count">—</span>
       </button>
       <button data-view="android">
         <span class="ico"><svg viewBox="0 0 24 24"><rect x="6" y="8" width="12" height="11" rx="2"/><path d="M9 8V5M15 8V5M9 19v2M15 19v2M3 11v5M21 11v5"/></svg></span>
-        <span>Android</span><span class="count">28G</span>
+        <span>Android</span><span class="count" id="nav-android-count">—</span>
       </button>
       <div class="sep"></div>
       <button data-view="analysis">
         <span class="ico"><svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg></span>
-        <span>Analisis</span>
+        <span data-i18n="nav.analysis">Analisis</span>
       </button>
       <button data-view="settings">
         <span class="ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9L17 7M7 17l-2.1 2.1"/></svg></span>
-        <span>Pengaturan</span>
+        <span data-i18n="nav.settings">Pengaturan</span>
       </button>
     </nav>
 
@@ -320,7 +324,7 @@
       <div class="swatches">
         <i style="background:var(--accent)"></i><i style="background:var(--accent-2)"></i><i style="background:var(--warn)"></i><i style="background:var(--danger)"></i>
       </div>
-      <div class="side-note"><b>M0 shell</b><br>data contoh dari pengukuran 22 Nov 2026</div>
+      <div class="side-note" data-i18n="side.note">M6 · settings, tema, dan i18n</div>
     </div>
   </aside>
 
@@ -332,7 +336,7 @@
         <div class="sub" id="page-sub">Ringkasan disk dan reclaimable space</div>
       </div>
       <div class="spacer"></div>
-      <span class="badge-wire" id="app-badge">M0</span>
+      <span class="badge-wire" id="app-badge">M6</span>
       <button class="icon-btn" id="theme-btn" title="Ganti tema">
         <svg viewBox="0 0 24 24"><path d="M21 12.8A8.5 8.5 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
       </button>
@@ -347,25 +351,25 @@
       <section class="view active" id="view-dashboard">
         <div class="grid g4">
           <div class="card stat">
-            <h3>Disk /</h3>
+            <h3 data-i18n="dashboard.disk">Disk /</h3>
             <div class="big"><span id="dash-disk-used">—</span> <span class="muted" style="font-size:14px">/ <span id="dash-disk-total">—</span></span></div>
             <div class="bar"><i class="accent" id="dash-disk-bar" style="width:0%"></i></div>
             <div class="hint" id="dash-disk-hint">memuat…</div>
           </div>
           <div class="card stat">
-            <h3>Nix store</h3>
+            <h3 data-i18n="dashboard.nix">Nix store</h3>
             <div class="big" id="dash-nix-size">—</div>
             <div class="hint good" id="dash-nix-dead">memuat…</div>
             <div class="hint dim" id="dash-nix-gens">memuat…</div>
           </div>
           <div class="card stat">
-            <h3>Cache dev</h3>
+            <h3 data-i18n="dashboard.cache">Cache dev</h3>
             <div class="big" id="dash-cache-size">—</div>
             <div class="bar"><i class="blue" id="dash-cache-bar" style="width:0%"></i></div>
             <div class="hint" id="dash-cache-hint">memuat…</div>
           </div>
           <div class="card stat">
-            <h3>Log &amp; journal</h3>
+            <h3 data-i18n="dashboard.log">Log &amp; journal</h3>
             <div class="big" id="dash-log-size">—</div>
             <div class="hint" id="dash-log-hint">memuat…</div>
             <div class="hint dim" id="dash-log-free">memuat…</div>
@@ -375,13 +379,13 @@
         <div class="grid g2" style="margin-top:14px">
           <div class="card">
             <div class="row" style="justify-content:space-between">
-              <h3>Pemakaian /home</h3>
+              <h3 data-i18n="dashboard.home">Pemakaian /home</h3>
               <span class="tiny dim" id="dash-home-size">memuat…</span>
             </div>
             <div class="diskmap" id="dash-map" style="margin-top:12px"></div>
             <div class="legend" id="dash-legend"></div>
             <div class="sep"></div>
-            <h3 style="margin-bottom:11px">Ruang yang bisa direbut kembali</h3>
+            <h3 style="margin-bottom:11px" data-i18n="dashboard.reclaim">Ruang yang bisa direbut kembali</h3>
             <table class="reclaim">
               <tbody id="dash-reclaim"><tr><td colspan="4" class="tiny dim" style="padding:14px">Memuat hasil scan…</td></tr></tbody>
             </table>
@@ -389,29 +393,29 @@
 
           <div class="grid" style="align-content:start">
             <div class="card">
-              <div class="row"><h3>Status</h3><div class="spacer"></div><button class="btn ghost" id="dash-refresh">Scan ulang</button></div>
+              <div class="row"><h3 data-i18n="dashboard.status">Status</h3><div class="spacer"></div><button class="btn ghost" id="dash-refresh" data-i18n="dashboard.refresh">Scan ulang</button></div>
               <div style="margin-top:12px;display:flex;flex-direction:column;gap:10px">
                 <div class="row"><span class="chip safe" id="st-polkit-chip">ok</span><span class="small" id="st-polkit">Polkit agent terdeteksi</span><span class="spacer"></span><span class="tiny dim" id="st-polkit-detail">aksi root via pkexec</span></div>
                 <div class="row"><span class="chip safe">ok</span><span class="small" id="dash-tools">memuat tool dev…</span><span class="spacer"></span><span class="tiny dim" id="dash-tools-detail">—</span></div>
-                <div class="row"><span class="chip warn">!</span><span class="small">Trash di filesystem berbeda</span><span class="spacer"></span><span class="tiny dim">/nix &amp; /var → konfirmasi permanen</span></div>
-                <div class="row"><span class="chip locked">off</span><span class="small">GC otomatis</span><span class="spacer"></span><span class="tiny dim">selalu manual + ketik GC</span></div>
+                <div class="row"><span class="chip warn">!</span><span class="small" data-i18n="dashboard.trashCross">Trash di filesystem berbeda</span><span class="spacer"></span><span class="tiny dim" data-i18n="dashboard.trashCrossHint">/nix &amp; /var → konfirmasi permanen</span></div>
+                <div class="row"><span class="chip locked">off</span><span class="small" data-i18n="dashboard.gcOff">GC otomatis</span><span class="spacer"></span><span class="tiny dim" data-i18n="dashboard.gcOffHint">selalu manual + ketik GC</span></div>
               </div>
             </div>
             <div class="card">
-              <h3>Bersihkan cepat</h3>
-              <p class="small muted" style="margin:9px 0 14px">Hanya item berisiko <b style="color:var(--accent)">aman</b> yang dipilih. Item ⚠ dan ⛔ selalu off.</p>
+              <h3 data-i18n="dashboard.quick">Bersihkan cepat</h3>
+              <p class="small muted" style="margin:9px 0 14px" data-i18n="dashboard.quickHint">Hanya item berisiko aman yang dipilih. Item ⚠ dan ⛔ selalu off.</p>
               <div class="row" style="gap:8px">
                 <button class="btn primary" id="quick-clean" data-open="confirm-clean">
                   <svg viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M10 11v6M14 11v6M6 7l1 13h10l1-13"/></svg>
-                  Bersihkan item aman (<span id="quick-size">32.4 GB</span>)
+                  <span data-i18n="dashboard.cleanSafe">Bersihkan item aman</span> (<span id="quick-size">32.4 GB</span>)
                 </button>
-                <button class="btn ghost">Tinjau item</button>
+                <button class="btn ghost" data-i18n="dashboard.review">Tinjau item</button>
               </div>
               <div class="tiny dim" style="margin-top:10px">Terakhir scan: 12:31 · 4.2 s · 214.830 file</div>
             </div>
             <div class="callout info">
               <span class="ico">i</span>
-              <div class="small">Shell <b>M0</b>: layout & navigasi sudah nyata, isi data masih contoh dari pengukuran 22 Nov 2026. Modul scan dan hapus masuk di M1–M2.</div>
+              <div class="small" data-i18n="dashboard.note">Scan hanya membaca disk. Semua aksi hapus lewat guard: dry-run, trash, lalu ukur ulang ruang yang benar-benar dibebaskan. GC tetap manual.</div>
             </div>
           </div>
         </div>
@@ -519,7 +523,7 @@
             <div class="row" style="margin-top:10px">
               <div class="small muted">Ukuran sekarang <b class="num" style="color:var(--text)" id="nix-journal-size">—</b></div>
               <div class="spacer"></div>
-              <select id="nix-journal-target"><option>500 MB</option><option>1 GB</option><option>2 GB</option></select>
+              <select id="nix-journal-target"><option value="500M">500 MB</option><option value="1G">1 GB</option><option value="2G">2 GB</option></select>
               <button class="btn" id="nix-vacuum">Vacuum</button>
             </div>
             <div class="tiny dim" style="margin-top:9px">Butuh root → <span class="mono">pkexec journalctl --vacuum-size=500M</span> (fallback: perintah sudo siap-copy).</div>
@@ -586,32 +590,32 @@
       <!-- ============ ANALYSIS ============ -->
       <section class="view" id="view-analysis">
         <div class="tabs" id="tabs">
-          <button class="active" data-tab="tree">Disk usage</button>
-          <button data-tab="large">File besar</button>
-          <button data-tab="dup">Duplikat</button>
-          <button data-tab="stale">File lama</button>
-          <button data-tab="artifacts">Artefak build</button>
+          <button class="active" data-tab="tree" data-i18n="analysis.tab.tree">Disk usage</button>
+          <button data-tab="large" data-i18n="analysis.tab.large">File besar</button>
+          <button data-tab="dup" data-i18n="analysis.tab.dup">Duplikat</button>
+          <button data-tab="stale" data-i18n="analysis.tab.stale">File lama</button>
+          <button data-tab="artifacts" data-i18n="analysis.tab.artifacts">Artefak build</button>
         </div>
 
         <div class="tabpane" id="tab-tree">
           <div class="row" style="justify-content:space-between;gap:8px;margin-bottom:10px">
             <div class="crumb" id="an-crumb"><span>~</span><span class="sl">·</span><span class="dim">memuat…</span></div>
             <div class="row" style="gap:8px">
-              <button class="btn ghost" id="an-refresh">Scan ulang</button>
-              <button class="btn" id="an-open">Buka di file manager</button>
+              <button class="btn ghost" id="an-refresh" data-i18n="analysis.scanAgain">Scan ulang</button>
+              <button class="btn" id="an-open" data-i18n="analysis.openFolder">Buka di file manager</button>
             </div>
           </div>
           <div class="grid g2">
             <div class="card" style="padding:0;overflow:hidden">
               <table>
-                <thead><tr><th>Folder</th><th class="r">Ukuran</th><th>Proporsi</th></tr></thead>
+                <thead><tr><th data-i18n="analysis.folder">Folder</th><th class="r" data-i18n="analysis.size">Ukuran</th><th data-i18n="analysis.share">Proporsi</th></tr></thead>
                 <tbody id="an-tree-body">
                   <tr><td colspan="3" class="tiny dim" style="padding:18px 16px">Memuat disk usage…</td></tr>
                 </tbody>
               </table>
             </div>
             <div class="card">
-              <div class="row" style="justify-content:space-between"><h3>Peta folder</h3><span class="tiny dim">klik untuk masuk</span></div>
+              <div class="row" style="justify-content:space-between"><h3 data-i18n="analysis.map">Peta folder</h3><span class="tiny dim" data-i18n="analysis.mapHint">klik untuk masuk</span></div>
               <div class="tmgrid" id="an-map" style="margin-top:12px"></div>
             </div>
           </div>
@@ -619,7 +623,7 @@
         <div class="tabpane" id="tab-large" hidden>
           <div class="card" style="padding:0;overflow:hidden">
             <div class="row" style="padding:13px 16px;border-bottom:1px solid var(--line)">
-              <div><div style="font-weight:650">File ≥ <span id="an-large-threshold">100 MB</span></div><div class="tiny dim">Ukuran allocated, bukan logical</div></div>
+              <div><div style="font-weight:650"><span data-i18n="analysis.largeTitle">File ≥</span> <span id="an-large-threshold">100 MB</span></div><div class="tiny dim" data-i18n="analysis.allocated">Ukuran allocated, bukan logical</div></div>
               <div class="spacer"></div>
               <span class="small dim" id="an-large-sel">0 dipilih</span>
               <select id="an-large-size"><option value="104857600">≥ 100 MB</option><option value="524288000">≥ 500 MB</option><option value="1073741824">≥ 1 GB</option></select>
@@ -636,10 +640,10 @@
         <div class="tabpane" id="tab-dup" hidden>
           <div class="card">
             <div class="row" style="gap:8px">
-              <div><div style="font-weight:650" id="an-dup-summary">Memuat duplikat…</div><div class="tiny dim">size → hash 64 KB pertama → SHA-256 penuh</div></div>
+              <div><div style="font-weight:650" id="an-dup-summary">Memuat duplikat…</div><div class="tiny dim" data-i18n="analysis.dupHint">size → hash 64 KB pertama → SHA-256 penuh</div></div>
               <div class="spacer"></div>
               <span class="small dim" id="an-dup-sel">0 dipilih</span>
-              <button class="btn primary" id="an-dup-trash" disabled>Pindahkan duplikat ke trash</button>
+              <button class="btn primary" id="an-dup-trash" disabled data-i18n="analysis.trashDup">Pindahkan duplikat ke trash</button>
             </div>
             <div class="sep"></div>
             <div id="an-dup-body"><div class="small dim">Pencarian duplikat membaca isi file dan bisa memakan waktu.</div></div>
@@ -648,7 +652,7 @@
         <div class="tabpane" id="tab-stale" hidden>
           <div class="card" style="padding:0;overflow:hidden">
             <div class="row" style="padding:13px 16px;border-bottom:1px solid var(--line)">
-              <div><div style="font-weight:650" id="an-stale-summary">Tidak diubah &gt; 365 hari</div><div class="tiny dim">Tanpa folder sistem, kunci, &amp; .git</div></div>
+              <div><div style="font-weight:650" id="an-stale-summary">Tidak diubah &gt; 365 hari</div><div class="tiny dim" data-i18n="analysis.staleHint">Tanpa folder sistem, kunci, &amp; .git</div></div>
               <div class="spacer"></div>
               <span class="small dim" id="an-stale-sel">0 dipilih</span>
               <button class="btn ghost" id="an-stale-select">Pilih aman</button>
@@ -663,9 +667,9 @@
         <div class="tabpane" id="tab-artifacts" hidden>
           <div class="card" style="padding:0;overflow:hidden">
             <div class="row" style="padding:13px 16px;border-bottom:1px solid var(--line)">
-              <div><div style="font-weight:650">Artefak build</div><div class="tiny dim">node_modules, target, .venv, dist, build, __pycache__</div></div>
+              <div><div style="font-weight:650" data-i18n="analysis.tab.artifacts">Artefak build</div><div class="tiny dim" data-i18n="analysis.artifactsHint">node_modules, target, .venv, dist, build, __pycache__</div></div>
               <div class="spacer"></div>
-              <span class="chip warn">proyek &lt; 7 hari tidak disarankan</span>
+              <span class="chip warn" data-i18n="analysis.activeProject">proyek &lt; 7 hari tidak disarankan</span>
               <span class="small dim" id="an-art-sel">0 dipilih</span>
               <button class="btn ghost" id="an-art-select">Pilih aman</button>
               <button class="btn" id="an-art-trash" disabled>Pindah ke trash</button>
@@ -680,84 +684,108 @@
 
       <!-- ============ SETTINGS ============ -->
       <section class="view" id="view-settings">
+        <div id="settings-warning" class="callout" style="margin-bottom:14px" hidden>
+          <span class="ico">⚠</span><div id="settings-warning-text"></div>
+        </div>
+
         <div class="grid g2">
           <div class="card">
-            <h3 style="margin-bottom:6px">Tampilan</h3>
+            <h3 style="margin-bottom:6px" data-i18n="settings.appearance">Tampilan</h3>
             <div class="field">
-              <div class="label"><b>Tema</b><span>Mengikuti sistem atau paksa terang/gelap</span></div>
-              <div class="ctrl"><select id="theme-select"><option value="dark">Gelap</option><option value="light">Terang</option></select></div>
+              <div class="label"><b data-i18n="settings.theme">Tema</b><span data-i18n="settings.themeHint">Mengikuti sistem atau paksa terang/gelap</span></div>
+              <div class="ctrl"><select id="theme-select">
+                <option value="system" data-i18n="theme.system">Sistem</option>
+                <option value="light" data-i18n="theme.light">Terang</option>
+                <option value="dark" data-i18n="theme.dark">Gelap</option>
+              </select></div>
             </div>
             <div class="field">
-              <div class="label"><b>Bahasa</b><span>Label, tanggal, dan format angka</span></div>
-              <div class="ctrl"><select><option>Bahasa Indonesia</option><option>English</option></select></div>
+              <div class="label"><b data-i18n="settings.language">Bahasa</b><span data-i18n="settings.languageHint">Label, tanggal, dan format angka</span></div>
+              <div class="ctrl"><select id="lang-select">
+                <option value="id">Bahasa Indonesia</option>
+                <option value="en">English</option>
+              </select></div>
             </div>
             <div class="field">
-              <div class="label"><b>Tampilkan item berisiko</b><span>⚠ dan ⛔ selalu off saat scan</span></div>
-              <div class="ctrl"><button class="toggle on" data-toggle></button></div>
-            </div>
-          </div>
-
-          <div class="card">
-            <h3 style="margin-bottom:6px">Pembersihan</h3>
-            <div class="field">
-              <div class="label"><b>Mode hapus default</b><span>Pindah ke trash agar bisa di-restore</span></div>
-              <div class="ctrl"><select><option>Trash (bisa restore)</option><option>Hapus permanen</option></select></div>
-            </div>
-            <div class="field">
-              <div class="label"><b>Item aman otomatis dicentang</b><span>Item ⚠/⛔ tidak pernah otomatis</span></div>
-              <div class="ctrl"><button class="toggle on" data-toggle></button></div>
-            </div>
-            <div class="field">
-              <div class="label"><b>Target journal</b><span>Vacuum system &amp; user journal</span></div>
-              <div class="ctrl"><input type="text" value="500 MB" style="width:90px"></div>
+              <div class="label"><b data-i18n="settings.showRisky">Tampilkan item berisiko</b><span data-i18n="settings.showRiskyHint">Item ⚠ dan ⛔ tetap tidak pernah dipilih otomatis</span></div>
+              <div class="ctrl"><button class="toggle" id="show-risky" role="switch" aria-checked="false" aria-label="Tampilkan item berisiko"></button></div>
             </div>
           </div>
 
           <div class="card">
-            <h3 style="margin-bottom:6px">Analisis</h3>
+            <h3 style="margin-bottom:6px" data-i18n="settings.cleanup">Pembersihan</h3>
             <div class="field">
-              <div class="label"><b>Ambang file besar</b><span>Ditampilkan di tab File besar</span></div>
-              <div class="ctrl"><input type="text" value="100 MB" style="width:96px"></div>
+              <div class="label"><b data-i18n="settings.deleteMode">Mode hapus default</b><span data-i18n="settings.deleteModeHint">Trash bisa di-restore dari file manager</span></div>
+              <div class="ctrl"><select id="delete-mode">
+                <option value="trash" data-i18n="settings.trash">Trash (bisa restore)</option>
+                <option value="permanent" data-i18n="settings.permanent">Hapus permanen</option>
+              </select></div>
             </div>
             <div class="field">
-              <div class="label"><b>Ambang file lama</b><span>mtime lebih tua dari</span></div>
-              <div class="ctrl"><input type="text" value="365 hari" style="width:96px"></div>
+              <div class="label"><b data-i18n="settings.autoSafe">Item aman otomatis dicentang</b><span data-i18n="settings.autoSafeHint">Item ⚠/⛔ tidak pernah otomatis</span></div>
+              <div class="ctrl"><button class="toggle" id="auto-safe" role="switch" aria-checked="true" aria-label="Item aman otomatis dicentang"></button></div>
             </div>
             <div class="field">
-              <div class="label"><b>Root scan artefak</b><span>Pisahkan dengan koma</span></div>
-              <div class="ctrl"><input type="text" value="~/Projects, ~/work" style="width:220px"></div>
+              <div class="label"><b data-i18n="settings.journalTarget">Target journal</b><span data-i18n="settings.journalTargetHint">Vacuum system dan user journal</span></div>
+              <div class="ctrl"><input type="text" id="journal-target" value="500M" style="width:100px" aria-label="Target journal"></div>
             </div>
           </div>
 
           <div class="card">
-            <h3 style="margin-bottom:6px">Pengecualian &amp; akses</h3>
+            <h3 style="margin-bottom:6px" data-i18n="settings.analysis">Analisis</h3>
             <div class="field">
-              <div class="label"><b>Path dikecualikan</b><span>Tidak pernah dipindai atau dihapus</span></div>
-              <div class="ctrl" style="flex-wrap:wrap;justify-content:flex-end;max-width:320px">
-                <span class="tag">~/Projects <b>×</b></span>
-                <span class="tag">~/Documents <b>×</b></span>
-                <span class="tag">~/.ssh <b>×</b></span>
-                <button class="btn ghost" style="padding:4px 8px">+ Tambah</button>
+              <div class="label"><b data-i18n="settings.largeThreshold">Ambang file besar</b><span data-i18n="settings.largeThresholdHint">Ditampilkan di tab File besar</span></div>
+              <div class="ctrl"><input type="number" id="large-mb" min="1" max="102400" step="1" value="100" style="width:96px" aria-label="Ambang file besar (MB)"><span class="tiny dim">MB</span></div>
+            </div>
+            <div class="field">
+              <div class="label"><b data-i18n="settings.staleDays">Ambang file lama</b><span data-i18n="settings.staleDaysHint">mtime lebih tua dari</span></div>
+              <div class="ctrl"><input type="number" id="stale-days" min="1" max="3650" step="1" value="365" style="width:96px" aria-label="Ambang file lama (hari)"><span class="tiny dim" data-i18n="settings.days">hari</span></div>
+            </div>
+            <div class="field">
+              <div class="label"><b data-i18n="settings.artifactRoots">Root scan tambahan</b><span data-i18n="settings.artifactRootsHint">Pisahkan dengan koma; dipakai untuk scan artefak</span></div>
+              <div class="ctrl"><input type="text" id="artifact-roots" placeholder="~/Projects, ~/work" style="width:220px" aria-label="Root scan tambahan"></div>
+            </div>
+          </div>
+
+          <div class="card">
+            <h3 style="margin-bottom:6px" data-i18n="settings.exclusions">Pengecualian &amp; akses</h3>
+            <div class="field" style="align-items:flex-start">
+              <div class="label"><b data-i18n="settings.excluded">Path dikecualikan</b><span data-i18n="settings.excludedHint">Tidak pernah dipindai atau dihapus</span></div>
+              <div class="ctrl" style="flex-wrap:wrap;justify-content:flex-end;max-width:340px">
+                <div id="excluded-list" class="row" style="flex-wrap:wrap;justify-content:flex-end;gap:6px"></div>
+                <input type="text" id="excluded-input" placeholder="~/path" style="width:126px" aria-label="Tambah path dikecualikan">
+                <button class="btn ghost" id="excluded-add" style="padding:4px 8px">+ Tambah</button>
               </div>
             </div>
             <div class="field">
-              <div class="label"><b>Aksi root</b><span>Status polkit agent di sesi ini</span></div>
-              <div class="ctrl"><span class="chip safe">agent terdeteksi</span><span class="tiny dim">pkexec</span></div>
+              <div class="label"><b data-i18n="settings.rootAction">Aksi root</b><span data-i18n="settings.rootActionHint">Status polkit agent di sesi ini</span></div>
+              <div class="ctrl"><span class="chip safe" id="settings-polkit">memeriksa…</span><span class="tiny dim" id="settings-polkit-detail"></span></div>
             </div>
             <div class="field">
-              <div class="label"><b>Riwayat</b><span>Audit log semua aksi hapus</span></div>
-              <div class="ctrl"><span class="tiny mono dim">~/.local/state/cleanlie/history.jsonl</span><button class="btn ghost" style="padding:5px 9px">Buka</button></div>
+              <div class="label"><b data-i18n="settings.history">Riwayat</b><span data-i18n="settings.historyHint">Audit log semua aksi hapus</span></div>
+              <div class="ctrl"><span class="tiny mono dim">~/.local/state/cleanlie/history.jsonl</span><button class="btn ghost" id="history-open" style="padding:5px 9px" data-i18n="settings.open">Buka</button></div>
             </div>
           </div>
         </div>
 
         <div class="card" style="margin-top:14px">
-          <h3>Runtime</h3>
+          <div class="row" style="gap:10px;flex-wrap:wrap">
+            <button class="btn primary" id="settings-save" data-i18n="settings.save">Simpan pengaturan</button>
+            <button class="btn ghost" id="settings-reset" data-i18n="settings.reset">Kembalikan default</button>
+            <span class="small muted" id="settings-status" role="status"></span>
+            <span class="spacer"></span>
+            <span class="tiny dim" data-i18n="settings.configPath">Config</span>
+            <span class="tiny mono dim" id="settings-path">~/.config/cleanlie/config.json</span>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:14px">
+          <h3 data-i18n="settings.runtime">Runtime</h3>
           <div class="row" style="margin-top:10px;gap:18px;flex-wrap:wrap">
-            <span class="small muted">Versi: <b class="mono" style="color:var(--text)" id="diag-version">—</b></span>
-            <span class="small muted">Commit: <b class="mono" style="color:var(--text)" id="diag-commit">—</b></span>
+            <span class="small muted"><span data-i18n="settings.version">Versi</span>: <b class="mono" style="color:var(--text)" id="diag-version">—</b></span>
+            <span class="small muted"><span data-i18n="settings.commit">Commit</span>: <b class="mono" style="color:var(--text)" id="diag-commit">—</b></span>
             <span class="small muted">Go: <b class="mono" style="color:var(--text)" id="diag-go">—</b></span>
-            <span class="small muted">Platform: <b class="mono" style="color:var(--text)" id="diag-platform">—</b></span>
+            <span class="small muted"><span data-i18n="settings.platform">Platform</span>: <b class="mono" style="color:var(--text)" id="diag-platform">—</b></span>
           </div>
           <div class="row" style="margin-top:10px;gap:18px;flex-wrap:wrap">
             <span class="small muted">Home: <b class="mono" style="color:var(--text)" id="diag-home">—</b></span>
@@ -765,16 +793,12 @@
           </div>
           <div class="row" style="margin-top:10px;gap:18px;flex-wrap:wrap">
             <span class="small muted">Polkit: <b class="mono" style="color:var(--text)" id="diag-polkit">—</b></span>
-          </div>
-          <div class="row" style="margin-top:10px;gap:18px;flex-wrap:wrap">
             <span class="small muted">Store: <b class="mono" style="color:var(--text)">/nix/store</b></span>
-            <span class="small muted">Config: <b class="mono" style="color:var(--text)">~/.config/cleanlie/config.json</b></span>
             <span class="spacer"></span>
-            <span class="pill">Cleanlie <b>v0.1.0</b></span>
+            <span class="pill">Cleanlie <b id="settings-version">—</b></span>
           </div>
         </div>
       </section>
-
     </div><!-- /content -->
 
     <!-- action bar only on cleanup -->
@@ -782,7 +806,7 @@
       <div class="sum"><b id="sel-count">5</b> item dipilih · <b id="sel-size">15.4 GB</b></div>
       <div class="hint">1 item ⛔ terkunci · 2 item ⚠ butuh konfirmasi</div>
       <div class="spacer"></div>
-      <button class="btn ghost" id="clear-sel">Kosongkan</button>
+      <button class="btn ghost" id="clear-sel" data-i18n="common.clear">Kosongkan</button>
       <button class="btn" id="btn-trash" data-open="confirm-clean">Pindah ke Trash</button>
       <button class="btn danger" id="btn-permanent" data-open="confirm-clean">Hapus permanen…</button>
     </div>
@@ -878,7 +902,8 @@ let activeCat = 'node';
 const selected = new Set();
 
 function renderCleanup(){
-  const rows = ITEMS.filter(i => i.g === activeCat);
+  const showRisky = !window.__getSettings || window.__getSettings().showRisky;
+  const rows = ITEMS.filter(i => i.g === activeCat && (showRisky || i.risk === 'safe'));
   const [title, note] = TITLES[activeCat];
   document.getElementById('cat-title').textContent = title;
   document.getElementById('cat-sub').textContent = rows.length + ' item · ' + fmt(rows.reduce((a,b)=>a+b.mb,0));
@@ -932,8 +957,9 @@ function navigate(view){
   document.querySelectorAll('.view').forEach(v => v.classList.toggle('active', v.id === 'view-' + view));
   document.querySelectorAll('#nav button').forEach(b => b.classList.toggle('active', b.dataset.view === view));
   const [t,s] = META[view] || ['Cleanlie',''];
-  document.getElementById('page-title').textContent = t;
-  document.getElementById('page-sub').textContent = s;
+  const tr = k => (window.__t ? window.__t(k) : null);
+  document.getElementById('page-title').textContent = tr('page.' + view + '.title') || t;
+  document.getElementById('page-sub').textContent = tr('page.' + view + '.sub') || s;
   document.getElementById('actionbar').hidden = view !== 'cleanup';
   if (view === 'cleanup') updateTotals();
   if (location.hash !== '#/'+view) history.replaceState(null,'','#/'+view);
@@ -962,11 +988,23 @@ document.querySelectorAll('#tabs button').forEach(b => b.addEventListener('click
 /* android suggestion ditangani oleh blok M4 di bawah */
 
 /* toggles + theme */
-document.querySelectorAll('[data-toggle]').forEach(t => t.addEventListener('click', () => t.classList.toggle('on')));
 const themeSelect = document.getElementById('theme-select');
-function setTheme(t){ document.documentElement.dataset.theme = t; if (themeSelect) themeSelect.value = t; }
-document.getElementById('theme-btn').addEventListener('click', () => setTheme(document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark'));
-if (themeSelect) themeSelect.addEventListener('change', e => setTheme(e.target.value));
+const systemDark = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
+function resolveTheme(mode){ return mode === 'system' ? (systemDark && systemDark.matches ? 'dark' : 'light') : mode; }
+function setTheme(mode){ document.documentElement.dataset.themeMode = mode; document.documentElement.dataset.theme = resolveTheme(mode); if (themeSelect) themeSelect.value = mode; }
+document.getElementById('theme-btn').addEventListener('click', () => {
+  const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+  setTheme(next);
+  if (window.__themeChanged) window.__themeChanged(next);
+});
+if (themeSelect) themeSelect.addEventListener('change', e => {
+  setTheme(e.target.value);
+  if (window.__themeChanged) window.__themeChanged(e.target.value);
+});
+if (systemDark && systemDark.addEventListener) systemDark.addEventListener('change', () => {
+  if (document.documentElement.dataset.themeMode === 'system') setTheme('system');
+});
+setTheme(document.documentElement.dataset.themeMode || 'system');
 
 /* ---------------- modal ---------------- */
 const backdrop = document.getElementById('backdrop');
@@ -1152,7 +1190,8 @@ navigate(META[initial] ? initial : 'dashboard');
       }
     }
     selected.clear();
-    for (const it of ITEMS) if (it.risk === 'safe') selected.add(it.p);
+    const autoSafe = !window.__getSettings || window.__getSettings().autoSelectSafe;
+    if (autoSafe) for (const it of ITEMS) if (it.risk === 'safe') selected.add(it.p);
 
     refreshCats();
     const visible = catOrder.filter(c => ITEMS.some(i => i.g === c));
@@ -1329,7 +1368,10 @@ navigate(META[initial] ? initial : 'dashboard');
   rebind(byId('quick-clean'), async () => {
     navigate("cleanup");
     const r = await ensureScan();
-    if (r) openClean('trash');
+    if (r) {
+      const mode = window.__getSettings ? window.__getSettings().deleteMode : 'trash';
+      openClean(mode === 'permanent' ? 'permanent' : 'trash');
+    }
   });
 
   const cancelBtn = byId('scan-cancel');
@@ -2491,6 +2533,517 @@ navigate(META[initial] ? initial : 'dashboard');
   if (current === 'dashboard') refreshDashboard(false);
   if (current === 'analysis') ensureAnalysis(activeTab);
 })();
+</script>
+<script>
+/* ================= M6: settings, theme, i18n ================= */
+(function () {
+  const bridge = window.go && window.go.main && window.go.main.App;
+  const byId = id => document.getElementById(id);
+  const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const MIB = 1024 * 1024;
+
+  const STRINGS = {
+    id: {
+      'brand.tagline': 'cleaner untuk NixOS',
+      'side.note': 'M6 · settings, tema, dan i18n',
+      'nav.dashboard': 'Dashboard',
+      'nav.cleanup': 'Bersihkan',
+      'nav.analysis': 'Analisis',
+      'nav.settings': 'Pengaturan',
+      'page.dashboard.title': 'Dashboard',
+      'page.dashboard.sub': 'Ringkasan disk dan reclaimable space',
+      'page.cleanup.title': 'Bersihkan',
+      'page.cleanup.sub': 'Pilih item per kategori · default hanya item aman',
+      'page.nix.title': 'Nix',
+      'page.nix.sub': 'Store, generasi, dan garbage collection',
+      'page.android.title': 'Android',
+      'page.android.sub': 'AVD, system image, dan NDK',
+      'page.analysis.title': 'Analisis',
+      'page.analysis.sub': 'Disk usage, file besar, duplikat, file lama, artefak build',
+      'page.settings.title': 'Pengaturan',
+      'page.settings.sub': 'Preferensi pembersihan dan tampilan',
+      'theme.system': 'Sistem',
+      'theme.light': 'Terang',
+      'theme.dark': 'Gelap',
+      'settings.appearance': 'Tampilan',
+      'settings.theme': 'Tema',
+      'settings.themeHint': 'Mengikuti sistem atau paksa terang/gelap',
+      'settings.language': 'Bahasa',
+      'settings.languageHint': 'Label, tanggal, dan format angka',
+      'settings.showRisky': 'Tampilkan item berisiko',
+      'settings.showRiskyHint': 'Item ⚠ dan ⛔ tetap tidak pernah dipilih otomatis',
+      'settings.cleanup': 'Pembersihan',
+      'settings.deleteMode': 'Mode hapus default',
+      'settings.deleteModeHint': 'Trash bisa di-restore dari file manager',
+      'settings.trash': 'Trash (bisa restore)',
+      'settings.permanent': 'Hapus permanen',
+      'settings.autoSafe': 'Item aman otomatis dicentang',
+      'settings.autoSafeHint': 'Item ⚠/⛔ tidak pernah otomatis',
+      'settings.journalTarget': 'Target journal',
+      'settings.journalTargetHint': 'Vacuum system dan user journal',
+      'settings.analysis': 'Analisis',
+      'settings.largeThreshold': 'Ambang file besar',
+      'settings.largeThresholdHint': 'Ditampilkan di tab File besar',
+      'settings.staleDays': 'Ambang file lama',
+      'settings.staleDaysHint': 'mtime lebih tua dari',
+      'settings.days': 'hari',
+      'settings.artifactRoots': 'Root scan tambahan',
+      'settings.artifactRootsHint': 'Pisahkan dengan koma; dipakai untuk scan artefak',
+      'settings.exclusions': 'Pengecualian & akses',
+      'settings.excluded': 'Path dikecualikan',
+      'settings.excludedHint': 'Tidak pernah dipindai atau dihapus',
+      'settings.rootAction': 'Aksi root',
+      'settings.rootActionHint': 'Status polkit agent di sesi ini',
+      'settings.history': 'Riwayat',
+      'settings.historyHint': 'Audit log semua aksi hapus',
+      'settings.open': 'Buka',
+      'settings.save': 'Simpan pengaturan',
+      'settings.reset': 'Kembalikan default',
+      'settings.configPath': 'Config',
+      'settings.runtime': 'Runtime',
+      'settings.version': 'Versi',
+      'settings.commit': 'Commit',
+      'settings.platform': 'Platform',
+      'settings.saved': 'Pengaturan disimpan.',
+      'settings.saving': 'Menyimpan…',
+      'settings.dirty': 'Perubahan belum disimpan.',
+      'settings.loadFailed': 'Gagal membaca pengaturan: ',
+      'settings.saveFailed': 'Gagal menyimpan: ',
+      'settings.preview': 'Mode preview: perubahan tidak ditulis ke disk.',
+      'settings.warning': 'Config lama: ',
+      'settings.polkit': 'Polkit',
+      'settings.polkitYes': 'agent terdeteksi',
+      'settings.polkitNo': 'tidak ada agent',
+      'analysis.tab.tree': 'Disk usage',
+      'analysis.tab.large': 'File besar',
+      'analysis.tab.dup': 'Duplikat',
+      'analysis.tab.stale': 'File lama',
+      'analysis.tab.artifacts': 'Artefak build',
+      'analysis.scanAgain': 'Scan ulang',
+      'analysis.openFolder': 'Buka di file manager',
+      'analysis.folder': 'Folder',
+      'analysis.size': 'Ukuran',
+      'analysis.share': 'Proporsi',
+      'analysis.map': 'Peta folder',
+      'analysis.mapHint': 'klik untuk masuk',
+      'analysis.largeTitle': 'File ≥',
+      'analysis.allocated': 'Ukuran allocated, bukan logical',
+      'analysis.selected': 'dipilih',
+      'analysis.selectSafe': 'Pilih aman',
+      'analysis.toTrash': 'Pindah ke trash',
+      'analysis.trashDup': 'Pindahkan duplikat ke trash',
+      'analysis.dupHint': 'size → hash 64 KB pertama → SHA-256 penuh',
+      'analysis.staleHint': 'Tanpa folder sistem, kunci, & .git',
+      'analysis.artifactsHint': 'node_modules, target, .venv, dist, build, __pycache__',
+      'analysis.activeProject': 'proyek < 7 hari tidak disarankan',
+      'analysis.file': 'File',
+      'analysis.modified': 'Dimodifikasi',
+      'analysis.lastChanged': 'Terakhir diubah',
+      'analysis.action': 'Aksi',
+      'analysis.project': 'Proyek',
+      'analysis.artifact': 'Artefak',
+      'dashboard.disk': 'Disk /',
+      'dashboard.nix': 'Nix store',
+      'dashboard.cache': 'Cache dev',
+      'dashboard.log': 'Log & journal',
+      'dashboard.home': 'Pemakaian /home',
+      'dashboard.reclaim': 'Ruang yang bisa direbut kembali',
+      'dashboard.status': 'Status',
+      'dashboard.refresh': 'Scan ulang',
+      'dashboard.quick': 'Bersihkan cepat',
+      'dashboard.quickHint': 'Hanya item berisiko aman yang dipilih. Item ⚠ dan ⛔ selalu off.',
+      'dashboard.cleanSafe': 'Bersihkan item aman',
+      'dashboard.review': 'Tinjau item',
+      'dashboard.gcOff': 'GC otomatis',
+      'dashboard.gcOffHint': 'selalu manual + ketik GC',
+      'dashboard.trashCross': 'Trash di filesystem berbeda',
+      'dashboard.trashCrossHint': '/nix & /var → konfirmasi permanen',
+      'dashboard.note': 'Scan hanya membaca disk. Semua aksi hapus lewat guard: dry-run, trash, lalu ukur ulang ruang yang benar-benar dibebaskan. GC tetap manual.',
+      'common.scanAgain': 'Scan ulang',
+      'common.cancel': 'Batal',
+      'common.clear': 'Kosongkan',
+      'common.open': 'Buka',
+      'common.reset': 'Reset',
+      'common.save': 'Simpan'
+    },
+    en: {
+      'brand.tagline': 'cleaner for NixOS',
+      'side.note': 'M6 · settings, theme, and i18n',
+      'nav.dashboard': 'Dashboard',
+      'nav.cleanup': 'Clean',
+      'nav.analysis': 'Analysis',
+      'nav.settings': 'Settings',
+      'page.dashboard.title': 'Dashboard',
+      'page.dashboard.sub': 'Disk overview and reclaimable space',
+      'page.cleanup.title': 'Clean',
+      'page.cleanup.sub': 'Pick items by category · safe items only by default',
+      'page.nix.title': 'Nix',
+      'page.nix.sub': 'Store, generations, and garbage collection',
+      'page.android.title': 'Android',
+      'page.android.sub': 'AVDs, system images, and NDK',
+      'page.analysis.title': 'Analysis',
+      'page.analysis.sub': 'Disk usage, large files, duplicates, stale files, build artifacts',
+      'page.settings.title': 'Settings',
+      'page.settings.sub': 'Cleaning and appearance preferences',
+      'theme.system': 'System',
+      'theme.light': 'Light',
+      'theme.dark': 'Dark',
+      'settings.appearance': 'Appearance',
+      'settings.theme': 'Theme',
+      'settings.themeHint': 'Follow the system or force light/dark',
+      'settings.language': 'Language',
+      'settings.languageHint': 'Labels, dates, and number formatting',
+      'settings.showRisky': 'Show risky items',
+      'settings.showRiskyHint': '⚠ and ⛔ items are never selected automatically',
+      'settings.cleanup': 'Cleaning',
+      'settings.deleteMode': 'Default delete mode',
+      'settings.deleteModeHint': 'Trash can be restored from the file manager',
+      'settings.trash': 'Trash (restorable)',
+      'settings.permanent': 'Delete permanently',
+      'settings.autoSafe': 'Auto-select safe items',
+      'settings.autoSafeHint': '⚠/⛔ items are never auto-selected',
+      'settings.journalTarget': 'Journal target',
+      'settings.journalTargetHint': 'Vacuum system and user journal',
+      'settings.analysis': 'Analysis',
+      'settings.largeThreshold': 'Large file threshold',
+      'settings.largeThresholdHint': 'Used by the Large files tab',
+      'settings.staleDays': 'Stale file threshold',
+      'settings.staleDaysHint': 'mtime older than',
+      'settings.days': 'days',
+      'settings.artifactRoots': 'Extra scan roots',
+      'settings.artifactRootsHint': 'Comma separated; used for artifact scans',
+      'settings.exclusions': 'Exclusions & access',
+      'settings.excluded': 'Excluded paths',
+      'settings.excludedHint': 'Never scanned or deleted',
+      'settings.rootAction': 'Root actions',
+      'settings.rootActionHint': 'Polkit agent status in this session',
+      'settings.history': 'History',
+      'settings.historyHint': 'Audit log for every delete',
+      'settings.open': 'Open',
+      'settings.save': 'Save settings',
+      'settings.reset': 'Restore defaults',
+      'settings.configPath': 'Config',
+      'settings.runtime': 'Runtime',
+      'settings.version': 'Version',
+      'settings.commit': 'Commit',
+      'settings.platform': 'Platform',
+      'settings.saved': 'Settings saved.',
+      'settings.saving': 'Saving…',
+      'settings.dirty': 'Unsaved changes.',
+      'settings.loadFailed': 'Could not read settings: ',
+      'settings.saveFailed': 'Could not save: ',
+      'settings.preview': 'Preview mode: changes are not written to disk.',
+      'settings.warning': 'Old config: ',
+      'settings.polkit': 'Polkit',
+      'settings.polkitYes': 'agent detected',
+      'settings.polkitNo': 'no agent',
+      'analysis.tab.tree': 'Disk usage',
+      'analysis.tab.large': 'Large files',
+      'analysis.tab.dup': 'Duplicates',
+      'analysis.tab.stale': 'Stale files',
+      'analysis.tab.artifacts': 'Build artifacts',
+      'analysis.scanAgain': 'Scan again',
+      'analysis.openFolder': 'Open in file manager',
+      'analysis.folder': 'Folder',
+      'analysis.size': 'Size',
+      'analysis.share': 'Share',
+      'analysis.map': 'Folder map',
+      'analysis.mapHint': 'click to enter',
+      'analysis.largeTitle': 'Files ≥',
+      'analysis.allocated': 'Allocated size, not logical',
+      'analysis.selected': 'selected',
+      'analysis.selectSafe': 'Select safe',
+      'analysis.toTrash': 'Move to trash',
+      'analysis.trashDup': 'Move duplicates to trash',
+      'analysis.dupHint': 'size → first 64 KB hash → full SHA-256',
+      'analysis.staleHint': 'System folders, keys, & .git excluded',
+      'analysis.artifactsHint': 'node_modules, target, .venv, dist, build, __pycache__',
+      'analysis.activeProject': 'projects < 7 days are not suggested',
+      'analysis.file': 'File',
+      'analysis.modified': 'Modified',
+      'analysis.lastChanged': 'Last changed',
+      'analysis.action': 'Action',
+      'analysis.project': 'Project',
+      'analysis.artifact': 'Artifact',
+      'dashboard.disk': 'Disk /',
+      'dashboard.nix': 'Nix store',
+      'dashboard.cache': 'Dev cache',
+      'dashboard.log': 'Logs & journal',
+      'dashboard.home': '/home usage',
+      'dashboard.reclaim': 'Reclaimable space',
+      'dashboard.status': 'Status',
+      'dashboard.refresh': 'Scan again',
+      'dashboard.quick': 'Quick clean',
+      'dashboard.quickHint': 'Only safe items are selected. ⚠ and ⛔ items always stay off.',
+      'dashboard.cleanSafe': 'Clean safe items',
+      'dashboard.review': 'Review items',
+      'dashboard.gcOff': 'Automatic GC',
+      'dashboard.gcOffHint': 'always manual + type GC',
+      'dashboard.trashCross': 'Trash is on a different filesystem',
+      'dashboard.trashCrossHint': '/nix & /var → permanent confirmation',
+      'dashboard.note': 'Scans are read-only. Every delete goes through the guard: dry-run, trash, then re-measure the space actually freed. GC stays manual.',
+      'common.scanAgain': 'Scan again',
+      'common.cancel': 'Cancel',
+      'common.clear': 'Clear',
+      'common.open': 'Open',
+      'common.reset': 'Reset',
+      'common.save': 'Save'
+    }
+  };
+
+  let LANG = 'id';
+  window.__t = function (key) {
+    const table = STRINGS[LANG] || STRINGS.id;
+    return table[key] || (STRINGS.id[key] || null);
+  };
+  const t = key => window.__t(key) || key;
+
+  const DEFAULTS = {
+    theme: 'system', language: 'id', showRisky: false, deleteMode: 'trash',
+    autoSelectSafe: true, showRisky: true, journalTarget: '500M', largeBytes: 100 * MIB,
+    staleDays: 365, artifactRoots: [], excluded: []
+  };
+  let state = Object.assign({}, DEFAULTS);
+  let view = null;
+  let warning = '';
+
+  function applyLanguage(lang) {
+    LANG = lang === 'en' ? 'en' : 'id';
+    document.documentElement.lang = LANG;
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+      const text = t(el.dataset.i18n);
+      if (text) el.textContent = text;
+    });
+    document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+      const text = t(el.dataset.i18nPlaceholder);
+      if (text) el.placeholder = text;
+    });
+    document.querySelectorAll('[data-i18n-title]').forEach(el => {
+      const text = t(el.dataset.i18nTitle);
+      if (text) el.title = text;
+    });
+    if (typeof current === 'string') {
+      const title = t('page.' + current + '.title');
+      const sub = t('page.' + current + '.sub');
+      const tEl = document.getElementById('page-title');
+      const sEl = document.getElementById('page-sub');
+      if (tEl && title) tEl.textContent = title;
+      if (sEl && sub) sEl.textContent = sub;
+    }
+  }
+
+  function shortPath(p) {
+    if (window.cleanlie && window.cleanlie.shortPath) return window.cleanlie.shortPath(p);
+    return p || '';
+  }
+
+  function setToggle(el, on) {
+    if (!el) return;
+    el.classList.toggle('on', !!on);
+    el.setAttribute('aria-checked', on ? 'true' : 'false');
+  }
+
+  function renderExcluded() {
+    const box = byId('excluded-list');
+    if (!box) return;
+    box.innerHTML = state.excluded.length
+      ? state.excluded.map((p, i) =>
+          '<span class="tag"><span class="mono">' + esc(shortPath(p)) + '</span>' +
+          '<button type="button" data-rm-excluded="' + i + '" aria-label="Hapus ' + esc(p) + '">×</button></span>'
+        ).join('')
+      : '<span class="tiny dim">Belum ada path dikecualikan.</span>';
+  }
+
+  function setWarning(text) {
+    warning = text || '';
+    const box = byId('settings-warning');
+    const txt = byId('settings-warning-text');
+    if (!box || !txt) return;
+    box.hidden = !warning;
+    txt.textContent = warning;
+  }
+
+  function fillSettings() {
+    const theme = byId('theme-select');
+    const lang = byId('lang-select');
+    if (theme) theme.value = state.theme;
+    if (lang) lang.value = state.language;
+    setToggle(byId('show-risky'), state.showRisky);
+    setToggle(byId('auto-safe'), state.autoSelectSafe);
+    const del = byId('delete-mode');
+    if (del) del.value = state.deleteMode;
+    const journal = byId('journal-target');
+    if (journal) journal.value = state.journalTarget;
+    const large = byId('large-mb');
+    if (large) large.value = String(Math.round((state.largeBytes || 0) / MIB));
+    const stale = byId('stale-days');
+    if (stale) stale.value = String(state.staleDays);
+    const jt = byId('nix-journal-target');
+    if (jt) {
+      const v = String(state.journalTarget || '500M').toUpperCase().replace(/\s+/g, '').replace(/B$/, '');
+      if ([...jt.options].some(o => o.value === v)) jt.value = v;
+    }
+    const roots = byId('artifact-roots');
+    if (roots) roots.value = (state.artifactRoots || []).map(shortPath).join(', ');
+    renderExcluded();
+  }
+
+  function applyView(v, message) {
+    view = v || {};
+    const c = view.config || DEFAULTS;
+    state = Object.assign({}, DEFAULTS, c);
+    window.__getSettings = () => state;
+    state.artifactRoots = Array.isArray(c.artifactRoots) ? c.artifactRoots.slice() : [];
+    state.excluded = Array.isArray(c.excluded) ? c.excluded.slice() : [];
+    setTheme(state.theme);
+    fillSettings();
+    applyLanguage(state.language);
+    const pathEl = byId('settings-path');
+    if (pathEl) pathEl.textContent = view.path || '~/.config/cleanlie/config.json';
+    const ver = byId('settings-version');
+    if (ver && window.__cleanlieVersion) ver.textContent = 'v' + window.__cleanlieVersion;
+    setWarning(view.warning ? t('settings.warning') + view.warning : '');
+    const status = byId('settings-status');
+    if (status) status.textContent = message || '';
+  }
+
+  function markDirty() {
+    const status = byId('settings-status');
+    if (status) status.textContent = t('settings.dirty');
+  }
+
+  function readForm() {
+    const num = (id, fallback) => {
+      const n = Number(byId(id) && byId(id).value);
+      return Number.isFinite(n) && n > 0 ? n : fallback;
+    };
+    return {
+      theme: (byId('theme-select') && byId('theme-select').value) || state.theme,
+      language: (byId('lang-select') && byId('lang-select').value) || state.language,
+      showRisky: !!(byId('show-risky') && byId('show-risky').classList.contains('on')),
+      deleteMode: (byId('delete-mode') && byId('delete-mode').value) || state.deleteMode,
+      autoSelectSafe: !!(byId('auto-safe') && byId('auto-safe').classList.contains('on')),
+      journalTarget: ((byId('journal-target') && byId('journal-target').value) || '500M').trim(),
+      largeBytes: Math.round(num('large-mb', 100) * MIB),
+      staleDays: Math.round(num('stale-days', 365)),
+      artifactRoots: ((byId('artifact-roots') && byId('artifact-roots').value) || '')
+        .split(',').map(x => x.trim()).filter(Boolean),
+      excluded: state.excluded.slice()
+    };
+  }
+
+  async function loadSettings() {
+    if (!bridge || !bridge.Settings) {
+      applyView({ config: DEFAULTS, path: '~/.config/cleanlie/config.json' }, t('settings.preview'));
+      return;
+    }
+    try {
+      applyView(await bridge.Settings());
+    } catch (e) {
+      applyView({ config: DEFAULTS, path: '~/.config/cleanlie/config.json' }, t('settings.loadFailed') + errMsg(e));
+    }
+    try {
+      const d = await bridge.Diagnostics();
+      window.__cleanlieVersion = d.version;
+      const ver = byId('settings-version');
+      if (ver) ver.textContent = 'v' + d.version;
+      const chip = byId('settings-polkit');
+      const detail = byId('settings-polkit-detail');
+      if (chip) {
+        chip.textContent = d.polkitAgent ? t('settings.polkitYes') : t('settings.polkitNo');
+        chip.className = 'chip ' + (d.polkitAgent ? 'safe' : 'warn');
+      }
+      if (detail) detail.textContent = d.polkitDetail || '';
+      document.querySelectorAll('[data-i18n="settings.polkit"]').forEach(el => el.textContent = t('settings.polkit'));
+    } catch (e) { /* diagnostik opsional */ }
+  }
+
+  async function saveSettings(reset) {
+    const btn = byId('settings-save');
+    const status = byId('settings-status');
+    if (!bridge || !(bridge.SaveSettings || bridge.ResetSettings)) {
+      if (status) status.textContent = t('settings.preview');
+      return;
+    }
+    if (btn) btn.disabled = true;
+    if (status) status.textContent = t('settings.saving');
+    try {
+      const next = reset ? await bridge.ResetSettings() : await bridge.SaveSettings(readForm());
+      applyView(next, t('settings.saved'));
+    } catch (e) {
+      if (status) status.textContent = t('settings.saveFailed') + errMsg(e);
+    } finally {
+      if (btn) btn.disabled = false;
+    }
+  }
+
+  function addExcluded() {
+    const input = byId('excluded-input');
+    if (!input) return;
+    const p = input.value.trim();
+    if (!p) return;
+    if (!state.excluded.includes(p)) state.excluded.push(p);
+    input.value = '';
+    renderExcluded();
+    markDirty();
+  }
+
+  function bind() {
+    if (!byId('view-settings')) return;
+    const theme = byId('theme-select');
+    if (theme) theme.addEventListener('change', markDirty);
+    const lang = byId('lang-select');
+    if (lang) lang.addEventListener('change', () => {
+      state.language = lang.value;
+      applyLanguage(lang.value);
+      markDirty();
+    });
+    ['show-risky', 'auto-safe'].forEach(id => {
+      const el = byId(id);
+      if (el) el.addEventListener('click', () => {
+        setToggle(el, !el.classList.contains('on'));
+        markDirty();
+      });
+    });
+    const del = byId('delete-mode');
+    if (del) del.addEventListener('change', markDirty);
+    ['journal-target', 'large-mb', 'stale-days', 'artifact-roots'].forEach(id => {
+      const el = byId(id);
+      if (el) el.addEventListener('input', markDirty);
+    });
+    const add = byId('excluded-add');
+    if (add) add.addEventListener('click', addExcluded);
+    const input = byId('excluded-input');
+    if (input) input.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); addExcluded(); } });
+    const list = byId('excluded-list');
+    if (list) list.addEventListener('click', e => {
+      const btn = e.target.closest('[data-rm-excluded]');
+      if (!btn) return;
+      state.excluded.splice(Number(btn.dataset.rmExcluded), 1);
+      renderExcluded();
+      markDirty();
+    });
+    const save = byId('settings-save');
+    if (save) save.addEventListener('click', () => saveSettings(false));
+    const reset = byId('settings-reset');
+    if (reset) reset.addEventListener('click', () => saveSettings(true));
+    const hist = byId('history-open');
+    if (hist) hist.addEventListener('click', () => {
+      if (bridge) bridge.OpenInFileManager('~/.local/state/cleanlie').catch(e => toast(t('settings.saveFailed') + errMsg(e)));
+    });
+    window.__themeChanged = mode => { state.theme = mode; markDirty(); };
+  }
+
+  window.addEventListener('DOMContentLoaded', () => {
+    bind();
+    loadSettings();
+  });
+  if (document.readyState !== 'loading') {
+    bind();
+    loadSettings();
+  }
+})();
+
 </script>
 
 </body>

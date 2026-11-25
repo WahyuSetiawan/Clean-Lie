@@ -125,6 +125,7 @@ func CollectGarbage(ctx context.Context, confirm string, opts Options) (ActionRe
 
 // VacuumJournal mengecilkan journal ke target (mis. "500M").
 func VacuumJournal(ctx context.Context, target string, opts Options) (ActionResult, error) {
+	target = normalizeVacuumTarget(target)
 	if !vacuumTargetRe.MatchString(target) {
 		return ActionResult{}, fmt.Errorf("target journal tidak valid: %q", target)
 	}
@@ -135,6 +136,13 @@ func VacuumJournal(ctx context.Context, target string, opts Options) (ActionResu
 		Timeout:  5 * time.Minute,
 	})
 	return fromPrivileged("vacuum-journal", pr), nil
+}
+
+func normalizeVacuumTarget(target string) string {
+	target = strings.ToUpper(strings.TrimSpace(target))
+	target = strings.ReplaceAll(target, " ", "")
+	target = strings.TrimSuffix(target, "B")
+	return target
 }
 
 // GCPreview mengembalikan perintah GC yang akan dijalankan.
