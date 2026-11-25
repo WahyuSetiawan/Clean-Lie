@@ -1,6 +1,6 @@
 # Cleanlie v1 — Plan (GUI cleaner untuk NixOS)
 
-> Status: **M0 selesai** (scaffold Wails + flake + shell UI) · berikutnya M1
+> Status: **M5 selesai** (analisis + dashboard) · berikutnya M6 polish/packaging
 > Target mesin: NixOS 26.11, Hyprland/Wayland, uid 1000 (`juragankoding`)
 
 ## 1. Ringkasan
@@ -352,6 +352,9 @@ func (a *App) ScanLarge(root string, minBytes int64) ([]FileItem, error)
 func (a *App) ScanDuplicates(root string) ([]DupGroup, error)
 func (a *App) ScanStale(root string, olderThanDays int) ([]FileItem, error)
 func (a *App) ScanArtifacts(root string) ([]ProjectItem, error)
+// Implementasi M5 menggabungkan empat fungsi di atas menjadi:
+// AnalysisTree(root, depth), AnalysisOverview(root), AnalysisDuplicates(root),
+// AnalysisRefresh(), AnalysisCancel(), AnalysisClean(req), DiskStatus().
 func (a *App) ScanAndroid() (AndroidReport, error)         // AVD + system images + NDK, read-only
 func (a *App) AndroidAction(req AndroidRequest) (CleanResult, error) // hapus/wipe AVD, uninstall image
 func (a *App) OpenInFileManager(path string) error
@@ -373,7 +376,7 @@ tanpa membuka window. Ini yang dipakai di integration test.
 | **M2** | `internal/clean` (gio trash + fallback, guard, protected, process check, verify freed, history) + layar **Bersihkan** (grup per tool, ⚠/⛔ badge) + dialog konfirmasi + eksekusi via perintah resmi | `npm cache clean`, `pnpm store prune`, `gradle caches`, `uv cache prune` jalan & ukuran turun; restore dari trash OK | 1.5 d |
 | **M3** | `internal/nix` (parse generasi, closure size, dry-run GC) + layar **Nix** + `privileged` (pkexec) untuk GC/hapus generasi system/vacuum journal | GC dry-run = angka nyata; hapus generasi jalan | 1 d |
 | **M4** | `internal/android` (parse AVD/ini, system-images, NDK, mtime pemakaian) + layar **Android** + aksi hapus/wipe AVD & uninstall image | hapus `test_devices` membebaskan ~5 G, `avdmanager list avd` konsisten | 0.5 d |
-| **M5** | `internal/analysis` (tree, large, dup, stale) + `artifacts.go` + 4 layar analisis + dashboard kartu & top-reclaim | semua layar terisi data nyata | 1 d |
+| **M5** ✅ | `internal/analysis` (tree, large, dup, stale) + `artifacts.go` + 4 layar analisis + dashboard kartu & top-reclaim | semua layar terisi data nyata | 1 d |
 | **M6** | Pengaturan + persistensi (default tanpa centang untuk item ⚠/⛔), laporan hasil, i18n ID/EN, tema, packaging flake (`package.cleanlie`), ikon, README | `nix build .#cleanlie` → binary + desktop item | 0.5 d |
 
 Total ~6 hari kerja. Urutan wajib M1 → M2 sebelum M3/M4/M5 (engine & planner dipakai bersama).

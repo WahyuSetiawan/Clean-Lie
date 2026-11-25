@@ -1,5 +1,5 @@
 APP      := cleanlie
-VERSION  ?= 0.4.0
+VERSION  ?= 0.5.0
 COMMIT   ?= $(shell git rev-parse --short HEAD 2>/dev/null || echo unknown)
 TAGS     := desktop,production,webkit2_41
 LDFLAGS  := -s -w -X main.version=$(VERSION) -X main.commit=$(COMMIT)
