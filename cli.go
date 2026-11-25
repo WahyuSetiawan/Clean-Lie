@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Juragan-Koding/cleanlie/internal/android"
 	"github.com/Juragan-Koding/cleanlie/internal/fsx"
 	"github.com/Juragan-Koding/cleanlie/internal/nix"
 	"github.com/Juragan-Koding/cleanlie/internal/privileged"
@@ -27,6 +28,7 @@ func runCLI(args []string) (handled bool, code int) {
 		switch a {
 		case "--dry-run", "-dry-run", "--json", "-json", "--scan-only", "-scan-only",
 			"--nix-status", "-nix-status", "--nix-dead", "-nix-dead",
+			"--android-status", "-android-status",
 			"--version", "-version", "--help", "-help", "-h":
 			headless = true
 		}
@@ -47,6 +49,7 @@ func runCLI(args []string) (handled bool, code int) {
 		showVer  = fs.Bool("version", false, "cetak versi")
 		nixStat  = fs.Bool("nix-status", false, "cetak status Nix sebagai JSON")
 		nixDead  = fs.Bool("nix-dead", false, "hitung dead paths Nix sebagai JSON")
+		andStat  = fs.Bool("android-status", false, "status AVD/SDK Android sebagai JSON")
 	)
 	fs.Usage = func() {
 		fmt.Fprintf(os.Stderr, `Cleanlie %s
@@ -58,6 +61,7 @@ Pemakaian:
   cleanlie --scan-only --path DIR  ukur satu direktori
   cleanlie --nix-status            status store, generasi, journal (JSON)
   cleanlie --nix-dead              dry-run GC: jumlah + ukuran dead paths
+  cleanlie --android-status        status AVD/SDK Android (JSON)
   cleanlie --version
 
 Opsi:
@@ -70,6 +74,11 @@ Opsi:
 	}
 	if *showVer {
 		fmt.Printf("cleanlie %s (%s)\n", version, commit)
+		return true, 0
+	}
+
+	if *andStat {
+		printJSON(android.ReadStatus(context.Background(), android.Options{}))
 		return true, 0
 	}
 

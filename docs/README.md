@@ -1,8 +1,9 @@
 # Cleanlie — Dokumentasi
 
-Cleaner GUI untuk NixOS (Go + Wails v2). Status: **M3 selesai** — engine scan, dry-run CLI,
-layar Bersihkan, eksekusi trash/permanen, audit log, serta layar Nix (generasi, dead paths,
-GC, vacuum journal, fallback pkexec/sudo) sudah jalan. Berikutnya M4 Android.
+Cleaner GUI untuk NixOS (Go + Wails v2). Status: **M4 selesai** — engine scan, dry-run CLI,
+layar Bersihkan, eksekusi trash/permanen, audit log, layar Nix (generasi, dead paths,
+GC, vacuum journal, fallback pkexec/sudo), serta layar Android (AVD/SDK, saran >90 hari,
+hapus/wipe/uninstall) sudah jalan. Berikutnya M5 Analisis + Dashboard.
 
 | Dokumen | Isi |
 |---|---|
@@ -14,6 +15,8 @@ GC, vacuum journal, fallback pkexec/sudo) sudah jalan. Berikutnya M4 Android.
 | [`implementation/m1-engine.md`](implementation/m1-engine.md) | Catatan implementasi engine: walker, katalog rule, CLI dry-run |
 | [`implementation/m2-clean.md`](implementation/m2-clean.md) | Guard, trash freedesktop, deteksi proses, eksekutor, audit, wiring UI |
 | [`implementation/m3-nix.md`](implementation/m3-nix.md) | Parser generasi, dead paths, privileged pkexec/sudo, layar Nix, gate `GC` |
+| [`implementation/m4-android.md`](implementation/m4-android.md) | Parser AVD/SDK, aksi avdmanager/sdkmanager/wipe, guard, layar Android |
+| [`../CHANGELOG.md`](../CHANGELOG.md) | Riwayat perubahan per milestone (M0–M4) |
 
 ## Buka wireframe
 
@@ -24,7 +27,7 @@ xdg-open docs/wireframe/index.html
 ## Urutan kerja
 
 M0 scaffold → M1 engine (`fsx` + `rules` + dry-run) → M2 hapus + layar Bersihkan →
-M3 Nix (generasi, GC, aksi root) → M4 Android → M5 analisis + dashboard → M6 packaging & verifikasi.
+M3 Nix (generasi, GC, aksi root) → M4 Android (AVD/SDK) → M5 analisis + dashboard → M6 packaging & verifikasi.
 
 ## Fakta mesin target (2026-11-22)
 

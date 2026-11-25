@@ -15,7 +15,8 @@
 | M1 engine | ✅ 2026-11-25 | `--dry-run --json` 150 item/9 grup; `scripts/verify-sizes.sh` 15 item terbesar delta ≤ 1%; 4 paket test hijau |
 | M2 hapus + Bersihkan | ✅ 2026-11-25 | `internal/clean` + layar Bersihkan nyata; UI smoke (jsdom) scan→gate→trash→hasil hijau; restore trash nyata lolos; 5 paket Go hijau |
 | M3 Nix | ✅ 2026-11-25 | `--nix-status` 129 generasi/47.208 path/70,4 GB NAR; `--nix-dead` **624 path** == `nix-collect-garbage --dry-run` **624**; 7 paket Go hijau; UI smoke gate `GC` hijau |
-| M4–M6 | ⏳ | — |
+| M4 Android | ✅ 2026-11-25 | `--android-status` 1 AVD/5,01 GiB + SDK 13,81 GiB/13 paket; 1 saran system image; 8 paket Go hijau; UI smoke saran→gate→hapus/uninstall→wipe hijau |
+| M5–M6 | ⏳ | — |
 
 ## Aturan main
 
@@ -238,6 +239,29 @@
 ### T4.4 — Layar Android
 - Tabel AVD, tabel system-image/NDK, saran otomatis (`>90 hari` & tidak dipakai), default tanpa centang.
 - **Acceptance:** "Hapus yang disarankan" hanya menyentuh item yang disarankan; konfirmasi eksplisit.
+
+### Catatan implementasi M4 (2026-11-25)
+
+- **AVD:** parser membaca `~/.android/avd/*.ini` + `config.ini`; **tidak** memakai
+  `avdmanager list avd` karena di mesin target perintah itu mengembalikan daftar kosong
+  meski `test_devices.avd` ada. `lastUsed` = mtime terbaru dari `emu-launch-params.txt`,
+  `snapshots/`, `userdata-qemu.img*`, `cache.img*`. Saran hanya bila usia >90 hari,
+  tidak berjalan, dan tidak error.
+- **SDK:** paket `system-images`, `ndk`, `build-tools`, `platforms`, `emulator`; system
+  image yang dipakai AVD ditandai `UsedBy` dan tidak disarankan. `cmdline-tools`, `cmake`,
+  `platform-tools` belum dihitung ke kartu SDK (di luar scope T4.2).
+- **Aksi:** `avdmanager delete avd -n`, `sdkmanager --sdk_root=... --uninstall`,
+  `emulator -avd ... -wipe-data -no-window -no-snapshot -quit-after-boot 180`.
+  Semua path tool absolut. Emulator hidup memblokir semua aksi. Fallback hapus folder +
+  `.ini` hanya untuk AVD yang tidak dikenali `avdmanager`, dan tetap divalidasi di
+  dalam `AVDHome`.
+- **Nyata:** AVD `test_devices` 5.381.066.752 byte (usia 1 hari → tidak disarankan);
+  SDK 14.833.647.616 byte; saran `system-images;android-35;google_apis;x86_64`
+  3.754.844.160 byte (154 hari, tidak dipakai); `--android-status` 137 ms.
+- **Gate:** fixture membuktikan hapus AVD menghilangkan folder + `.ini` dan `freed>0`;
+  AVD asli tidak dihapus saat pengembangan. UI default tanpa centang; gate checkbox
+  eksplisit untuk hapus dan wipe.
+- Detail: [`../implementation/m4-android.md`](../implementation/m4-android.md).
 
 ---
 

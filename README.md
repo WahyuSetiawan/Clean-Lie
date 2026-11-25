@@ -2,11 +2,13 @@
 
 Disk cleaner & analyzer GUI untuk NixOS. Go + Wails v2, UI statis (tanpa Node).
 
-> Status: **M3 — Nix**. Scan katalog, dry-run CLI, eksekusi hapus (trash/perm), audit,
-> serta layar Nix (store, generasi, dead paths, GC, vacuum journal, fallback pkexec/sudo)
-> sudah jalan. Berikutnya M4 Android. Lihat
-> [`docs/tasks/cleanlie-v1.md`](docs/tasks/cleanlie-v1.md) dan
-> [`docs/implementation/`](docs/implementation/) (m1, m2, m3).
+> Status: **M4 — Android**. Scan katalog, dry-run CLI, eksekusi hapus (trash/perm), audit,
+> layar Nix (store, generasi, dead paths, GC, vacuum journal, fallback pkexec/sudo), dan
+> layar Android (AVD/SDK, saran >90 hari, hapus/wipe/uninstall) sudah jalan. Berikutnya
+> M5 Analisis + Dashboard. Lihat
+> [`docs/tasks/cleanlie-v1.md`](docs/tasks/cleanlie-v1.md),
+> [`docs/implementation/`](docs/implementation/) (m1–m4), dan
+> [`CHANGELOG.md`](CHANGELOG.md).
 
 ## Kenapa
 
@@ -48,6 +50,7 @@ Wrapper sudah membawa PATH untuk `nix`, `journalctl`, `pkexec`, `gio`, `xdg-open
 ./bin/cleanlie --scan-only --path DIR # ukur satu direktori
 ./bin/cleanlie --nix-status           # store, generasi, journal (JSON; ~8 s)
 ./bin/cleanlie --nix-dead             # dry-run GC: jumlah + ukuran dead path (JSON; ~32 s)
+./bin/cleanlie --android-status       # AVD + paket SDK (JSON; ~0,14 s)
 ./bin/cleanlie --version
 
 make verify                           # bandingkan ukuran vs `du` (toleransi 2%)
@@ -56,11 +59,17 @@ make verify                           # bandingkan ukuran vs `du` (toleransi 2%)
 Semua mode di atas read-only. Eksekusi hapus ada di GUI (layar **Bersihkan**): pilih item,
 konfirmasi dialog, lalu `gio trash` (default) atau permanen dengan checkbox. Layar **Nix**
 menghapus generasi/GC/vacuum journal lewat pkexec bila ada polkit agent, atau menampilkan
-perintah `sudo` siap-copy bila tidak ada. Hasil menyimpan `freed` terukur dan audit log di
-`~/.local/state/cleanlie/history.jsonl`.
+perintah `sudo` siap-copy bila tidak ada. Layar **Android** menghapus AVD lewat
+`avdmanager`, paket SDK lewat `sdkmanager`, dan wipe data lewat `emulator -wipe-data`
+(headless), semuanya dengan gate checkbox dan tanpa mengirim path dari UI. Hasil menyimpan
+`freed` terukur dan audit log di `~/.local/state/cleanlie/history.jsonl`.
 
 Gate M3: `--nix-dead` dan `nix-collect-garbage --dry-run` harus memberi jumlah path yang sama
 (624 pada mesin target, 2026-11-25).
+
+Gate M4: hapus AVD lewat fixture harus menghilangkan folder `.avd` + `.ini` dan memberi
+`freed > 0`; pada mesin target `test_devices` 5,01 GiB terdeteksi, sedangkan saran otomatis
+hanya `system-images;android-35;google_apis;x86_64` (3,50 GiB, 154 hari, tidak dipakai).
 
 ## Test UI (opsional, tanpa build Node)
 
@@ -69,21 +78,24 @@ cd frontend/test && npm install && npm test
 ```
 
 jsdom menjalankan `frontend/dist/index.html` dengan binding Go tiruan: scan → pilih → gate
-permanen → trash → hasil → layar Nix → gate `GC` → hasil GC. Ini juga menjaga agar `window.go`
+permanen → trash → hasil → layar Nix → gate `GC` → hasil GC → layar Android → pilih saran →
+gate hapus/uninstall → hasil → wipe → hasil. Ini juga menjaga agar `window.go`
 (binding Wails) tidak tertimpa.
 
 ## Struktur
 
 ```
 main.go                 # wails.Run + embed frontend/dist + dispatch CLI
-cli.go                  # --dry-run / --scan-only / --json / --nix-status / --nix-dead
+cli.go                  # --dry-run / --scan-only / --json / --nix-status / --nix-dead / --android-status
 app.go                  # binding Go → window.go.main.App (Diagnostics)
 app_clean.go            # ScanJunk/CancelScan/Clean/History + event progress
 app_nix.go              # NixStatus/NixDeadPaths/NixPreview/aksi + cache 2 menit
+app_android.go          # AndroidStatus/Refresh/DeleteAVD/Uninstall/Wipe/Preview
 internal/fsx/           # walker paralel (blok disk, hardlink, one-fs) + usage/statfs
 internal/rules/         # katalog rule + Plan read-only (linux, devtools, android, nix)
 internal/clean/         # guard, trash freedesktop, deteksi proses, eksekutor, audit
 internal/nix/           # generasi, closure, dead paths, aksi GC/vacuum
+internal/android/       # parser AVD/SDK + aksi avdmanager/sdkmanager/wipe
 internal/privileged/    # pkexec dengan path absolut, fallback sudo siap-copy
 internal/tools/         # jalankan perintah resmi dengan preview + timeout
 frontend/dist/          # UI statis (sumber desain: docs/wireframe)
@@ -103,6 +115,9 @@ docs/plan|tasks|wireframe|implementation
    `~/.local/state/cleanlie/history.jsonl`.
 7. Aksi root memakai `pkexec` dengan path absolut bila ada polkit agent; tanpa agent,
    perintah `sudo` siap-copy ditampilkan dan tidak dieksekusi diam-diam.
+8. Aksi Android memakai perintah resmi (`avdmanager`, `sdkmanager`, `emulator`), menolak
+   saat emulator berjalan, dan memvalidasi path di dalam `~/.android/avd`/SDK. UI mengirim
+   nama AVD atau ID paket, bukan path.
 
 ## Catatan Wayland/Hyprland
 

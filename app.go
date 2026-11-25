@@ -9,6 +9,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/Juragan-Koding/cleanlie/internal/android"
 	"github.com/Juragan-Koding/cleanlie/internal/nix"
 	"github.com/Juragan-Koding/cleanlie/internal/rules"
 )
@@ -32,6 +33,10 @@ type App struct {
 	nixDeadMu   sync.Mutex
 	nixDead     *nix.Dead
 	nixDeadAt   time.Time
+
+	androidMu       sync.Mutex
+	androidStatus   *android.Status
+	androidStatusAt time.Time
 }
 
 func NewApp(version, commit string) *App {
