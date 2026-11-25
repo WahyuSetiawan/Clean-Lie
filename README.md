@@ -2,11 +2,11 @@
 
 Disk cleaner & analyzer GUI untuk NixOS. Go + Wails v2, UI statis (tanpa Node).
 
-> Status: **M2 — bersihkan**. Scan katalog, dry-run CLI, dan eksekusi hapus (trash/perm)
-> sudah jalan lewat layar Bersihkan. Aksi root (GC/generasi) masuk M3. Lihat
-> [`docs/tasks/cleanlie-v1.md`](docs/tasks/cleanlie-v1.md),
-> [`docs/implementation/m1-engine.md`](docs/implementation/m1-engine.md), dan
-> [`docs/implementation/m2-clean.md`](docs/implementation/m2-clean.md).
+> Status: **M3 — Nix**. Scan katalog, dry-run CLI, eksekusi hapus (trash/perm), audit,
+> serta layar Nix (store, generasi, dead paths, GC, vacuum journal, fallback pkexec/sudo)
+> sudah jalan. Berikutnya M4 Android. Lihat
+> [`docs/tasks/cleanlie-v1.md`](docs/tasks/cleanlie-v1.md) dan
+> [`docs/implementation/`](docs/implementation/) (m1, m2, m3).
 
 ## Kenapa
 
@@ -46,14 +46,21 @@ Wrapper sudah membawa PATH untuk `nix`, `journalctl`, `pkexec`, `gio`, `xdg-open
 ./bin/cleanlie --dry-run              # laporan teks, tidak menghapus
 ./bin/cleanlie --dry-run --json       # JSON untuk integrasi / verifikasi
 ./bin/cleanlie --scan-only --path DIR # ukur satu direktori
+./bin/cleanlie --nix-status           # store, generasi, journal (JSON; ~8 s)
+./bin/cleanlie --nix-dead             # dry-run GC: jumlah + ukuran dead path (JSON; ~32 s)
 ./bin/cleanlie --version
 
 make verify                           # bandingkan ukuran vs `du` (toleransi 2%)
 ```
 
 Semua mode di atas read-only. Eksekusi hapus ada di GUI (layar **Bersihkan**): pilih item,
-konfirmasi dialog, lalu `gio trash` (default) atau permanen dengan checkbox. Hasil menyimpan
-`freed` terukur dan audit log di `~/.local/state/cleanlie/history.jsonl`.
+konfirmasi dialog, lalu `gio trash` (default) atau permanen dengan checkbox. Layar **Nix**
+menghapus generasi/GC/vacuum journal lewat pkexec bila ada polkit agent, atau menampilkan
+perintah `sudo` siap-copy bila tidak ada. Hasil menyimpan `freed` terukur dan audit log di
+`~/.local/state/cleanlie/history.jsonl`.
+
+Gate M3: `--nix-dead` dan `nix-collect-garbage --dry-run` harus memberi jumlah path yang sama
+(624 pada mesin target, 2026-11-25).
 
 ## Test UI (opsional, tanpa build Node)
 
@@ -62,18 +69,22 @@ cd frontend/test && npm install && npm test
 ```
 
 jsdom menjalankan `frontend/dist/index.html` dengan binding Go tiruan: scan → pilih → gate
-permanen → trash → hasil. Ini juga menjaga agar `window.go` (binding Wails) tidak tertimpa.
+permanen → trash → hasil → layar Nix → gate `GC` → hasil GC. Ini juga menjaga agar `window.go`
+(binding Wails) tidak tertimpa.
 
 ## Struktur
 
 ```
 main.go                 # wails.Run + embed frontend/dist + dispatch CLI
-cli.go                  # --dry-run / --scan-only / --json
+cli.go                  # --dry-run / --scan-only / --json / --nix-status / --nix-dead
 app.go                  # binding Go → window.go.main.App (Diagnostics)
 app_clean.go            # ScanJunk/CancelScan/Clean/History + event progress
+app_nix.go              # NixStatus/NixDeadPaths/NixPreview/aksi + cache 2 menit
 internal/fsx/           # walker paralel (blok disk, hardlink, one-fs) + usage/statfs
 internal/rules/         # katalog rule + Plan read-only (linux, devtools, android, nix)
 internal/clean/         # guard, trash freedesktop, deteksi proses, eksekutor, audit
+internal/nix/           # generasi, closure, dead paths, aksi GC/vacuum
+internal/privileged/    # pkexec dengan path absolut, fallback sudo siap-copy
 internal/tools/         # jalankan perintah resmi dengan preview + timeout
 frontend/dist/          # UI statis (sumber desain: docs/wireframe)
 frontend/test/          # smoke test jsdom (opsional, bukan bagian build)
@@ -87,9 +98,11 @@ docs/plan|tasks|wireframe|implementation
 2. Hapus default ke **trash** (`gio trash`), `permanent` harus eksplisit.
 3. Whitelist root + protected list; item di luar aturan ditolak.
 4. Cache tool yang prosesnya berjalan di-skip, bukan dipaksa.
-5. GC & hapus generasi Nix wajib konfirmasi ketik `GC`.
+5. GC & hapus generasi Nix wajib konfirmasi ketik `GC`; generasi current tidak pernah bisa dipilih.
 6. `freed` diukur ulang (before − after), bukan diasumsikan; audit log di
    `~/.local/state/cleanlie/history.jsonl`.
+7. Aksi root memakai `pkexec` dengan path absolut bila ada polkit agent; tanpa agent,
+   perintah `sudo` siap-copy ditampilkan dan tidak dieksekusi diam-diam.
 
 ## Catatan Wayland/Hyprland
 

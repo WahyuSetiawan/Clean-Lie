@@ -11,6 +11,8 @@ import (
 	"time"
 
 	"github.com/Juragan-Koding/cleanlie/internal/fsx"
+	"github.com/Juragan-Koding/cleanlie/internal/nix"
+	"github.com/Juragan-Koding/cleanlie/internal/privileged"
 	"github.com/Juragan-Koding/cleanlie/internal/rules"
 )
 
@@ -24,6 +26,7 @@ func runCLI(args []string) (handled bool, code int) {
 	for _, a := range args {
 		switch a {
 		case "--dry-run", "-dry-run", "--json", "-json", "--scan-only", "-scan-only",
+			"--nix-status", "-nix-status", "--nix-dead", "-nix-dead",
 			"--version", "-version", "--help", "-help", "-h":
 			headless = true
 		}
@@ -42,6 +45,8 @@ func runCLI(args []string) (handled bool, code int) {
 		group    = fs.String("group", "", "batasi ke satu group (mis. dev.node)")
 		workers  = fs.Int("workers", 0, "jumlah worker pemindaian (0 = otomatis)")
 		showVer  = fs.Bool("version", false, "cetak versi")
+		nixStat  = fs.Bool("nix-status", false, "cetak status Nix sebagai JSON")
+		nixDead  = fs.Bool("nix-dead", false, "hitung dead paths Nix sebagai JSON")
 	)
 	fs.Usage = func() {
 		fmt.Fprintf(os.Stderr, `Cleanlie %s
@@ -51,6 +56,8 @@ Pemakaian:
   cleanlie --dry-run               pindai dan cetak rencana
   cleanlie --dry-run --json        rencana dalam JSON
   cleanlie --scan-only --path DIR  ukur satu direktori
+  cleanlie --nix-status            status store, generasi, journal (JSON)
+  cleanlie --nix-dead              dry-run GC: jumlah + ukuran dead paths
   cleanlie --version
 
 Opsi:
@@ -63,6 +70,25 @@ Opsi:
 	}
 	if *showVer {
 		fmt.Printf("cleanlie %s (%s)\n", version, commit)
+		return true, 0
+	}
+
+	if *nixStat || *nixDead {
+		if *nixDead {
+			d := nix.DeadPaths(context.Background(), nix.Options{})
+			printJSON(d)
+			if d.Error != "" {
+				return true, 1
+			}
+			return true, 0
+		}
+		st := nix.ReadStatus(context.Background(), nix.Options{})
+		st.Agent = privileged.DetectAgent()
+		st.GCCommand = nix.GCPreview(st.Agent)
+		printJSON(st)
+		if len(st.Errors) > 0 {
+			return true, 1
+		}
 		return true, 0
 	}
 
@@ -179,4 +205,12 @@ func truncate(s string, n int) string {
 		return s[:n]
 	}
 	return s[:n-1] + "…"
+}
+
+func printJSON(v any) {
+	enc := json.NewEncoder(os.Stdout)
+	enc.SetIndent("", "  ")
+	if err := enc.Encode(v); err != nil {
+		fmt.Fprintln(os.Stderr, "cleanlie:", err)
+	}
 }
