@@ -4,6 +4,17 @@ Semua perubahan penting pada Cleanlie. Format mengikuti
 [Keep a Changelog](https://keepachangelog.com/id/1.1.0/) dan versi mengikuti
 [Semantic Versioning](https://semver.org/lang/id/).
 
+## [Unreleased]
+
+### Diubah — UI dipecah per modul
+
+- `frontend/dist/index.html` (150 KB) dipecah menjadi shell markup + `dist/ui/app.css` dan script per
+  modul: `demo`, `diagnostics`, `core`, `cleanup`, `nix`, `android`, `screens`, `analysis`, `settings`.
+  Tetap statis, tanpa bundler; urutan `<script>` = urutan dependensi.
+- `frontend/test/ui-smoke.mjs` meng-inline aset `ui/*` sebelum dijalankan di jsdom.
+- Test baru `frontend_embed_test.go` memastikan setiap `src`/`href` di `index.html` benar-benar
+  ter-embed (mencegah UI blank bila aset lupa di-`git add` sebelum `nix build`).
+
 ## [0.6.0] — 2026-11-25
 
 ### Ditambahkan — M6 Settings + packaging

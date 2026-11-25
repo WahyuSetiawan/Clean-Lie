@@ -8,7 +8,13 @@ import assert from 'node:assert/strict';
 import { JSDOM } from 'jsdom';
 
 const here = dirname(fileURLToPath(import.meta.url));
-const html = fs.readFileSync(join(here, '..', 'dist', 'index.html'), 'utf8');
+const dist = join(here, '..', 'dist');
+
+// jsdom tidak memuat aset relatif tanpa ResourceLoader; inline dulu agar tetap satu dokumen.
+const html = fs
+  .readFileSync(join(dist, 'index.html'), 'utf8')
+  .replace(/<link[^>]+href="([^"]+\.css)"[^>]*>/g, (_, f) => `<style>${fs.readFileSync(join(dist, f), 'utf8')}</style>`)
+  .replace(/<script src="([^"]+)"><\/script>/g, (_, f) => `<script>${fs.readFileSync(join(dist, f), 'utf8')}</script>`);
 
 const mkItem = (id, group, path, bytes, risk, extra) => ({
   id, group, root: path, whole: true, label: path.split('/').pop(), path,
