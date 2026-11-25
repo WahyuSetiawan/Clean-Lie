@@ -3,6 +3,7 @@ package main
 import (
 	"embed"
 	"log"
+	"os"
 
 	"github.com/wailsapp/wails/v2"
 	"github.com/wailsapp/wails/v2/pkg/options"
@@ -19,6 +20,10 @@ var (
 )
 
 func main() {
+	if handled, code := runCLI(os.Args[1:]); handled {
+		os.Exit(code)
+	}
+
 	app := NewApp(version, commit)
 
 	err := wails.Run(&options.App{

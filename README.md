@@ -2,8 +2,9 @@
 
 Disk cleaner & analyzer GUI untuk NixOS. Go + Wails v2, UI statis (tanpa Node).
 
-> Status: **M0 — scaffold**. Window, navigasi, dan binding diagnostik sudah jalan.
-> Engine scan/clean baru masuk M1–M2. Lihat [`docs/tasks/cleanlie-v1.md`](docs/tasks/cleanlie-v1.md).
+> Status: **M1 — engine**. Window, navigasi, katalog rule, dan `--dry-run --json`
+> sudah jalan. Eksekusi hapus masuk M2. Lihat [`docs/tasks/cleanlie-v1.md`](docs/tasks/cleanlie-v1.md)
+> dan [`docs/implementation/m1-engine.md`](docs/implementation/m1-engine.md).
 
 ## Kenapa
 
@@ -37,14 +38,32 @@ nix build .#cleanlie
 Wrapper sudah membawa PATH untuk `nix`, `journalctl`, `pkexec`, `gio`, `xdg-open`
 (karena `pkexec` membuang environment sesi).
 
+## Mode headless (tanpa GUI)
+
+```sh
+./bin/cleanlie --dry-run              # laporan teks, tidak menghapus
+./bin/cleanlie --dry-run --json       # JSON untuk integrasi / verifikasi
+./bin/cleanlie --scan-only --path DIR # ukur satu direktori
+./bin/cleanlie --version
+
+make verify                           # bandingkan ukuran vs `du` (toleransi 2%)
+```
+
+Semua mode di atas read-only. Perintah resmi tool (mis. `npm cache clean --force`)
+muncul di laporan sebagai saran; eksekusinya baru ada di M2.
+
 ## Struktur
 
 ```
-main.go                 # wails.Run + embed frontend/dist
-app.go                  # binding Go → window.go.main.App (M0: Diagnostics)
+main.go                 # wails.Run + embed frontend/dist + dispatch CLI
+cli.go                  # --dry-run / --scan-only / --json
+app.go                  # binding Go → window.go.main.App
+internal/fsx/           # walker paralel (blok disk, hardlink, one-fs) + usage/statfs
+internal/rules/         # katalog rule + Plan read-only (linux, devtools, android, nix)
+internal/tools/         # jalankan perintah resmi dengan preview + timeout
 frontend/dist/          # UI statis (sumber desain: docs/wireframe)
 flake.nix               # devShell + package
-docs/plan|tasks|wireframe
+docs/plan|tasks|wireframe|implementation
 ```
 
 ## Prinsip keamanan (v1)

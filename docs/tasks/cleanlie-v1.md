@@ -12,7 +12,7 @@
 | Milestone | Status | Bukti |
 |---|---|---|
 | **M0** scaffold | ✅ 2026-11-25 | `nix develop -c make build` → `bin/cleanlie` 8.8 MB; `nix build .#cleanlie` sukses; window jalan 6 s tanpa crash; binding `Diagnostics()` tampil di layar Pengaturan |
-| M1 engine | ⏳ berikutnya | — |
+| M1 engine | ✅ 2026-11-25 | `--dry-run --json` 150 item/9 grup; `scripts/verify-sizes.sh` 15 item terbesar delta ≤ 1%; 4 paket test hijau |
 | M2 hapus + Bersihkan | ⏳ | — |
 | M3–M6 | ⏳ | — |
 
@@ -108,6 +108,19 @@
 ### T1.9 — Cross-check vs `du`
 - `scripts/verify-sizes.sh`: bandingkan total per rule vs `du -sk`, toleransi 1%.
 - **Acceptance:** laporan hijau untuk 10 rule terbesar (`_cacache`, gradle, pnpm, opencode, qmd, phpactor, uv, pub-cache, playwright, cargo).
+
+### Catatan implementasi M1 (2026-11-25)
+
+- **Hasil:** `--dry-run` menemukan 9 grup / 150 item / 88.4 GiB dalam 3,5 s. Temuan terbesar di luar dugaan: `/var/tmp/avd` **17 GiB** (sisa emulator), disusul `_cacache` 7,2 GiB dan `test_devices.avd` 5,1 GiB.
+- **Verifikasi:** `scripts/verify-sizes.sh` membandingkan 15 item > 100 MiB; delta 0,00% untuk 14 item, journal 0,99% (perbedaan pembulatan `journalctl`).
+- **Test:** `go test -tags desktop,production,webkit2_41 ./...` → 4 paket hijau (fsx, rules, tools, main/CLI).
+- **Keputusan teknis:**
+  - `Plan` membuang item yang merupakan **induk** dari item lain (`dropAncestors`) agar `~/.cache/ms-playwright` tidak dobel dengan `chromium-1248`.
+  - Rule dengan `Priority` lebih tinggi menang saat path sama; ini yang membuat rule dev eksplisit mengalahkan rule generik `~/.cache/*`.
+  - Journal memakai probe `journalctl --disk-usage` (fallback walk), bukan `du`.
+  - `Rule.Probe != nil` menandai item tanpa path yang bisa di-trash; `fallbackDelete=false`.
+- **Deviasi dari rencana:** T1.3 memakai `Plan(ctx, []Rule, opts)` (bukan `Plan(ctx)`) supaya CLI bisa memindai satu direktori dan M4 bisa memfilter katalog. `Roots` menjadi `Path` + `Whole`/`Depth`.
+- **Belum ada:** deteksi proses berjalan (M2), eksekusi perintah (M2), cache browser dipisah per profile (M2).
 
 ---
 
