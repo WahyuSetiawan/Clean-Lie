@@ -15,7 +15,7 @@ var assets embed.FS
 
 // Diisi lewat -ldflags saat build (lihat Makefile / flake.nix).
 var (
-	version = "0.6.0-dev"
+	version = "0.7.0-dev"
 	commit  = "unknown"
 )
 
@@ -23,6 +23,11 @@ func main() {
 	if handled, code := runCLI(os.Args[1:]); handled {
 		os.Exit(code)
 	}
+
+	// GTK3/WebKitGTK di Wayland (mis. Hyprland) bisa melaporkan viewport
+	// negatif setelah window di-tile/resize, sehingga UI bertumpuk. Pakai
+	// XWayland kecuali pengguna memilih backend lain lewat GDK_BACKEND.
+	preferXWayland()
 
 	app := NewApp(version, commit)
 
@@ -43,5 +48,13 @@ func main() {
 	})
 	if err != nil {
 		log.Fatal("cleanlie: ", err)
+	}
+}
+
+// preferXWayland menghindari bug viewport WebKitGTK di Wayland tanpa
+// menimpa pilihan pengguna yang sudah menetapkan GDK_BACKEND.
+func preferXWayland() {
+	if os.Getenv("GDK_BACKEND") == "" && os.Getenv("WAYLAND_DISPLAY") != "" && os.Getenv("DISPLAY") != "" {
+		_ = os.Setenv("GDK_BACKEND", "x11")
 	}
 }
