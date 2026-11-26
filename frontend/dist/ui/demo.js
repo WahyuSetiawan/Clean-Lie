@@ -116,6 +116,7 @@ const META = {
   cleanup:['Bersihkan','Pilih item per kategori · default hanya item aman'],
   nix:['Nix','Store, generasi, dan garbage collection'],
   android:['Android','AVD, system image, dan NDK'],
+  direnv:['direnv','Cari folder .direnv yang berat dan bisa dibuat ulang'],
   analysis:['Analisis','Disk usage, file besar, duplikat, file lama, artefak build'],
   settings:['Pengaturan','Preferensi pembersihan dan tampilan'],
 };

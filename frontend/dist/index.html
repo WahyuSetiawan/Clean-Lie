@@ -33,6 +33,10 @@
         <span class="ico"><svg viewBox="0 0 24 24"><rect x="6" y="8" width="12" height="11" rx="2"/><path d="M9 8V5M15 8V5M9 19v2M15 19v2M3 11v5M21 11v5"/></svg></span>
         <span>Android</span><span class="count" id="nav-android-count">—</span>
       </button>
+      <button data-view="direnv">
+        <span class="ico"><svg viewBox="0 0 24 24"><path d="M3 7h6l2 2h10v10H3zM8 14l2 2 4-4"/></svg></span>
+        <span data-i18n="nav.direnv">direnv</span><span class="count" id="nav-direnv-count">—</span>
+      </button>
       <div class="sep"></div>
       <button data-view="analysis">
         <span class="ico"><svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg></span>
@@ -48,7 +52,7 @@
       <div class="swatches">
         <i style="background:var(--accent)"></i><i style="background:var(--accent-2)"></i><i style="background:var(--warn)"></i><i style="background:var(--danger)"></i>
       </div>
-      <div class="side-note" data-i18n="side.note">M6 · settings, tema, dan i18n</div>
+      <div class="side-note" data-i18n="side.note">M7 · direnv scan</div>
     </div>
   </aside>
 
@@ -60,7 +64,7 @@
         <div class="sub" id="page-sub">Ringkasan disk dan reclaimable space</div>
       </div>
       <div class="spacer"></div>
-      <span class="badge-wire" id="app-badge">M6</span>
+      <span class="badge-wire" id="app-badge">M7</span>
       <button class="icon-btn" id="theme-btn" title="Ganti tema">
         <svg viewBox="0 0 24 24"><path d="M21 12.8A8.5 8.5 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
       </button>
@@ -406,6 +410,49 @@
         </div>
       </section>
 
+      <!-- ============ DIRENV ============ -->
+      <section class="view" id="view-direnv">
+        <div class="grid g2">
+          <div class="card">
+            <div class="row"><h3 data-i18n="direnv.roots">Folder proyek</h3><div class="spacer"></div><span class="tiny dim" data-i18n="direnv.rootsHint">maks 32</span></div>
+            <p class="small muted" style="margin:9px 0 12px" data-i18n="direnv.rootsNote">Klik Pilih folder… atau ketik path. Cleanlie mencari folder .direnv di dalamnya; nix-direnv menyimpan profil yang bisa besar.</p>
+            <div class="row" style="gap:8px;flex-wrap:wrap">
+              <button class="btn primary" id="direnv-root-pick" data-i18n="direnv.pick">Pilih folder…</button>
+              <input type="text" id="direnv-root-input" placeholder="atau ketik path, mis. ~/Projects" style="flex:1;min-width:180px" aria-label="Folder untuk scan direnv">
+              <button class="btn ghost" id="direnv-root-add" data-i18n="direnv.add">+ Tambah</button>
+            </div>
+            <div id="direnv-roots" class="row" style="flex-wrap:wrap;gap:6px;margin-top:10px"></div>
+            <div class="sep"></div>
+            <div class="row" style="gap:8px;flex-wrap:wrap">
+              <button class="btn primary" id="direnv-scan" data-i18n="direnv.scan">Scan direnv</button>
+              <button class="btn ghost" id="direnv-cancel" hidden data-i18n="direnv.cancel">Batal</button>
+              <button class="btn ghost" id="direnv-refresh" data-i18n="direnv.refresh">Scan ulang</button>
+              <span class="small muted" id="direnv-status" role="status"></span>
+            </div>
+          </div>
+          <div class="card">
+            <h3 data-i18n="direnv.summary">Ringkasan</h3>
+            <div class="big" id="direnv-total">—</div>
+            <div class="hint" id="direnv-summary">Belum ada hasil scan.</div>
+            <div class="hint dim" id="direnv-missing" hidden></div>
+            <div class="sep"></div>
+            <div class="small muted" data-i18n="direnv.cacheNote">Cache global ~/.cache/direnv dan ~/.cache/nix-direnv ikut diukur. Isi nix-direnv sebagian besar symlink; ruang nyata dibebaskan oleh GC Nix.</div>
+          </div>
+        </div>
+        <div class="card" style="padding:0;overflow:hidden;margin-top:14px">
+          <div class="row" style="padding:13px 16px;border-bottom:1px solid var(--line)">
+            <div><div style="font-weight:650" data-i18n="direnv.table">Folder .direnv</div><div class="tiny dim" data-i18n="direnv.tableHint">Ukuran allocated, symlink tidak diikuti</div></div>
+            <div class="spacer"></div>
+            <span class="small dim" id="direnv-selected">0 dipilih</span>
+            <button class="btn ghost" id="direnv-select" data-i18n="direnv.selectSafe">Pilih aman</button>
+            <button class="btn" id="direnv-trash" disabled data-i18n="direnv.trash">Pindah ke trash</button>
+          </div>
+          <table>
+            <thead><tr><th style="width:34px"></th><th data-i18n="direnv.project">Proyek</th><th data-i18n="direnv.location">Lokasi</th><th class="r" data-i18n="direnv.size">Ukuran</th><th data-i18n="direnv.changed">Terakhir</th><th data-i18n="direnv.state">Status</th></tr></thead>
+            <tbody id="direnv-body"><tr><td colspan="6" class="tiny dim" style="padding:18px 16px">Tambahkan folder lalu jalankan scan.</td></tr></tbody>
+          </table>
+        </div>
+      </section>
       <!-- ============ SETTINGS ============ -->
       <section class="view" id="view-settings">
         <div id="settings-warning" class="callout" style="margin-bottom:14px" hidden>
@@ -561,6 +608,7 @@
 <script src="ui/screens.js"></script>
 <script src="ui/analysis.js"></script>
 <script src="ui/settings.js"></script>
+<script src="ui/direnv.js"></script>
 
 </body>
 </html>

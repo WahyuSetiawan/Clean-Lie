@@ -11,7 +11,9 @@ import (
 
 	"github.com/Juragan-Koding/cleanlie/internal/analysis"
 	"github.com/Juragan-Koding/cleanlie/internal/android"
+	"github.com/Juragan-Koding/cleanlie/internal/clean"
 	"github.com/Juragan-Koding/cleanlie/internal/config"
+	"github.com/Juragan-Koding/cleanlie/internal/direnv"
 	"github.com/Juragan-Koding/cleanlie/internal/nix"
 	"github.com/Juragan-Koding/cleanlie/internal/rules"
 )
@@ -54,6 +56,12 @@ type App struct {
 	analysisDups        map[string]analysis.Duplicates
 	analysisDupsAt      map[string]time.Time
 	analysisTargets     map[string]analysisTarget
+	direnvMu            sync.Mutex
+	direnvCancel        context.CancelFunc
+	direnvReport        *direnv.Report
+	direnvKey           string
+	direnvAt            time.Time
+	direnvTargets       map[string]clean.Target
 }
 
 func NewApp(version, commit string) *App {

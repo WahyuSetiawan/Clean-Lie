@@ -4,7 +4,23 @@ Semua perubahan penting pada Cleanlie. Format mengikuti
 [Keep a Changelog](https://keepachangelog.com/id/1.1.0/) dan versi mengikuti
 [Semantic Versioning](https://semver.org/lang/id/).
 
-## [Unreleased]
+## [0.7.0] — 2026-11-26
+
+### Ditambahkan — M7 direnv
+- `internal/direnv`: pemindai read-only folder `.direnv` per proyek. Pengguna
+  menambahkan folder proyek; Cleanlie berhenti di `.direnv`, mengukur allocated
+  (symlink tidak diikuti), dan melewati `.git`/`node_modules`/artefak build.
+  Cache global `~/.cache/direnv` dan `~/.cache/nix-direnv` ikut diukur sebagai
+  `kind=cache`.
+- Config baru `direnvRoots` (maks 32, dinormalisasi `~`/absolut/clean).
+- Binding `DirenvScan`, `DirenvCancel`, `DirenvRefresh`, `DirenvAddRoot`,
+  `DirenvRemoveRoot`, `DirenvClean`; cache scan 60 detik dan UI hanya mengirim ID.
+- Layar **direnv**: pilih folder lewat dialog native (atau ketik path), scan/batal,
+  ringkasan ukuran, daftar proyek + cache, pilih aman (lewati proyek aktif < 7 hari),
+  pindah ke trash lewat guard `clean.Execute` yang sama.
+- CLI `--direnv-scan` (JSON; `--path DIR` atau root dari config).
+- Test `internal/direnv`, `app_direnv_test.go`, dan alur UI smoke
+  tambah→scan→pilih→trash.
 
 ### Diubah — UI dipecah per modul
 
@@ -14,6 +30,13 @@ Semua perubahan penting pada Cleanlie. Format mengikuti
 - `frontend/test/ui-smoke.mjs` meng-inline aset `ui/*` sebelum dijalankan di jsdom.
 - Test baru `frontend_embed_test.go` memastikan setiap `src`/`href` di `index.html` benar-benar
   ter-embed (mencegah UI blank bila aset lupa di-`git add` sebelum `nix build`).
+- Versi aplikasi menjadi **0.7.0** (`Makefile`, `flake.nix`).
+
+### Diperbaiki — viewport Wayland
+- Di Wayland (Hyprland), GTK3/WebKitGTK bisa melaporkan `innerWidth`/`innerHeight`
+  negatif setelah window di-tile/resize; UI jadi bertumpuk dan sisa window hitam.
+  Binary sekarang otomatis memakai XWayland (`GDK_BACKEND=x11`) bila `WAYLAND_DISPLAY`
+  dan `DISPLAY` tersedia. Set `GDK_BACKEND=wayland` untuk memaksa Wayland.
 
 ## [0.6.0] — 2026-11-25
 

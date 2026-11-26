@@ -8,10 +8,11 @@
   const STRINGS = {
     id: {
       'brand.tagline': 'cleaner untuk NixOS',
-      'side.note': 'M6 · settings, tema, dan i18n',
+      'side.note': 'M7 · direnv scan',
       'nav.dashboard': 'Dashboard',
       'nav.cleanup': 'Bersihkan',
       'nav.analysis': 'Analisis',
+      'nav.direnv': 'direnv',
       'nav.settings': 'Pengaturan',
       'page.dashboard.title': 'Dashboard',
       'page.dashboard.sub': 'Ringkasan disk dan reclaimable space',
@@ -23,6 +24,27 @@
       'page.android.sub': 'AVD, system image, dan NDK',
       'page.analysis.title': 'Analisis',
       'page.analysis.sub': 'Disk usage, file besar, duplikat, file lama, artefak build',
+      'page.direnv.title': 'direnv',
+      'page.direnv.sub': 'Cari folder .direnv yang berat dan bisa dibuat ulang',
+      'direnv.roots': 'Folder proyek',
+      'direnv.rootsHint': 'maks 32',
+      'direnv.rootsNote': 'Klik Pilih folder… atau ketik path. Cleanlie mencari folder .direnv di dalamnya; nix-direnv menyimpan profil yang bisa besar.',
+      'direnv.pick': 'Pilih folder…',
+      'direnv.add': '+ Tambah',
+      'direnv.scan': 'Scan direnv',
+      'direnv.cancel': 'Batal',
+      'direnv.refresh': 'Scan ulang',
+      'direnv.summary': 'Ringkasan',
+      'direnv.cacheNote': 'Cache global ~/.cache/direnv dan ~/.cache/nix-direnv ikut diukur. Isi nix-direnv sebagian besar symlink; ruang nyata dibebaskan oleh GC Nix.',
+      'direnv.table': 'Folder .direnv',
+      'direnv.tableHint': 'Ukuran allocated, symlink tidak diikuti',
+      'direnv.selectSafe': 'Pilih aman',
+      'direnv.trash': 'Pindah ke trash',
+      'direnv.project': 'Proyek',
+      'direnv.location': 'Lokasi',
+      'direnv.size': 'Ukuran',
+      'direnv.changed': 'Terakhir',
+      'direnv.state': 'Status',
       'page.settings.title': 'Pengaturan',
       'page.settings.sub': 'Preferensi pembersihan dan tampilan',
       'theme.system': 'Sistem',
@@ -131,10 +153,11 @@
     },
     en: {
       'brand.tagline': 'cleaner for NixOS',
-      'side.note': 'M6 · settings, theme, and i18n',
+      'side.note': 'M7 · direnv scan',
       'nav.dashboard': 'Dashboard',
       'nav.cleanup': 'Clean',
       'nav.analysis': 'Analysis',
+      'nav.direnv': 'direnv',
       'nav.settings': 'Settings',
       'page.dashboard.title': 'Dashboard',
       'page.dashboard.sub': 'Disk overview and reclaimable space',
@@ -146,6 +169,27 @@
       'page.android.sub': 'AVDs, system images, and NDK',
       'page.analysis.title': 'Analysis',
       'page.analysis.sub': 'Disk usage, large files, duplicates, stale files, build artifacts',
+      'page.direnv.title': 'direnv',
+      'page.direnv.sub': 'Find heavy .direnv folders that can be regenerated',
+      'direnv.roots': 'Project folders',
+      'direnv.rootsHint': 'max 32',
+      'direnv.rootsNote': 'Click Choose folder… or type a path. Cleanlie looks for .direnv inside; nix-direnv profiles can be large.',
+      'direnv.pick': 'Choose folder…',
+      'direnv.add': '+ Add',
+      'direnv.scan': 'Scan direnv',
+      'direnv.cancel': 'Cancel',
+      'direnv.refresh': 'Scan again',
+      'direnv.summary': 'Summary',
+      'direnv.cacheNote': 'Global caches ~/.cache/direnv and ~/.cache/nix-direnv are measured too. nix-direnv is mostly symlinks; the real space is freed by Nix GC.',
+      'direnv.table': '.direnv folders',
+      'direnv.tableHint': 'Allocated size, symlinks not followed',
+      'direnv.selectSafe': 'Select safe',
+      'direnv.trash': 'Move to trash',
+      'direnv.project': 'Project',
+      'direnv.location': 'Location',
+      'direnv.size': 'Size',
+      'direnv.changed': 'Last changed',
+      'direnv.state': 'Status',
       'page.settings.title': 'Settings',
       'page.settings.sub': 'Cleaning and appearance preferences',
       'theme.system': 'System',
@@ -264,7 +308,7 @@
   const DEFAULTS = {
     theme: 'system', language: 'id', showRisky: false, deleteMode: 'trash',
     autoSelectSafe: true, showRisky: true, journalTarget: '500M', largeBytes: 100 * MIB,
-    staleDays: 365, artifactRoots: [], excluded: []
+    staleDays: 365, artifactRoots: [], direnvRoots: [], excluded: []
   };
   let state = Object.assign({}, DEFAULTS);
   let view = null;
@@ -357,6 +401,7 @@
     state = Object.assign({}, DEFAULTS, c);
     window.__getSettings = () => state;
     state.artifactRoots = Array.isArray(c.artifactRoots) ? c.artifactRoots.slice() : [];
+    state.direnvRoots = Array.isArray(c.direnvRoots) ? c.direnvRoots.slice() : [];
     state.excluded = Array.isArray(c.excluded) ? c.excluded.slice() : [];
     setTheme(state.theme);
     fillSettings();
@@ -391,6 +436,7 @@
       staleDays: Math.round(num('stale-days', 365)),
       artifactRoots: ((byId('artifact-roots') && byId('artifact-roots').value) || '')
         .split(',').map(x => x.trim()).filter(Boolean),
+      direnvRoots: (state.direnvRoots || []).slice(),
       excluded: state.excluded.slice()
     };
   }

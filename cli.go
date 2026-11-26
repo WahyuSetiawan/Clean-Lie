@@ -12,6 +12,8 @@ import (
 
 	"github.com/Juragan-Koding/cleanlie/internal/analysis"
 	"github.com/Juragan-Koding/cleanlie/internal/android"
+	"github.com/Juragan-Koding/cleanlie/internal/config"
+	"github.com/Juragan-Koding/cleanlie/internal/direnv"
 	"github.com/Juragan-Koding/cleanlie/internal/fsx"
 	"github.com/Juragan-Koding/cleanlie/internal/nix"
 	"github.com/Juragan-Koding/cleanlie/internal/privileged"
@@ -32,6 +34,7 @@ func runCLI(args []string) (handled bool, code int) {
 			"--android-status", "-android-status",
 			"--analysis-tree", "-analysis-tree", "--analysis-overview", "-analysis-overview",
 			"--analysis-dups", "-analysis-dups",
+			"--direnv-scan", "-direnv-scan",
 			"--version", "-version", "--help", "-help", "-h":
 			headless = true
 		}
@@ -56,6 +59,7 @@ func runCLI(args []string) (handled bool, code int) {
 		anTree     = fs.Bool("analysis-tree", false, "tree disk usage sebagai JSON")
 		anOverview = fs.Bool("analysis-overview", false, "file besar/lama/artefak sebagai JSON")
 		anDups     = fs.Bool("analysis-dups", false, "file duplikat sebagai JSON")
+		dirScan    = fs.Bool("direnv-scan", false, "scan folder .direnv sebagai JSON")
 		anDepth    = fs.Int("depth", 2, "kedalaman tree analisis")
 	)
 	fs.Usage = func() {
@@ -72,6 +76,7 @@ Pemakaian:
   cleanlie --analysis-tree         tree disk usage (JSON; --path, --depth)
   cleanlie --analysis-overview     file besar, lama, artefak (JSON)
   cleanlie --analysis-dups         file duplikat (JSON)
+  cleanlie --direnv-scan           folder .direnv di --path (JSON)
   cleanlie --version
 
 Opsi:
@@ -89,6 +94,25 @@ Opsi:
 
 	if *andStat {
 		printJSON(android.ReadStatus(context.Background(), android.Options{}))
+		return true, 0
+	}
+	if *dirScan {
+		roots := []string{}
+		if *path != "" {
+			roots = append(roots, *path)
+		} else if cfg, _ := config.Load(); len(cfg.DirenvRoots) > 0 {
+			roots = cfg.DirenvRoots
+		}
+		if len(roots) == 0 {
+			fmt.Fprintln(os.Stderr, "cleanlie: belum ada folder direnv; pakai --path DIR atau tambahkan di layar direnv")
+			return true, 1
+		}
+		rep, err := direnv.Scan(context.Background(), direnv.Options{Roots: roots})
+		if err != nil {
+			fmt.Fprintln(os.Stderr, "cleanlie:", err)
+			return true, 1
+		}
+		printJSON(rep)
 		return true, 0
 	}
 	if *anTree || *anOverview || *anDups {

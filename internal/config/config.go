@@ -35,6 +35,7 @@ type Config struct {
 	LargeBytes     int64    `json:"largeBytes"`
 	StaleDays      int      `json:"staleDays"`
 	ArtifactRoots  []string `json:"artifactRoots"`
+	DirenvRoots    []string `json:"direnvRoots"`
 	Excluded       []string `json:"excluded"`
 }
 
@@ -115,6 +116,7 @@ func Normalize(c Config) (Config, []string) {
 		c.StaleDays = 3650
 	}
 	c.ArtifactRoots = cleanPaths(c.ArtifactRoots)
+	c.DirenvRoots = cleanPaths(c.DirenvRoots)
 	c.Excluded = cleanPaths(c.Excluded)
 	return c, warnings
 }

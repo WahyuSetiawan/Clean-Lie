@@ -18,6 +18,7 @@
 | M4 Android | ✅ 2026-11-25 | `--android-status` 1 AVD/5,01 GiB + SDK 13,81 GiB/13 paket; 1 saran system image; 8 paket Go hijau; UI smoke saran→gate→hapus/uninstall→wipe hijau |
 | M5 Analisis + dashboard | ✅ 2026-11-25 | tree `~` depth 2 **179.182.256.128 B** vs `du` selisih 0,0013%; `~/.cache` **1,70 s**; duplikat 1.715 grup/16,70 GiB; 9 paket Go hijau; UI smoke dashboard + analisis hijau |
 | M6 Settings + packaging | ✅ 2026-11-25 | config round-trip + fallback hijau; **10 paket Go** hijau; UI smoke settings/tema/i18n hijau; `nix build .#cleanlie` 0.6.0 + desktop/ikon; `desktop-file-validate` hanya hint kategori |
+| M7 direnv | ✅ 2026-11-26 | `internal/direnv` + layar direnv; **11 paket Go** hijau; UI smoke tambah folder→scan→pilih→trash hijau; `--direnv-scan --path` JSON; `nix build` 0.7.0 |
 
 ## Aturan main
 
@@ -358,7 +359,7 @@
   dan `analysis.Options.Excluded/ExtraRoots`.
 - **Config:** `~/.config/cleanlie/config.json` (XDG), tulis atomik, fallback default + warning.
   Field: tema, bahasa, showRisky, deleteMode, autoSelectSafe, journalTarget, largeBytes,
-  staleDays, artifactRoots, excluded.
+  staleDays, artifactRoots, direnvRoots, excluded.
 - **Binding:** `Settings`, `SaveSettings`, `ResetSettings`. Simpan membersihkan cache analisis;
   exclusion juga dicek ulang di `Clean`.
 - **UI:** layar Pengaturan nyata (simpan/reset, tag exclusion, status polkit, path config),
@@ -371,6 +372,38 @@
 - **Batas:** label dinamis M2–M4 belum semua diterjemahkan; screenshot 6 layar diganti smoke
   test jsdom karena headless browser tidak stabil.
 - Detail: [`../implementation/m6-settings.md`](../implementation/m6-settings.md).
+
+---
+
+## M7 — direnv (adendum v1)
+
+### T7.1 — `internal/direnv` scanner
+- Walk tiap root, deteksi `.direnv`, ukur dengan `fsx.Usage` (allocated, symlink tidak diikuti),
+  skip `.git`/`node_modules`/artefak, dedupe root, catat root yang hilang.
+- Cache global `~/.cache/direnv` + `~/.cache/nix-direnv` sebagai `kind=cache`.
+- **Acceptance:** fixture `.direnv` terdeteksi, `.git`/`node_modules` tidak, symlink keluar
+  tidak menambah ukuran; `go test ./internal/direnv` hijau.
+- **Files:** `internal/direnv/direnv.go`, `direnv_test.go`.
+
+### T7.2 — Config + binding + CLI
+- Field `direnvRoots` (maks 32) di config; binding `DirenvScan/Cancel/Refresh/AddRoot/RemoveRoot/Clean`.
+- Target ID disimpan saat scan; `DirenvClean` memakai `clean.Execute` + exclusion guard.
+- CLI `--direnv-scan` (JSON; `--path DIR` atau root dari config).
+- **Acceptance:** round-trip config, scan tanpa root ditolak, ID asing ditolak, dry-run tidak menghapus.
+- **Files:** `app_direnv.go`, `app_direnv_test.go`, `app.go`, `app_settings.go`, `cli.go`,
+  `internal/config/config.go`.
+
+### T7.3 — Layar direnv
+- Nav + `view-direnv`: pilih folder lewat dialog native / tambah manual / hapus, scan/batal, ringkasan, tabel proyek/cache,
+  pilih aman (lewati aktif < 7 hari), trash + hasil.
+- i18n ID/EN, demo nav, `frontend_embed_test` otomatis mencakup aset baru.
+- **Acceptance:** UI smoke tambah→scan→pilih→trash→rescan→hapus folder hijau.
+- **Files:** `frontend/dist/index.html`, `frontend/dist/ui/direnv.js`, `settings.js`, `demo.js`,
+  `frontend/test/ui-smoke.mjs`.
+
+### T7.4 — Docs + rilis
+- `docs/implementation/m7-direnv.md`, README, CHANGELOG, versi 0.7.0.
+- **Acceptance:** `nix build .#cleanlie` 0.7.0; `go test ./internal/... .` hijau.
 
 ---
 
