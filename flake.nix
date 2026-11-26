@@ -17,6 +17,19 @@
       devShells = each (
         pkgs:
         let
+          # nixpkgs membawa wails 2.17.0, sedangkan go.mod memakai library 2.17.1.
+          # CLI 2.17.0 men-downgrade go.mod tiap `wails dev`; pin CLI ke versi library.
+          wails = pkgs.wails.overrideAttrs (_old: {
+            version = "2.17.1";
+            src = pkgs.fetchFromGitHub {
+              owner = "wailsapp";
+              repo = "wails";
+              tag = "v2.17.1";
+              hash = "sha256-QVYEAnIMKb7aW/u2tUdmKIAge0vYdctiVVEKZqE0+KM=";
+            };
+            vendorHash = "sha256-jvj8M8bXcxyOkoxfnYaTuG7Zk7+O6f1mdnpws2AHvto=";
+          });
+
           # Library runtime untuk `wails dev` dan binary cgo hasil `go build`.
           runtimeLibs = with pkgs; [
             gtk3

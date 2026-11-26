@@ -2,12 +2,13 @@ APP      := cleanlie
 VERSION  ?= 0.6.0
 COMMIT   ?= $(shell git rev-parse --short HEAD 2>/dev/null || echo unknown)
 TAGS     := desktop,production,webkit2_41
+DEV_TAGS := desktop,webkit2_41
 LDFLAGS  := -s -w -X main.version=$(VERSION) -X main.commit=$(COMMIT)
 
 .PHONY: dev build run test lint fmt tidy clean verify
 
 dev:
-	wails dev
+	wails dev -tags $(DEV_TAGS)
 
 build:
 	go build -tags $(TAGS) -trimpath -ldflags "$(LDFLAGS)" -o bin/$(APP) .
