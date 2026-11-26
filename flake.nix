@@ -11,7 +11,7 @@
         "aarch64-linux"
       ];
       each = f: nixpkgs.lib.genAttrs systems (system: f nixpkgs.legacyPackages.${system});
-      version = "0.6.0";
+      version = "0.7.0";
     in
     {
       devShells = each (

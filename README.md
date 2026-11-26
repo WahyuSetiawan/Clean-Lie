@@ -2,13 +2,14 @@
 
 Disk cleaner & analyzer GUI untuk NixOS. Go + Wails v2, UI statis (tanpa Node).
 
-> Status: **M6 — Settings + packaging**. Scan katalog, dry-run CLI, eksekusi hapus
+> Status: **M7 — direnv**. Scan katalog, dry-run CLI, eksekusi hapus
 > (trash/perm), audit, layar Nix (store, generasi, dead paths, GC, vacuum journal,
 > fallback pkexec/sudo), layar Android (AVD/SDK, saran >90 hari, hapus/wipe/uninstall),
-> layar Analisis (tree, file besar, duplikat, file lama, artefak), Dashboard nyata,
+> layar Analisis (tree, file besar, duplikat, file lama, artefak), layar **direnv**
+> (folder `.direnv` per proyek + cache global), Dashboard nyata,
 > Pengaturan persisten, tema system/light/dark, dan i18n ID/EN sudah jalan. Lihat
 > [`docs/tasks/cleanlie-v1.md`](docs/tasks/cleanlie-v1.md),
-> [`docs/implementation/`](docs/implementation/) (m1–m6), dan
+> [`docs/implementation/`](docs/implementation/) (m1–m7), dan
 > [`CHANGELOG.md`](CHANGELOG.md).
 
 ## Kenapa
@@ -65,6 +66,7 @@ Wrapper sudah membawa PATH untuk `nix`, `journalctl`, `pkexec`, `gio`, `xdg-open
 ./bin/cleanlie --analysis-tree         # tree disk usage (JSON; ~5 s; --path, --depth)
 ./bin/cleanlie --analysis-overview     # file besar/lama/artefak (JSON; ~19 s)
 ./bin/cleanlie --analysis-dups         # file duplikat (JSON; ~51 s)
+./bin/cleanlie --direnv-scan --path DIR # folder .direnv di DIR (JSON)
 ./bin/cleanlie --version
 
 make verify                           # bandingkan ukuran vs `du` (toleransi 2%)
@@ -99,18 +101,19 @@ cd frontend/test && npm install && npm test
 jsdom menjalankan `frontend/dist/index.html` (aset `dist/ui/*` di-inline otomatis) dengan binding Go tiruan: scan → pilih → gate
 permanen → trash → hasil → layar Nix → gate `GC` → hasil GC → layar Android → pilih saran →
 gate hapus/uninstall → hasil → wipe → hasil → dashboard → analisis (tree, drill-down, file
-besar, duplikat, artefak). Ini juga menjaga agar `window.go` (binding Wails) tidak tertimpa.
+besar, duplikat, artefak) → direnv (tambah folder, scan, pilih aman, trash). Ini juga menjaga agar `window.go` (binding Wails) tidak tertimpa.
 
 ## Struktur
 
 ```
 main.go                 # wails.Run + embed frontend/dist + dispatch CLI
-cli.go                  # --dry-run / --scan-only / --json / Nix / Android / analisis
+cli.go                  # --dry-run / --scan-only / --json / Nix / Android / analisis / direnv
 app.go                  # binding Go → window.go.main.App (Diagnostics + cache)
 app_clean.go            # ScanJunk/CancelScan/Clean/History + event progress
 app_nix.go              # NixStatus/NixDeadPaths/NixPreview/aksi + cache 2 menit
 app_android.go          # AndroidStatus/Refresh/DeleteAVD/Uninstall/Wipe/Preview
 app_analysis.go         # tree/overview/duplikat, cache 60 s, target ID, trash analisis
+app_direnv.go           # scan .direnv per proyek + cache global, root config, trash
 app_settings.go         # Settings/SaveSettings/ResetSettings + guard path dikecualikan
 internal/fsx/           # walker paralel (blok disk, hardlink, one-fs) + usage/statfs
 internal/rules/         # katalog rule + Plan read-only (linux, devtools, android, nix)
@@ -118,6 +121,7 @@ internal/clean/         # guard, trash freedesktop, deteksi proses, eksekutor, a
 internal/nix/           # generasi, closure, dead paths, aksi GC/vacuum
 internal/android/       # parser AVD/SDK + aksi avdmanager/sdkmanager/wipe
 internal/analysis/      # tree, file besar/lama, artefak, duplikat (read-only)
+internal/direnv/        # cari .direnv per proyek + cache direnv/nix-direnv (read-only)
 internal/config/        # config.json: tema, bahasa, ambang, exclusion, scan roots
 internal/privileged/    # pkexec dengan path absolut, fallback sudo siap-copy
 internal/tools/         # jalankan perintah resmi dengan preview + timeout
@@ -156,9 +160,11 @@ default** mengembalikan semuanya.
 
 ## Catatan Wayland/Hyprland
 
-WebKitGTK kadang butuh `WEBKIT_DISABLE_COMPOSITING_MODE=1` (sudah diset di devShell).
-Kalau window hitam/berkedip, jalankan dengan env itu. Tanpa polkit agent, aksi root
-otomatis jatuh ke dialog perintah `sudo` siap-copy.
+GTK3/WebKitGTK di Wayland bisa melaporkan viewport negatif setelah window di-tile
+(UI bertumpuk, sisa window hitam). Binary otomatis memakai XWayland bila
+`WAYLAND_DISPLAY` dan `DISPLAY` tersedia; set `GDK_BACKEND=wayland` untuk memaksa
+Wayland. `WEBKIT_DISABLE_COMPOSITING_MODE=1` juga diset di devShell. Tanpa polkit
+agent, aksi root otomatis jatuh ke dialog perintah `sudo` siap-copy.
 
 ## Lisensi
 
