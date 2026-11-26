@@ -14,32 +14,49 @@
       version = "0.6.0";
     in
     {
-      devShells = each (pkgs: {
-        default = pkgs.mkShell {
-          packages = with pkgs; [
-            go
-            wails
-            pkg-config
+      devShells = each (
+        pkgs:
+        let
+          # Library runtime untuk `wails dev` dan binary cgo hasil `go build`.
+          runtimeLibs = with pkgs; [
             gtk3
-            webkitgtk_4_1
             glib
-            jq
+            webkitgtk_4_1
+            libsoup_3
           ];
+        in
+        {
+          default = pkgs.mkShell {
+            packages = with pkgs; [
+              go
+              gopls
+              gotools
+              wails
+              pkg-config
+              gnumake
+              git
+              jq
+              nodejs # frontend/test/ui-smoke.mjs (jsdom)
+            ] ++ runtimeLibs;
 
-          env = {
-            CGO_ENABLED = "1";
-            # WebKitGTK di Wayland/Hyprland kadang butuh ini; aman untuk dev.
-            WEBKIT_DISABLE_COMPOSITING_MODE = "1";
+            env = {
+              CGO_ENABLED = "1";
+              # Pakai go dari shell ini; jangan unduh toolchain lain diam-diam.
+              GOTOOLCHAIN = "local";
+              # WebKitGTK di Wayland/Hyprland kadang butuh ini; aman untuk dev.
+              WEBKIT_DISABLE_COMPOSITING_MODE = "1";
+              LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath runtimeLibs;
+            };
+
+            shellHook = ''
+              echo "cleanlie dev shell · go $(go version | awk '{print $3}') · wails $(wails version 2>/dev/null | head -1)"
+              echo "  make dev     # wails dev (hot reload)"
+              echo "  make build   # bin/cleanlie"
+              echo "  make test"
+            '';
           };
-
-          shellHook = ''
-            echo "cleanlie dev shell · go $(go version | awk '{print $3}') · wails $(wails version 2>/dev/null | head -1)"
-            echo "  make dev     # wails dev"
-            echo "  make build   # bin/cleanlie"
-            echo "  make test"
-          '';
-        };
-      });
+        }
+      );
 
       packages = each (
         pkgs:

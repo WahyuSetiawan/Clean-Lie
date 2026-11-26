@@ -20,7 +20,8 @@ dry-run + trash (bisa restore), bukan `rm -rf` buta.
 ## Jalankan (dev)
 
 ```sh
-nix develop        # go, wails, gtk3, webkitgtk 4.1, pkg-config
+direnv allow       # sekali saja; butuh direnv + nix-direnv
+# shell otomatis: go, gopls, wails, gtk3, webkitgtk 4.1, node, jq
 make dev           # wails dev (hot reload)
 make build         # bin/cleanlie
 make test
