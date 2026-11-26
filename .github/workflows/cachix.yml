@@ -1,0 +1,38 @@
+name: Cachix
+
+# Cache Cachix akun juragan-koding. Nama cache yang sudah terdaftar:
+# juragankoding-cachix (lihat ~/.nix/myNix/nixos-modules/nix.nix).
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cachix-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: cachix/install-nix-action@v30
+        with:
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+
+      - uses: cachix/cachix-action@v15
+        with:
+          name: juragankoding-cachix
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+
+      - name: Build cleanlie
+        run: nix build --print-build-logs .#cleanlie
+
+      - name: Evaluate flake outputs
+        run: nix flake show --all-systems
