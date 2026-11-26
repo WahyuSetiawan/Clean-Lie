@@ -4,6 +4,15 @@ Semua perubahan penting pada Cleanlie. Format mengikuti
 [Keep a Changelog](https://keepachangelog.com/id/1.1.0/) dan versi mengikuti
 [Semantic Versioning](https://semver.org/lang/id/).
 
+## [Unreleased]
+
+### Ditambahkan
+- Output flake `overlays.default` dan `nixosModules.default`, plus `package.nix`
+  yang bisa dipanggil dengan nixpkgs konsumen. Cleanlie sekarang bisa dipakai dari
+  flake NixOS/Home Manager lain lewat `pkgs.cleanlie` atau modul siap pakai.
+- Workflow `.github/workflows/cachix.yml`: build `.#cleanlie` di `main` dan push
+  closure ke cache Cachix `juragankoding-cachix` (secret `CACHIX_AUTH_TOKEN`).
+
 ## [0.7.0] — 2026-11-26
 
 ### Ditambahkan — M7 direnv
