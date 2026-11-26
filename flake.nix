@@ -71,78 +71,39 @@
         }
       );
 
-      packages = each (
-        pkgs:
-        let
-          runtimeDeps = with pkgs; [
-            nix
-            systemd
-            polkit
-            glib # gio trash
-            xdg-utils # xdg-open
-            gtk3
-            webkitgtk_4_1
-          ];
-        in
+      packages = each (pkgs: {
+        cleanlie = pkgs.callPackage ./package.nix {
+          inherit version;
+          commit = self.shortRev or "dirty";
+          source = ./.;
+        };
+        default = self.packages.${pkgs.stdenv.hostPlatform.system}.cleanlie;
+      });
+
+      # Overlay supaya bisa dipakai dari konfigurasi Nix lain:
+      #   nixpkgs.overlays = [ inputs.cleanlie.overlays.default ];
+      #   environment.systemPackages = [ pkgs.cleanlie ];
+      overlays.default = final: prev: {
+        cleanlie = final.callPackage ./package.nix {
+          inherit version;
+          commit = self.shortRev or "dirty";
+          source = ./.;
+        };
+      };
+
+      # Jalur pintas untuk NixOS:
+      #   imports = [ inputs.cleanlie.nixosModules.default ];
+      nixosModules.default =
+        { pkgs, ... }:
         {
-          cleanlie = pkgs.buildGoModule {
-            pname = "cleanlie";
-            inherit version;
-            src = ./.;
-            vendorHash = "sha256-y+hhovS1wVZkSXig8LOpjlek20O9VErVYmw+VGLfIfI=";
-
-            nativeBuildInputs = [
-              pkgs.pkg-config
-              pkgs.wrapGAppsHook3
-            ];
-            buildInputs = [
-              pkgs.gtk3
-              pkgs.webkitgtk_4_1
-              pkgs.glib
-            ];
-
-            env.CGO_ENABLED = "1";
-            tags = [
-              "webkit2_41"
-              "desktop"
-              "production"
-            ];
-            ldflags = [
-              "-s"
-              "-w"
-              "-X"
-              "main.version=${version}"
-              "-X"
-              "main.commit=${self.shortRev or "dirty"}"
-            ];
-
-            # PATH untuk aksi root & perintah sistem; pkexec membuang environment sesi.
-            preFixup = ''
-              gappsWrapperArgs+=(--prefix PATH : ${pkgs.lib.makeBinPath runtimeDeps})
-              gappsWrapperArgs+=(--set-default WEBKIT_DISABLE_COMPOSITING_MODE 1)
-            '';
-
-            postInstall = ''
-              install -Dm644 ${./packaging/cleanlie.desktop} $out/share/applications/cleanlie.desktop
-              install -Dm644 ${./packaging/cleanlie.svg} $out/share/icons/hicolor/scalable/apps/cleanlie.svg
-            '';
-
-            meta = {
-              description = "Disk cleaner and analyzer for NixOS";
-              homepage = "https://github.com/Juragan-Koding/cleanlie";
-              mainProgram = "cleanlie";
-              platforms = pkgs.lib.platforms.linux;
-            };
-          };
-
-          default = self.packages.${pkgs.system}.cleanlie;
-        }
-      );
+          nixpkgs.overlays = [ self.overlays.default ];
+          environment.systemPackages = [ pkgs.cleanlie ];
+        };
 
       apps = each (pkgs: {
         default = {
           type = "app";
-          program = "${self.packages.${pkgs.system}.cleanlie}/bin/cleanlie";
+          program = "${self.packages.${pkgs.stdenv.hostPlatform.system}.cleanlie}/bin/cleanlie";
         };
       });
     };

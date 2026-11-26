@@ -54,6 +54,65 @@ nix profile install .#cleanlie
 Wrapper sudah membawa PATH untuk `nix`, `journalctl`, `pkexec`, `gio`, `xdg-open`
 (karena `pkexec` membuang environment sesi).
 
+## Pakai di konfigurasi Nix
+
+Flake ini mengekspor `packages.<system>.cleanlie`, `overlays.default`, dan
+`nixosModules.default`, jadi bisa dipakai dari flake NixOS/Home Manager lain.
+
+Tambah input di `~/.nix/flake.nix`:
+
+```nix
+inputs.cleanlie.url = "github:WahyuSetiawan/Clean-Lie";
+```
+
+Pilih salah satu cara berikut.
+
+1. Lewat overlay (paling fleksibel):
+
+   ```nix
+   # myNix/overlays/default.nix
+   flake.overlays.cleanlie = inputs.cleanlie.overlays.default;
+   ```
+
+   lalu di `environment.systemPackages`:
+
+   ```nix
+   environment.systemPackages = [ pkgs.cleanlie ];
+   ```
+
+2. Langsung dari input:
+
+   ```nix
+   environment.systemPackages = [
+     inputs.cleanlie.packages.${pkgs.stdenv.hostPlatform.system}.default
+   ];
+   ```
+
+3. Modul NixOS (overlay + package sekaligus):
+
+   ```nix
+   imports = [ inputs.cleanlie.nixosModules.default ];
+   ```
+
+Setelah menambah input, jalankan `nix flake lock` di repo konfigurasi. Untuk update
+Cleanlie saja: `nix flake update cleanlie`.
+
+## CI / Cachix
+
+Workflow `.github/workflows/cachix.yml` build `.#cleanlie` di setiap push ke `main`
+dan mengunggah closure ke cache Cachix `juragankoding-cachix` (akun juragan-koding).
+
+Sekali saja: tambahkan repository secret `CACHIX_AUTH_TOKEN` (Settings → Secrets and
+variables → Actions). Token dibuat di <https://app.cachix.org/personal-auth-tokens>.
+Workflow juga bisa dijalankan manual lewat **Actions → Cachix → Run workflow**.
+
+Untuk memakai cache di mesin lain:
+
+```sh
+cachix use juragankoding-cachix
+# atau tambahkan ke nix.settings.substituters + trusted-public-keys
+```
+
 ## Mode headless (tanpa GUI)
 
 ```sh
@@ -128,7 +187,8 @@ internal/tools/         # jalankan perintah resmi dengan preview + timeout
 frontend/dist/          # UI statis (sumber desain: docs/wireframe)
 frontend/test/          # smoke test jsdom (opsional, bukan bagian build)
 packaging/              # desktop entry + ikon SVG
-flake.nix               # devShell + package (desktop entry/ikon di $out/share)
+flake.nix               # devShell, package, overlay, nixosModules
+package.nix             # derivasi buildGoModule (dipakai flake + overlay)
 docs/plan|tasks|wireframe|implementation
 ```
 
