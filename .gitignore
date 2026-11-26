@@ -3,9 +3,10 @@
 /result
 /result-*
 .direnv/
-.envrc
 
 # frontend/dist is source (static UI, no bundler) — keep it tracked.
+# frontend/wailsjs/ digenerate `wails dev`; UI pakai window.go, bukan binding ini.
+frontend/wailsjs/
 frontend/node_modules/
 frontend/dist/assets/
 
