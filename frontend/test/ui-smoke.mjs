@@ -48,6 +48,12 @@ let gcConfirm = null;
 let analysisTreeCalls = 0;
 let analysisCleanReq = null;
 let analysisOpened = null;
+let direnvScanCalls = 0;
+let direnvAdded = null;
+let direnvRemoved = null;
+let direnvCleanReq = null;
+let direnvPickCalls = 0;
+let direnvPickPath = '/home/u/Projects';
 let savedSettings = null;
 let resetSettingsCalls = 0;
 let settingsView = {
@@ -55,7 +61,7 @@ let settingsView = {
   config: {
     theme: 'system', language: 'id', showRisky: true, deleteMode: 'trash',
     autoSelectSafe: true, journalTarget: '500M', largeBytes: 104857600,
-    staleDays: 365, artifactRoots: [], excluded: []
+    staleDays: 365, artifactRoots: [], direnvRoots: [], excluded: []
   }
 };
 
@@ -178,6 +184,43 @@ const dom = new JSDOM(html, {
           id, path: id.split(':').slice(1).join(':'), label: 'x', status: 'removed', bytesBefore: 1200000000, bytesAfter: 0, freed: 1200000000
         })), auditPath: '/home/u/.local/state/cleanlie/history.jsonl' };
       },
+      DirenvScan: async () => {
+        direnvScanCalls++;
+        return {
+          roots: ['/home/u/Projects'], missing: [], bytes: 700000000, files: 12, errors: 0, durationMs: 15, scannedAt: 'now',
+          entries: [
+            { id: 'direnv:/home/u/Projects/app/.direnv', kind: 'project', project: '/home/u/Projects/app', path: '/home/u/Projects/app/.direnv', bytes: 600000000, files: 10, modTime: '2026-10-01 10:00', ageDays: 56, active: false },
+            { id: 'direnv:/home/u/.cache/direnv', kind: 'cache', project: '/home/u/.cache', path: '/home/u/.cache/direnv', bytes: 100000000, files: 2, modTime: '2026-11-25 10:00', ageDays: 1, active: true }
+          ]
+        };
+      },
+      DirenvRefresh: async () => true,
+      DirenvCancel: async () => true,
+      DirenvPickRoot: async () => {
+        direnvPickCalls++;
+        return direnvPickPath;
+      },
+      DirenvAddRoot: async p => {
+        direnvAdded = p;
+        settingsView = { path: settingsView.path, config: Object.assign({}, settingsView.config, { direnvRoots: ['/home/u/Projects'] }) };
+        return settingsView;
+      },
+      DirenvRemoveRoot: async p => {
+        direnvRemoved = p;
+        settingsView = { path: settingsView.path, config: Object.assign({}, settingsView.config, { direnvRoots: [] }) };
+        return settingsView;
+      },
+      DirenvClean: async req => {
+        direnvCleanReq = req;
+        return {
+          mode: 'trash', startedAt: 'now', durationMs: 5, before: 600000000, after: 0, freed: 600000000,
+          auditPath: '/home/u/.local/state/cleanlie/history.jsonl',
+          items: req.ids.map(id => ({
+            id, path: id.slice('direnv:'.length), label: 'x', status: 'removed',
+            bytesBefore: 600000000, bytesAfter: 0, freed: 600000000, mode: 'trash'
+          }))
+        };
+      },
       OpenInFileManager: async p => { analysisOpened = p; },
       Settings: async () => settingsView,
       SaveSettings: async c => {
@@ -193,7 +236,7 @@ const dom = new JSDOM(html, {
           config: {
             theme: 'system', language: 'id', showRisky: true, deleteMode: 'trash',
             autoSelectSafe: true, journalTarget: '500M', largeBytes: 104857600,
-            staleDays: 365, artifactRoots: [], excluded: []
+            staleDays: 365, artifactRoots: [], direnvRoots: [], excluded: []
           }
         };
         return settingsView;
@@ -344,6 +387,40 @@ try {
   await sleep(50);
   assert.equal(d.querySelectorAll('#an-art-body tr').length, 2, '2 artefak');
   assert.equal(d.querySelectorAll('#an-art-body input[type="checkbox"]:disabled').length, 1, 'artefak aktif terkunci');
+  // M7: direnv — tambah folder, scan, pilih aman, trash.
+  d.querySelector('#nav button[data-view="direnv"]').click();
+  await sleep(200);
+  assert.equal(direnvScanCalls, 0, 'tanpa root tidak scan otomatis');
+  assert.match($('direnv-summary').textContent, /Belum ada folder/);
+  $('direnv-root-pick').click();
+  await sleep(120);
+  assert.equal(direnvPickCalls, 1, 'dialog folder dibuka');
+  assert.equal(direnvAdded, '/home/u/Projects', 'folder dari picker ditambahkan');
+  assert.equal($('direnv-root-input').value, '', 'input dibersihkan setelah picker');
+  assert.equal(d.querySelectorAll('#direnv-roots .tag').length, 1, 'folder tampil sebagai tag');
+  $('direnv-scan').click();
+  await sleep(200);
+  assert.equal(direnvScanCalls, 1, 'DirenvScan dipanggil');
+  assert.equal(d.querySelectorAll('#direnv-body tr').length, 2, '2 entri direnv');
+  assert.equal($('direnv-total').textContent, '668 MiB', 'total terukur');
+  assert.equal(d.querySelectorAll('#direnv-body input[type="checkbox"]:checked').length, 0, 'default tanpa centang');
+  $('direnv-select').click();
+  assert.equal(d.querySelectorAll('#direnv-body input[type="checkbox"]:checked').length, 1, 'hanya entri non-aktif dipilih');
+  assert.equal($('direnv-trash').disabled, false, 'trash terbuka setelah pilih');
+  $('direnv-trash').click();
+  await sleep(50);
+  assert.match($('m-title').textContent, /Pindahkan 1 folder \.direnv/);
+  $('m-ok').click();
+  await sleep(120);
+  assert.equal(direnvCleanReq.mode, 'trash');
+  assert.equal(JSON.stringify(direnvCleanReq.ids), '["direnv:/home/u/Projects/app/.direnv"]');
+  assert.match($('m-body').textContent, /572 MiB/);
+  $('m-ok').click();
+  await sleep(200);
+  assert.ok(direnvScanCalls >= 2, 'scan ulang setelah trash');
+  d.querySelector('#direnv-roots [data-dr-rm]').click();
+  await sleep(120);
+  assert.equal(direnvRemoved, '/home/u/Projects', 'folder dihapus lewat binding');
 
   // M6: settings, tema, bahasa, dan persistensi.
   d.querySelector('#nav button[data-view="settings"]').click();
@@ -389,7 +466,7 @@ try {
   assert.equal($('lang-select').value, 'id');
   assert.equal($('large-mb').value, '100');
 
-  console.log('UI smoke OK: scan, gate permanen, trash, hasil, rescan, Nix, GC, Android, dashboard, analisis, settings, tema, i18n');
+  console.log('UI smoke OK: scan, gate permanen, trash, hasil, rescan, Nix, GC, Android, dashboard, analisis, direnv, settings, tema, i18n');
 } finally {
   w.close();
 }
