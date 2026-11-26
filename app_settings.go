@@ -53,6 +53,7 @@ func (a *App) SaveSettings(c config.Config) (SettingsView, error) {
 	view := SettingsView{Config: saved, Path: a.cfgPath, Warning: a.cfgWarning}
 	a.cfgMu.Unlock()
 	a.AnalysisRefresh()
+	a.DirenvRefresh()
 	return view, nil
 }
 

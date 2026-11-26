@@ -31,6 +31,7 @@ func TestSaveLoadRoundTrip(t *testing.T) {
 	c.LargeBytes = 500 << 20
 	c.StaleDays = 30
 	c.ArtifactRoots = []string{"~/Projects", "~/work"}
+	c.DirenvRoots = []string{"~/Projects", "~/Projects", "~/src"}
 	c.Excluded = []string{"~/Downloads", "~/Downloads", "relative"}
 	saved, warns, err := Save(c)
 	if err != nil {
@@ -41,6 +42,9 @@ func TestSaveLoadRoundTrip(t *testing.T) {
 	}
 	if len(saved.Excluded) != 1 || !filepath.IsAbs(saved.Excluded[0]) {
 		t.Fatalf("excluded = %v", saved.Excluded)
+	}
+	if len(saved.DirenvRoots) != 2 || !filepath.IsAbs(saved.DirenvRoots[0]) {
+		t.Fatalf("direnvRoots = %v", saved.DirenvRoots)
 	}
 	loaded, warn := Load()
 	if warn != "" {
