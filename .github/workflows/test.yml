@@ -43,8 +43,16 @@ jobs:
         run: nix develop --command go vet -tags "$TAGS" ./...
 
       - name: gofmt
-        run: test -z "$(nix develop --command gofmt -l .)"
-
+        run: |
+          set -euo pipefail
+          # shellHook devShell menulis banner ke stdout; buang baris non-.go.
+          out=$(nix develop --command gofmt -l .)
+          files=$(printf '%s\n' "$out" | grep -E '\.go$' || true)
+          if [ -n "$files" ]; then
+            echo "::error::File Go belum diformat:"
+            echo "$files"
+            exit 1
+          fi
   ui:
     name: UI smoke (jsdom)
     runs-on: ubuntu-latest
