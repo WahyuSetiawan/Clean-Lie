@@ -21,6 +21,7 @@ jobs:
     timeout-minutes: 45
     env:
       TAGS: desktop,production,webkit2_41
+      CACHIX_AUTH_TOKEN: ${{ secrets.CACHIX_AUTH_TOKEN }}
     steps:
       - uses: actions/checkout@v4
 
@@ -28,6 +29,12 @@ jobs:
         with:
           extra_nix_config: |
             experimental-features = nix-command flakes
+
+      - uses: cachix/cachix-action@v15
+        if: env.CACHIX_AUTH_TOKEN != ''
+        with:
+          name: juragankoding-cachix
+          authToken: ${{ env.CACHIX_AUTH_TOKEN }}
 
       - name: go test
         run: nix develop --command go test -tags "$TAGS" ./...
@@ -62,6 +69,8 @@ jobs:
     runs-on: ubuntu-latest
     needs: [go, ui]
     timeout-minutes: 60
+    env:
+      CACHIX_AUTH_TOKEN: ${{ secrets.CACHIX_AUTH_TOKEN }}
     steps:
       - uses: actions/checkout@v4
 
@@ -69,6 +78,12 @@ jobs:
         with:
           extra_nix_config: |
             experimental-features = nix-command flakes
+
+      - uses: cachix/cachix-action@v15
+        if: env.CACHIX_AUTH_TOKEN != ''
+        with:
+          name: juragankoding-cachix
+          authToken: ${{ env.CACHIX_AUTH_TOKEN }}
 
       - name: Build cleanlie
         run: nix build --print-build-logs .#cleanlie

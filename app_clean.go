@@ -185,7 +185,7 @@ func (a *App) Clean(req CleanRequest) (clean.Result, error) {
 		}
 		a.scanMu.Unlock()
 		a.invalidateAfterMutation()
-		a.notifyCleanResult("Cleanlie — pembersihan selesai", res)
+		a.notifyCleanResult("clean", res)
 	}
 	return res, nil
 }

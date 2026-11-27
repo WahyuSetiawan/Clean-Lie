@@ -14,6 +14,7 @@
   let dashBusy = false;
   let tree = null, overview = null, dups = null;
   let lastVolume = null, lastNix = null, lastInsight = null, lastReport = null;
+  let lastMounts = null, lastMountPath = '/';
   let treePath = '';
   let treeSeq = 0;
   const loaded = { tree: false, overview: false, dups: false };
@@ -47,6 +48,20 @@
     if (pct < 0.05 || free < 2 * 1073741824) return 'critical';
     if (pct < 0.12 || free < 10 * 1073741824) return 'warn';
     return 'ok';
+  }
+
+  function renderMounts(mounts) {
+    if (!Array.isArray(mounts) || !mounts.length) return false;
+    lastMounts = mounts;
+    const sel = byId('dash-disk-select');
+    if (!sel) return false;
+    const prev = sel.value || lastMountPath;
+    sel.innerHTML = mounts.map(m => '<option value="' + esc(m.path) + '">' + esc(m.path) + '</option>').join('');
+    const cur = mounts.find(m => m.path === prev) || mounts[0];
+    sel.value = cur.path;
+    lastMountPath = cur.path;
+    renderDisk(cur);
+    return true;
   }
 
   function renderDisk(vol) {
@@ -194,7 +209,9 @@
     if (btn) { btn.disabled = true; btn.textContent = tf('dashboard.scanning', null, 'Memindai…'); }
     try {
       await ensureHome();
-      const volP = bridge.DiskStatus().then(renderDisk).catch(() => {});
+      const volP = (bridge.DiskVolumes ? bridge.DiskVolumes() : Promise.resolve(null))
+        .then(mounts => { if (!renderMounts(mounts)) return bridge.DiskStatus().then(renderDisk); })
+        .catch(() => bridge.DiskStatus().then(renderDisk).catch(() => {}));
       const nixP = bridge.NixStatus().then(renderNix).catch(() => {});
       const treeP = bridge.AnalysisTree(home, 1).then(renderHome).catch(() => {});
       const insightP = (bridge.Insight ? bridge.Insight() : Promise.resolve(null)).then(renderInsight).catch(() => {});
@@ -554,6 +571,11 @@
     if (view === 'dashboard') refreshDashboard(false);
     if (view === 'analysis') ensureAnalysis(activeTab);
   };
+  const diskSel = byId('dash-disk-select');
+  if (diskSel) diskSel.addEventListener('change', () => {
+    const m = (lastMounts || []).find(x => x.path === diskSel.value);
+    if (m) { lastMountPath = m.path; renderDisk(m); }
+  });
   if (current === 'dashboard') refreshDashboard(false);
   if (current === 'analysis') ensureAnalysis(activeTab);
 })();

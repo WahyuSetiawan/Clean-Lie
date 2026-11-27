@@ -240,7 +240,7 @@ func (a *App) DirenvClean(req DirenvCleanRequest) (clean.Result, error) {
 		}
 		a.direnvMu.Unlock()
 		a.invalidateAfterMutation()
-		a.notifyCleanResult("Cleanlie — pembersihan direnv selesai", res)
+		a.notifyCleanResult("direnv", res)
 	}
 	return res, nil
 }

@@ -18,7 +18,7 @@ var assets embed.FS
 
 // Diisi lewat -ldflags saat build (lihat Makefile / flake.nix).
 var (
-	version = "0.11.0-dev"
+	version = "0.12.0-dev"
 	commit  = "unknown"
 )
 
@@ -34,8 +34,11 @@ func main() {
 
 	lock, err := singleinstance.Acquire()
 	if errors.Is(err, singleinstance.ErrRunning) {
-		fmt.Fprintln(os.Stderr, "cleanlie: aplikasi sudah berjalan")
-		os.Exit(1)
+		if ferr := singleinstance.Activate(); ferr != nil {
+			fmt.Fprintf(os.Stderr, "cleanlie: aplikasi sudah berjalan (fokus gagal: %v)\n", ferr)
+			os.Exit(1)
+		}
+		os.Exit(0)
 	}
 	if err != nil {
 		log.Printf("cleanlie: lock instance dilewati: %v", err)
@@ -44,6 +47,11 @@ func main() {
 	}
 
 	app := NewApp(version, commit)
+	if focus, ferr := singleinstance.ServeFocus(app.focusWindow); ferr != nil {
+		log.Printf("cleanlie: aktivasi D-Bus nonaktif: %v", ferr)
+	} else {
+		defer focus.Close()
+	}
 
 	err = wails.Run(&options.App{
 		Title:       "Cleanlie",

@@ -63,7 +63,7 @@ func (a *App) NixDeleteGenerations(req nix.GenRequest) (nix.ActionResult, error)
 	}
 	if res.ExitCode == 0 && !res.NeedsSudo {
 		a.invalidateNix()
-		a.notifyNixResult("Cleanlie — hapus generasi selesai", res)
+		a.notifyNixResult("delete", res)
 	}
 	return res, nil
 }
@@ -76,7 +76,7 @@ func (a *App) NixCollectGarbage(confirm string) (nix.ActionResult, error) {
 	}
 	if res.ExitCode == 0 && !res.NeedsSudo {
 		a.invalidateNix()
-		a.notifyNixResult("Cleanlie — GC selesai", res)
+		a.notifyNixResult("gc", res)
 	}
 	return res, nil
 }
@@ -89,7 +89,7 @@ func (a *App) VacuumJournal(target string) (nix.ActionResult, error) {
 	}
 	if res.ExitCode == 0 && !res.NeedsSudo {
 		a.invalidateNix()
-		a.notifyNixResult("Cleanlie — vacuum journal selesai", res)
+		a.notifyNixResult("vacuum", res)
 	}
 	return res, nil
 }

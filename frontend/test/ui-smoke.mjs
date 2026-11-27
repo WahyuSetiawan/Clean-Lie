@@ -175,6 +175,10 @@ const dom = new JSDOM(html, {
         return { action: 'wipe', target: name, preview: 'emulator -avd ' + name + ' -wipe-data', exitCode: 0, freed: 0 };
       },
       DiskStatus: async () => ({ total: 200000000000, free: 80000000000, used: 120000000000, health: 'ok' }),
+      DiskVolumes: async () => ([
+        { path: '/', fstype: 'ext4', device: '/dev/sda2', total: 200000000000, free: 80000000000, used: 120000000000, health: 'ok' },
+        { path: '/mnt/data', fstype: 'ext4', device: '/dev/sdb1', total: 100000000000, free: 9000000000, used: 91000000000, health: 'warn' },
+      ]),
       Insight: async () => {
         insightCalls++;
         return {
@@ -409,6 +413,12 @@ try {
   d.querySelector('#nav button[data-view="dashboard"]').click();
   await sleep(300);
   assert.notEqual($('dash-disk-used').textContent, '—', 'disk dashboard terisi');
+  assert.equal(d.querySelectorAll('#dash-disk-select option').length, 2, 'dua volume lokal tampil');
+  $('dash-disk-select').value = '/mnt/data';
+  $('dash-disk-select').dispatchEvent(new w.Event('change', { bubbles: true }));
+  assert.equal($('dash-disk-health').textContent, 'Tipis', 'health volume non-root tampil');
+  $('dash-disk-select').value = '/';
+  $('dash-disk-select').dispatchEvent(new w.Event('change', { bubbles: true }));
   assert.match($('dash-cache-size').textContent, /2 MiB/, 'cache dev dari report');
   assert.match($('dash-nix-size').textContent, /65\.19 GiB/, 'Nix store dari NixStatus');
   assert.equal(d.querySelectorAll('#dash-reclaim tr').length, 3, 'reclaim top item');

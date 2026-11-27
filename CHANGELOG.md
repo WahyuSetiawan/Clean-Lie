@@ -4,6 +4,27 @@ Semua perubahan penting pada Cleanlie. Format mengikuti
 [Keep a Changelog](https://keepachangelog.com/id/1.1.0/) dan versi mengikuti
 [Semantic Versioning](https://semver.org/lang/id/).
 
+## [0.12.0] — 2026-11-27
+
+### Ditambahkan — follow-up M11
+
+- **Aktivasi instance lama lewat D-Bus**: instance kedua memanggil
+  `org.cleanlie.Cleanlie.Focus`; GUI pertama menampilkan/memunculkan window dan
+  keluar dengan exit 0. Bila session bus tidak tersedia, pesan lama + exit 1.
+- **Volume non-root di dashboard**: `DiskVolumes()` membaca mount lokal
+  (`ext4`/`btrfs`/`xfs`/`f2fs`/`vfat`/`exfat`/`ntfs`/`zfs`/`bcachefs`), dedupe
+  device, dan select volume di kartu Disk dengan chip health masing-masing.
+- **i18n pesan Go**: notifikasi desktop dan detail timer mengikuti bahasa config
+  ID/EN.
+- **CI Cachix opsional**: job `go` dan `build` memakai Cachix bila
+  `CACHIX_AUTH_TOKEN` tersedia; PR/fork tanpa token tetap lolos.
+
+### Catatan
+
+- Versi aplikasi menjadi **0.12.0** (`Makefile`, `flake.nix`, `package.nix`, `main.go`).
+- Fokus window bergantung compositor; Wayland dapat mengabaikan permintaan fokus.
+- Error teknis dari paket internal tetap tidak diterjemahkan.
+
 ## [0.11.0] — 2026-11-27
 
 ### Ditambahkan — M11 Polish

@@ -9,7 +9,7 @@
     id: {
       'brand.tagline': 'cleaner untuk NixOS',
       'brand.tagline.macos': 'cleaner untuk macOS',
-      'side.note': 'M10 · otomasi & cakupan',
+      'side.note': 'M11 · polish & keandalan',
       'nav.dashboard': 'Dashboard',
       'nav.cleanup': 'Bersihkan',
       'nav.analysis': 'Analisis',
@@ -262,7 +262,7 @@
       'analysis.action': 'Aksi',
       'analysis.project': 'Proyek',
       'analysis.artifact': 'Artefak',
-      'dashboard.disk': 'Disk /',
+      'dashboard.disk': 'Disk',
       'disk.ok': 'Sehat',
       'disk.warn': 'Tipis',
       'disk.critical': 'Kritis',
@@ -316,7 +316,7 @@
     en: {
       'brand.tagline': 'cleaner for NixOS',
       'brand.tagline.macos': 'cleaner for macOS',
-      'side.note': 'M10 · automation & coverage',
+      'side.note': 'M11 · polish & reliability',
       'nav.dashboard': 'Dashboard',
       'nav.cleanup': 'Clean',
       'nav.analysis': 'Analysis',
@@ -569,7 +569,7 @@
       'analysis.action': 'Action',
       'analysis.project': 'Project',
       'analysis.artifact': 'Artifact',
-      'dashboard.disk': 'Disk /',
+      'dashboard.disk': 'Disk',
       'disk.ok': 'Healthy',
       'disk.warn': 'Low',
       'disk.critical': 'Critical',
@@ -667,7 +667,10 @@
       if (tEl && title) tEl.textContent = title;
       if (sEl && sub) sEl.textContent = sub;
     }
-    if (window.__scheduleStatus) renderSchedule(window.__scheduleStatus);
+    if (window.__scheduleStatus) {
+      renderSchedule(window.__scheduleStatus);
+      if (bridge && bridge.ScheduleStatus) bridge.ScheduleStatus().then(renderSchedule).catch(() => {});
+    }
     try { window.dispatchEvent(new Event('cleanlie:lang')); } catch (_) {}
   }
 

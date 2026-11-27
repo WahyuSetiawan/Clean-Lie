@@ -18,26 +18,53 @@ func (a *App) notifyDesktop(title, body string) {
 	_ = notify.Send(a.baseCtx(), title, body)
 }
 
-func (a *App) notifyCleanResult(title string, res clean.Result) {
+func (a *App) notifyCleanResult(kind string, res clean.Result) {
 	removed := 0
 	for _, it := range res.Items {
 		if it.Status == clean.StatusRemoved {
 			removed++
 		}
 	}
-	body := fmt.Sprintf("%d item · %s dibebaskan", removed, fsx.Human(res.Freed))
+	title := a.msg("Cleanlie — pembersihan selesai", "Cleanlie — cleanup finished")
+	switch kind {
+	case "analysis":
+		title = a.msg("Cleanlie — pembersihan analisis selesai", "Cleanlie — analysis cleanup finished")
+	case "direnv":
+		title = a.msg("Cleanlie — pembersihan direnv selesai", "Cleanlie — direnv cleanup finished")
+	}
+	var body string
 	if res.Mode == clean.ModeTrash {
-		body = fmt.Sprintf("%d item dipindah ke trash", removed)
+		body = a.msg(
+			fmt.Sprintf("%d item dipindah ke trash", removed),
+			fmt.Sprintf("%d items moved to trash", removed),
+		)
+	} else {
+		body = a.msg(
+			fmt.Sprintf("%d item · %s dibebaskan", removed, fsx.Human(res.Freed)),
+			fmt.Sprintf("%d items · %s freed", removed, fsx.Human(res.Freed)),
+		)
 	}
 	a.notifyDesktop(title, body)
 }
 
-func (a *App) notifyNixResult(title string, res nix.ActionResult) {
+func (a *App) notifyNixResult(kind string, res nix.ActionResult) {
+	title := a.msg("Cleanlie — aksi Nix selesai", "Cleanlie — Nix action finished")
+	switch kind {
+	case "delete":
+		title = a.msg("Cleanlie — hapus generasi selesai", "Cleanlie — generation delete finished")
+	case "gc":
+		title = a.msg("Cleanlie — GC selesai", "Cleanlie — GC finished")
+	case "vacuum":
+		title = a.msg("Cleanlie — vacuum journal selesai", "Cleanlie — journal vacuum finished")
+	}
 	body := res.Preview
 	if res.Deleted > 0 {
-		body = fmt.Sprintf("%d item dihapus", res.Deleted)
+		body = a.msg(
+			fmt.Sprintf("%d item dihapus", res.Deleted),
+			fmt.Sprintf("%d items deleted", res.Deleted),
+		)
 	} else if res.Error != "" {
-		body = "gagal: " + res.Error
+		body = a.msg("gagal: ", "failed: ") + res.Error
 	}
 	a.notifyDesktop(title, body)
 }

@@ -11,7 +11,7 @@
   systemd,
   polkit,
   xdg-utils,
-  version ? "0.11.0",
+  version ? "0.12.0",
   commit ? "unknown",
   source ? ./.,
 }:

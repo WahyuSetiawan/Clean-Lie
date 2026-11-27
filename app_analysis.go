@@ -244,7 +244,7 @@ func (a *App) AnalysisClean(req AnalysisCleanRequest) (clean.Result, error) {
 		}
 		a.analysisMu.Unlock()
 		a.invalidateAfterMutation()
-		a.notifyCleanResult("Cleanlie — pembersihan analisis selesai", res)
+		a.notifyCleanResult("analysis", res)
 	}
 	return res, nil
 }
@@ -252,4 +252,10 @@ func (a *App) AnalysisClean(req AnalysisCleanRequest) (clean.Result, error) {
 // DiskStatus membaca pemakaian filesystem untuk kartu dashboard.
 func (a *App) DiskStatus() (fsx.Volume, error) {
 	return fsx.Statfs("/")
+}
+
+// DiskVolumes mengembalikan volume lokal (root + mount disk nyata) untuk
+// pemilih volume di kartu dashboard.
+func (a *App) DiskVolumes() ([]fsx.Mount, error) {
+	return fsx.Mounts()
 }
