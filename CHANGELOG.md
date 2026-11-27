@@ -4,6 +4,29 @@ Semua perubahan penting pada Cleanlie. Format mengikuti
 [Keep a Changelog](https://keepachangelog.com/id/1.1.0/) dan versi mengikuti
 [Semantic Versioning](https://semver.org/lang/id/).
 
+## [0.11.0] — 2026-11-27
+
+### Ditambahkan — M11 Polish
+
+- **Single instance GUI**: lock `flock` di `<state>/cleanlie/cleanlie.lock`; instance
+  kedua keluar dengan pesan `cleanlie: aplikasi sudah berjalan` (exit 1). Mode CLI
+  tetap bisa berjalan saat GUI terbuka.
+- **Kesehatan disk**: `fsx.ClassifyHealth` (`ok`/`warn`/`critical`/`unknown`),
+  field `health` di `Volume`, dan chip di kartu Disk dashboard.
+- **i18n teks dinamis**: helper `window.__tf`, key ID/EN untuk dashboard, analisis,
+  Riwayat, Nix, dan preview; ganti bahasa langsung me-render ulang data cache tanpa
+  scan ulang.
+- **CI test**: `.github/workflows/test.yml` menjalankan `go test`, `go vet`, cek
+  `gofmt`, UI smoke (Node 20), lalu `nix build`.
+- Test `internal/singleinstance`, `internal/fsx/health`, dan assertion UI smoke
+  untuk chip disk + teks EN dinamis.
+
+### Catatan
+
+- Versi aplikasi menjadi **0.11.0** (`Makefile`, `flake.nix`, `package.nix`, `main.go`).
+- Instance kedua belum mem-fokuskan window lama (butuh D-Bus).
+- Health hanya untuk filesystem root `/`; ini bukan SMART.
+
 ## [0.10.0] — 2026-11-27
 
 ### Ditambahkan — M10 Otomasi & Cakupan

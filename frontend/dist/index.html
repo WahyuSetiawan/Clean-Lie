@@ -83,7 +83,10 @@
       <section class="view active" id="view-dashboard">
         <div class="grid g4">
           <div class="card stat">
-            <h3 data-i18n="dashboard.disk">Disk /</h3>
+            <div class="row" style="justify-content:space-between;align-items:center">
+              <h3 data-i18n="dashboard.disk">Disk /</h3>
+              <span class="chip" id="dash-disk-health">—</span>
+            </div>
             <div class="big"><span id="dash-disk-used">—</span> <span class="muted" style="font-size:14px">/ <span id="dash-disk-total">—</span></span></div>
             <div class="bar"><i class="accent" id="dash-disk-bar" style="width:0%"></i></div>
             <div class="hint" id="dash-disk-hint">memuat…</div>

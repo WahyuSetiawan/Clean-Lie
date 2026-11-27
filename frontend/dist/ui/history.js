@@ -3,6 +3,7 @@
   const C = window.cleanlie;
   const { bridge, byId, esc, human, shortPath, setOk, errText } = C;
   const t = (k, fallback) => (window.__t && window.__t(k)) || fallback;
+  const tf = (k, v, f) => window.__tf ? window.__tf(k, v, f) : (f || k);
 
   const demoTrash = [
     { id: 'demo-a', name: 'npm-cache', originalPath: '~/.npm/_cacache', deletedAt: '2026-11-25T10:12:00Z', bytes: 734003200, restorable: true, reason: '' },
@@ -28,27 +29,27 @@
     if (isNaN(d.getTime())) return s;
     return d.toLocaleString(document.documentElement.lang === 'en' ? 'en-GB' : 'id-ID', { dateStyle: 'short', timeStyle: 'short' });
   };
-  const actionLabel = s => s.action === 'restore' ? 'restore' : s.action === 'trash-delete' ? 'hapus permanen' : s.action === 'trash-empty' ? 'kosongkan' : (s.mode || 'clean');
+  const actionLabel = s => s.action === 'restore' ? t('history.actionRestore', 'pulihkan') : s.action === 'trash-delete' ? t('history.actionDelete', 'hapus permanen') : s.action === 'trash-empty' ? t('history.actionEmpty', 'kosongkan') : (s.mode || t('history.actionClean', 'bersihkan'));
   const chip = s => s.action === 'restore' ? 'safe' : s.action ? 'warn' : (s.failed ? 'warn' : 'safe');
 
   function note(msg) { const el = byId('history-note'); if (el) el.textContent = msg || ''; }
 
   async function loadSessions() {
     if (!bridge) { sessions = demoSessions; loadedSessions = true; renderSessions(); return; }
-    note('Memuat sesi…');
+    note(tf('history.loadingSessions', null, 'Memuat sesi…'));
     try {
       const page = await bridge.HistorySessions(50);
       sessions = (page && page.sessions) || [];
       loadedSessions = true;
       renderSessions(page && page.truncated);
     } catch (e) {
-      note('Gagal memuat riwayat: ' + errText(e));
+      note(tf('history.loadFail', null, 'Gagal memuat riwayat: ') + errText(e));
     }
   }
 
   async function loadTrash() {
     if (!bridge) { trash = demoTrash; loadedTrash = true; renderTrash(); return; }
-    note('Memuat trash…');
+    note(tf('history.loadingTrash', null, 'Memuat trash…'));
     try {
       await bridge.TrashRefresh();
       const rep = await bridge.TrashList();
@@ -56,7 +57,7 @@
       loadedTrash = true;
       renderTrash(rep && rep.truncated);
     } catch (e) {
-      note('Gagal memuat trash: ' + errText(e));
+      note(tf('history.trashLoadFail', null, 'Gagal memuat trash: ') + errText(e));
     }
   }
 
@@ -64,7 +65,7 @@
     const body = byId('history-sessions');
     if (!body) return;
     const count = byId('history-session-count');
-    if (count) count.textContent = sessions.length + ' sesi';
+    if (count) count.textContent = tf('history.sessionsCount', { n: sessions.length }, sessions.length + ' sesi');
     if (byId('nav-history-count')) byId('nav-history-count').textContent = sessions.length;
     if (!sessions.length) {
       body.innerHTML = '<tr><td colspan="6" class="tiny dim" style="padding:18px 16px">' + esc(t('history.noSessions', 'Belum ada aktivitas pembersihan.')) + '</td></tr>';
@@ -73,17 +74,17 @@
     body.innerHTML = sessions.map(s => {
       const items = s.items || [];
       const detail = items.slice(0, 8).map(it =>
-        '<div class="row" style="gap:8px;padding:3px 0"><span class="chip ' + (it.status === 'removed' ? 'safe' : 'warn') + '">' + esc(it.status || '?') + '</span>'
+        '<div class="row" style="gap:8px;padding:3px 0"><span class="chip ' + (it.status === 'removed' ? 'safe' : 'warn') + '">' + esc(it.status === 'removed' ? t('history.statusRemoved', 'dihapus') : it.status === 'failed' ? t('history.statusFailed', 'gagal') : it.status === 'skipped' ? t('history.statusSkipped', 'dilewati') : (it.status || '?')) + '</span>'
         + '<span class="mono small" style="overflow:hidden;text-overflow:ellipsis">' + esc(shortPath(it.path || '—')) + '</span></div>'
-      ).join('') + (items.length > 8 ? '<div class="tiny dim">… +' + (items.length - 8) + ' item</div>' : '');
+      ).join('') + (items.length > 8 ? '<div class="tiny dim">… +' + tf('history.itemCount', { n: items.length - 8 }, (items.length - 8) + ' item') + '</div>' : '');
       return '<tr>'
         + '<td class="tiny">' + esc(fmtTime(s.startedAt)) + '</td>'
         + '<td><span class="chip ' + chip(s) + '">' + esc(actionLabel(s)) + '</span><div class="tiny dim">' + esc(s.batch || s.id) + '</div></td>'
-        + '<td class="r num">' + (s.removed || 0) + (s.failed ? ' <span class="tiny" style="color:var(--warn)">+' + s.failed + ' gagal</span>' : '') + '</td>'
+        + '<td class="r num">' + (s.removed || 0) + (s.failed ? ' <span class="tiny" style="color:var(--warn)">' + tf('history.failedCount', { n: s.failed }, '+' + s.failed + ' gagal') + '</span>' : '') + '</td>'
         + '<td class="r num">' + human(s.freed || 0) + '</td>'
         + '<td class="r num">' + (s.restorable || 0) + (s.restorableBytes ? '<div class="tiny dim">' + human(s.restorableBytes) + '</div>' : '') + '</td>'
         + '<td class="r"><button class="btn ghost" data-undo="' + esc(s.id) + '"' + (s.restorable ? '' : ' disabled') + '>' + esc(t('history.undo', 'Undo sesi ini')) + '</button></td>'
-        + '</tr><tr><td colspan="6" style="padding-top:0"><details><summary class="tiny dim">' + items.length + ' item' + (s.itemsTruncated ? ' (dipotong)' : '') + '</summary>' + detail + '</details></td></tr>';
+        + '</tr><tr><td colspan="6" style="padding-top:0"><details><summary class="tiny dim">' + tf('history.itemCount', { n: items.length }, items.length + ' item') + (s.itemsTruncated ? ' (dipotong)' : '') + '</summary>' + detail + '</details></td></tr>';
     }).join('');
     if (truncated) note(t('history.truncated', 'Daftar dipotong; gunakan pencarian untuk mempersempit.'));
   }
@@ -97,7 +98,7 @@
     for (const id of [...selected]) if (!trash.some(e => e.id === id)) selected.delete(id);
 
     if (!list.length) {
-      body.innerHTML = '<tr><td colspan="7" class="tiny dim" style="padding:18px 16px">' + esc(trash.length ? 'Tidak ada hasil pencarian.' : t('history.noTrash', 'Trash kosong.')) + '</td></tr>';
+      body.innerHTML = '<tr><td colspan="7" class="tiny dim" style="padding:18px 16px">' + esc(trash.length ? t('history.searchEmpty', 'Tidak ada hasil pencarian.') : t('history.noTrash', 'Trash kosong.')) + '</td></tr>';
       updateSel();
       return;
     }
@@ -106,7 +107,7 @@
       const size = e.bytes < 0 ? '…' : human(e.bytes);
       return '<tr>'
         + '<td><input type="checkbox" data-trash-id="' + esc(e.id) + '" ' + checked + ' aria-label="Pilih ' + esc(e.name) + '"></td>'
-        + '<td><b>' + esc(e.name) + '</b>' + (e.rootKind === 'volume' ? ' <span class="tiny dim">volume</span>' : '') + '</td>'
+        + '<td><b>' + esc(e.name) + '</b>' + (e.rootKind === 'volume' ? ' <span class="tiny dim">' + esc(t('history.volume', 'volume')) + '</span>' : '') + '</td>'
         + '<td class="mono small" style="overflow:hidden;text-overflow:ellipsis">' + esc(e.originalPath ? shortPath(e.originalPath) : '—') + '</td>'
         + '<td class="tiny">' + esc(fmtTime(e.deletedAt)) + '</td>'
         + '<td class="r num">' + size + '</td>'
@@ -121,7 +122,7 @@
 
   function updateSel() {
     const n = selected.size;
-    if (byId('history-selected')) byId('history-selected').textContent = n + ' ' + t('history.selected', 'dipilih');
+    if (byId('history-selected')) byId('history-selected').textContent = tf('history.selectedCount', { n: n }, n + ' ' + t('history.selected', 'dipilih'));
     const restore = byId('history-restore');
     const del = byId('history-delete');
     if (restore) restore.disabled = busy || n === 0;
@@ -343,6 +344,12 @@
     window.runtime.EventsOn('trash:changed', () => { if (current === 'history') { loadedSessions = false; loadedTrash = false; ensureHistory(true); } });
     window.runtime.EventsOn('trash:progress', p => { if (current === 'history') note('Memproses ' + (p.done || 0) + '/' + (p.total || 0) + ' · ' + (p.name || '')); });
   }
+
+  window.addEventListener('cleanlie:lang', () => {
+    if (loadedSessions) renderSessions();
+    if (loadedTrash) renderTrash();
+    updateSel();
+  });
 
   C.ensureHistory = ensureHistory;
   C.switchHistoryTab = switchTab;

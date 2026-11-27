@@ -3,6 +3,7 @@
   const C = window.cleanlie;
   if (!C.bridge) return;
   const { bridge, byId, esc, human, rebind, setOk, errText } = C;
+  const tf = (k, v, f) => window.__tf ? window.__tf(k, v, f) : (f || k);
 
   let nixStatus = null;
   let nixDead = null;
@@ -22,11 +23,11 @@
       }
     }
     if (on && !nixStatus) {
-      byId('nix-store-hint').textContent = 'memuat ukuran NAR\u2026';
-      byId('nix-dead-hint').textContent = 'menghitung dead paths (bisa ~30 detik)\u2026';
-      byId('nix-gen-hint').textContent = 'memuat generasi\u2026';
+      byId('nix-store-hint').textContent = tf('nix.loadingStore', null, 'memuat ukuran NAR…');
+      byId('nix-dead-hint').textContent = tf('nix.loadingDead', null, 'menghitung dead paths (bisa ~30 detik)…');
+      byId('nix-gen-hint').textContent = tf('nix.loadingGens', null, 'memuat generasi…');
       const tb = byId('nix-gens');
-      if (tb) tb.innerHTML = '<tr><td colspan="6" class="tiny dim" style="padding:18px 16px">Memuat generasi\u2026</td></tr>';
+      if (tb) tb.innerHTML = '<tr><td colspan="6" class="tiny dim" style="padding:18px 16px">' + esc(tf('nix.loadingGensRow', null, 'Memuat generasi…')) + '</td></tr>';
     }
   }
 
@@ -48,31 +49,31 @@
   function renderNixFailure(which, e) {
     const msg = errText(e);
     if (which === 'status') {
-      byId('nix-store-hint').textContent = 'gagal: ' + msg;
-      byId('nix-gen-hint').textContent = 'gagal: ' + msg;
+      byId('nix-store-hint').textContent = tf('nix.fail', null, 'gagal: ') + msg;
+      byId('nix-gen-hint').textContent = tf('nix.fail', null, 'gagal: ') + msg;
       const tb = byId('nix-gens');
       if (tb) tb.innerHTML = '<tr><td colspan="6" class="tiny" style="padding:18px 16px;color:var(--danger)">' + esc(msg) + '</td></tr>';
     } else {
       byId('nix-dead-size').textContent = '\u2014';
-      byId('nix-dead-hint').textContent = 'gagal: ' + msg;
+      byId('nix-dead-hint').textContent = tf('nix.fail', null, 'gagal: ') + msg;
     }
     toast('Nix: ' + msg);
   }
 
   function renderNixStatus(s) {
     byId('nix-store-size').textContent = human(s.storeBytes || 0);
-    byId('nix-store-hint').textContent = (s.storePaths || 0).toLocaleString('id-ID') + ' path \u00b7 NAR \u00b7 sisa ' + human(s.freeBytes || 0) + ' / ' + human(s.totalBytes || 0);
+    byId('nix-store-hint').textContent = tf('nix.pathsHint', { n: (s.storePaths || 0).toLocaleString(document.documentElement.lang === 'en' ? 'en-GB' : 'id-ID'), free: human(s.freeBytes || 0), total: human(s.totalBytes || 0) }, (s.storePaths || 0) + ' path · NAR · sisa ' + human(s.freeBytes || 0) + ' / ' + human(s.totalBytes || 0));
     byId('nix-gen-count').textContent = (s.generations || []).length;
     const parts = (s.profiles || []).filter(p => p.count).map(p => (nixProfileName[p.name] || p.name) + ' ' + p.count);
-    byId('nix-gen-hint').textContent = parts.length ? parts.join(' \u00b7 ') : 'tidak ada profile';
+    byId('nix-gen-hint').textContent = parts.length ? parts.join(' · ') : tf('nix.noProfile', null, 'tidak ada profile');
     const dates = (s.generations || []).map(g => g.date).filter(Boolean).sort();
-    byId('nix-gen-oldest').textContent = dates.length ? 'terlama: ' + dates[0] : '';
+    byId('nix-gen-oldest').textContent = dates.length ? tf('nix.oldest', null, 'terlama: ') + dates[0] : '';
     byId('nix-journal-size').textContent = human(s.journalBytes || 0);
 
     const tb = byId('nix-gens');
     const gens = s.generations || [];
     if (!gens.length) {
-      tb.innerHTML = '<tr><td colspan="6" class="tiny dim" style="padding:18px 16px">Tidak ada generasi yang terbaca.</td></tr>';
+      tb.innerHTML = '<tr><td colspan="6" class="tiny dim" style="padding:18px 16px">' + esc(tf('nix.noGenerations', null, 'Tidak ada generasi yang terbaca.')) + '</td></tr>';
     } else {
       tb.innerHTML = gens.map(g => {
         let status = g.current
@@ -117,12 +118,12 @@
     byId('m-title').textContent = title;
     byId('m-sub').textContent = sub || '';
     byId('m-body').innerHTML = body;
-    byId('m-cancel').textContent = 'Batal';
+    byId('m-cancel').textContent = tf('nix.cancel', null, 'Batal');
     const cancel = byId('m-cancel');
     if (cancel) cancel.disabled = false;
     const ok = setOk(opts.okLabel, !!opts.needGC, async () => {
       ok.disabled = true;
-      ok.textContent = 'Memproses\u2026';
+      ok.textContent = tf('nix.processing', null, 'Memproses…');
       if (cancel) cancel.disabled = true;
       try { await opts.action(); }
       catch (e) { showNixError(opts.okLabel, e); }
@@ -138,17 +139,17 @@
 
   function showNixError(label, e) {
     byId('m-cancel').disabled = false;
-    byId('m-title').textContent = 'Gagal: ' + label;
-    byId('m-sub').textContent = 'Tidak ada perubahan yang diklaim berhasil.';
+    byId('m-title').textContent = tf('nix.failed', null, 'Gagal: ') + label;
+    byId('m-sub').textContent = tf('nix.noChange', null, 'Tidak ada perubahan yang diklaim berhasil.');
     byId('m-body').innerHTML = '<div class="cmdbox">' + esc(errText(e)) + '</div>';
-    byId('m-cancel').textContent = 'Tutup';
+    byId('m-cancel').textContent = tf('nix.close', null, 'Tutup');
     setOk('Tutup', false, () => backdrop.classList.remove('open'));
   }
 
   function showNixResult(res, label) {
     byId('m-cancel').disabled = false;
     const ok = res.exitCode === 0;
-    byId('m-title').textContent = (ok ? 'Selesai: ' : (res.needsSudo ? 'Perlu sudo: ' : 'Gagal: ')) + label;
+    byId('m-title').textContent = (ok ? tf('nix.done', null, 'Selesai: ') : (res.needsSudo ? tf('nix.needSudo', null, 'Perlu sudo: ') : tf('nix.failed', null, 'Gagal: '))) + label;
     byId('m-sub').textContent = 'exit ' + res.exitCode + ' \u00b7 ' + Math.round(res.durationMs || 0) + ' ms' + (res.used ? ' \u00b7 ' + res.used : '');
     let body = '<div class="row" style="gap:8px;margin-bottom:10px">'
       + '<span class="pill ' + (ok ? 'safe' : '') + '">exit ' + res.exitCode + '</span>'
@@ -164,15 +165,15 @@
         + '<button class="btn ghost" id="nix-copy-sudo">Salin perintah</button>';
     }
     byId('m-body').innerHTML = body;
-    byId('m-cancel').textContent = 'Tutup';
+    byId('m-cancel').textContent = tf('nix.close', null, 'Tutup');
     setOk('Tutup', false, () => {
       backdrop.classList.remove('open');
       if (ok) ensureNix(true);
     });
     const copy = byId('nix-copy-sudo');
     if (copy) copy.addEventListener('click', async () => {
-      try { await bridge.CopyText(res.sudoCommand); toast('Perintah disalin'); }
-      catch (e) { toast('Gagal menyalin: ' + e); }
+      try { await bridge.CopyText(res.sudoCommand); toast(tf('nix.copyOk', null, 'Perintah disalin')); }
+      catch (e) { toast(tf('nix.copyFail', null, 'Gagal menyalin: ') + e); }
     });
   }
 
@@ -202,7 +203,7 @@
 
   function openGC() {
     if (!nixStatus) return;
-    if (!nixDead) { toast('Dead paths masih dihitung'); return; }
+    if (!nixDead) { toast(tf('nix.busyDead', null, 'Dead paths masih dihitung')); return; }
     const cmd = nixStatus.gcCommand || 'sudo nix-collect-garbage -d';
     let body = '<div class="row" style="gap:8px;margin-bottom:10px">'
       + '<span class="pill">store <b>' + human(nixStatus.storeBytes || 0) + '</b> (NAR)</span>'
@@ -219,7 +220,7 @@
   async function openDeleteOld() {
     if (!nixStatus) return;
     const gens = (nixStatus.generations || []).filter(g => !g.current && g.suggested);
-    if (!gens.length) { toast('Tidak ada generasi > 30 hari'); return; }
+    if (!gens.length) { toast(tf('nix.noOld', null, 'Tidak ada generasi > 30 hari')); return; }
     const by = {};
     for (const g of gens) (by[g.profile] = by[g.profile] || []).push(g);
     const entries = Object.entries(by);
@@ -285,6 +286,11 @@
   rebind(byId('nix-gc'), openGC);
   rebind(byId('nix-del-old'), openDeleteOld);
   rebind(byId('nix-vacuum'), openVacuum);
+
+  window.addEventListener('cleanlie:lang', () => {
+    if (nixStatus) renderNixStatus(nixStatus);
+    if (nixDead) renderNixDead(nixDead);
+  });
 
   C.ensureNix = ensureNix;
 })();

@@ -174,7 +174,7 @@ const dom = new JSDOM(html, {
         androidWiped = name;
         return { action: 'wipe', target: name, preview: 'emulator -avd ' + name + ' -wipe-data', exitCode: 0, freed: 0 };
       },
-      DiskStatus: async () => ({ total: 200000000000, free: 80000000000, used: 120000000000 }),
+      DiskStatus: async () => ({ total: 200000000000, free: 80000000000, used: 120000000000, health: 'ok' }),
       Insight: async () => {
         insightCalls++;
         return {
@@ -554,6 +554,9 @@ try {
   assert.equal($('page-title').textContent, 'Settings', 'judul halaman ikut bahasa');
   assert.equal(d.querySelector('#nav button[data-view="cleanup"] span[data-i18n]').textContent, 'Clean', 'nav ikut bahasa');
   assert.equal($('settings-save').textContent, 'Save settings', 'tombol ikut bahasa');
+  assert.equal($('dash-disk-health').textContent, 'Healthy', 'label kesehatan disk ikut bahasa');
+  assert.match($('dash-disk-hint').textContent, /used/, 'hint disk ikut bahasa');
+  assert.match($('an-dup-summary').textContent, /groups/, 'ringkasan duplikat ikut bahasa');
 
   $('theme-select').value = 'light';
   $('theme-select').dispatchEvent(new w.Event('change', { bubbles: true }));

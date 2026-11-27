@@ -62,7 +62,7 @@
       const res = await bridge.PreviewCleanup(id);
       openPreview(res, base(res.path));
     } catch (e) {
-      if (window.toast) toast('Preview gagal: ' + errText(e));
+      if (window.toast) toast(t('preview.fail', 'Preview gagal: ') + errText(e));
     }
   }
 
@@ -72,7 +72,7 @@
       const res = await bridge.PreviewTrash(id);
       openPreview(res, base(res.path));
     } catch (e) {
-      if (window.toast) toast('Preview gagal: ' + errText(e));
+      if (window.toast) toast(t('preview.fail', 'Preview gagal: ') + errText(e));
     }
   }
 

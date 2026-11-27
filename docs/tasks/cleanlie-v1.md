@@ -22,6 +22,7 @@
 | M8 Trust | ✅ 2026-11-27 | `internal/trash` + `preview` + Riwayat; **13 paket Go** hijau; UI smoke Riwayat/Trash/Preview/Undo hijau; `scripts/verify-trash.sh` hijau; `nix build` 0.8.0 |
 | M9 Visibilitas | ✅ 2026-11-27 | `internal/insight` + `notify`; **15 paket Go** hijau; UI smoke kartu minggu/sparkline/ekspor/toggle notifikasi hijau; `--insight`/`--report` hijau; `nix build` 0.9.0 |
 | M10 Otomasi | ✅ 2026-11-27 | aturan kustom + hardlink + `internal/schedule`; **16 paket Go** hijau; UI smoke aturan kustom/Otomasi hijau; `--auto-clean`/`--schedule-*` hijau; `nix build` 0.10.0 |
+| M11 Polish | ✅ 2026-11-27 | `internal/singleinstance` + `fsx.ClassifyHealth`; i18n dinamis; workflow test; **17 paket Go** hijau; UI smoke chip/EN hijau; `nix build` 0.11.0 |
 
 ## Aturan main
 

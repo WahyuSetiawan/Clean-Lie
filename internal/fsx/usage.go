@@ -92,9 +92,10 @@ func Human(b int64) string {
 
 // Volume adalah ringkasan pemakaian filesystem.
 type Volume struct {
-	Total int64 `json:"total"`
-	Free  int64 `json:"free"`
-	Used  int64 `json:"used"`
+	Total  int64  `json:"total"`
+	Free   int64  `json:"free"`
+	Used   int64  `json:"used"`
+	Health Health `json:"health"`
 }
 
 // Statfs membaca pemakaian filesystem tempat path berada.
@@ -105,5 +106,5 @@ func Statfs(path string) (Volume, error) {
 	}
 	total := int64(st.Blocks) * int64(st.Bsize)
 	free := int64(st.Bavail) * int64(st.Bsize)
-	return Volume{Total: total, Free: free, Used: total - free}, nil
+	return Volume{Total: total, Free: free, Used: total - free, Health: ClassifyHealth(total, free)}, nil
 }

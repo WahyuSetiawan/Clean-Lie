@@ -1,0 +1,74 @@
+---
+name: Test
+
+'on':
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: test-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  go:
+    name: Go test + vet + format
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      TAGS: desktop,production,webkit2_41
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: cachix/install-nix-action@v30
+        with:
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+
+      - name: go test
+        run: nix develop --command go test -tags "$TAGS" ./...
+
+      - name: go vet
+        run: nix develop --command go vet -tags "$TAGS" ./...
+
+      - name: gofmt
+        run: test -z "$(nix develop --command gofmt -l .)"
+
+  ui:
+    name: UI smoke (jsdom)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: frontend/test
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: frontend/test/package-lock.json
+
+      - run: npm ci
+      - run: npm test
+
+  build:
+    name: Nix build
+    runs-on: ubuntu-latest
+    needs: [go, ui]
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: cachix/install-nix-action@v30
+        with:
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+
+      - name: Build cleanlie
+        run: nix build --print-build-logs .#cleanlie
