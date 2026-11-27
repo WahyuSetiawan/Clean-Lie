@@ -10,6 +10,8 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+
+	"github.com/Juragan-Koding/cleanlie/internal/rules"
 )
 
 const (
@@ -26,18 +28,28 @@ const (
 
 // Config adalah isi ~/.config/cleanlie/config.json.
 type Config struct {
-	Theme          string   `json:"theme"`
-	Language       string   `json:"language"`
-	ShowRisky      bool     `json:"showRisky"`
-	DeleteMode     string   `json:"deleteMode"`
-	AutoSelectSafe bool     `json:"autoSelectSafe"`
-	Notify         bool     `json:"notify"`
-	JournalTarget  string   `json:"journalTarget"`
-	LargeBytes     int64    `json:"largeBytes"`
-	StaleDays      int      `json:"staleDays"`
-	ArtifactRoots  []string `json:"artifactRoots"`
-	DirenvRoots    []string `json:"direnvRoots"`
-	Excluded       []string `json:"excluded"`
+	Theme          string       `json:"theme"`
+	Language       string       `json:"language"`
+	ShowRisky      bool         `json:"showRisky"`
+	DeleteMode     string       `json:"deleteMode"`
+	AutoSelectSafe bool         `json:"autoSelectSafe"`
+	Notify         bool         `json:"notify"`
+	JournalTarget  string       `json:"journalTarget"`
+	LargeBytes     int64        `json:"largeBytes"`
+	StaleDays      int          `json:"staleDays"`
+	ArtifactRoots  []string     `json:"artifactRoots"`
+	DirenvRoots    []string     `json:"direnvRoots"`
+	Excluded       []string     `json:"excluded"`
+	CustomRules    []CustomRule `json:"customRules,omitempty"`
+}
+
+// CustomRule adalah aturan pemindaian tambahan dari pengguna.
+type CustomRule struct {
+	Path  string `json:"path"`
+	Label string `json:"label,omitempty"`
+	Risk  string `json:"risk,omitempty"`
+	Whole bool   `json:"whole,omitempty"`
+	Depth int    `json:"depth,omitempty"`
 }
 
 // Default mengembalikan preferensi awal yang aman.
@@ -120,6 +132,7 @@ func Normalize(c Config) (Config, []string) {
 	c.ArtifactRoots = cleanPaths(c.ArtifactRoots)
 	c.DirenvRoots = cleanPaths(c.DirenvRoots)
 	c.Excluded = cleanPaths(c.Excluded)
+	c.CustomRules, warnings = normalizeCustomRules(c.CustomRules, warnings)
 	return c, warnings
 }
 
@@ -204,6 +217,62 @@ func cleanPaths(in []string) []string {
 	}
 	sort.Strings(out)
 	return out
+}
+
+func normalizeCustomRules(in []CustomRule, warnings []string) ([]CustomRule, []string) {
+	const maxCustom = 32
+	seen := map[string]bool{}
+	out := make([]CustomRule, 0, len(in))
+	for i, r := range in {
+		if len(out) >= maxCustom {
+			warnings = append(warnings, fmt.Sprintf("aturan kustom dibatasi %d; sisanya diabaikan", maxCustom))
+			break
+		}
+		p := strings.TrimSpace(r.Path)
+		if p == "" {
+			continue
+		}
+		p = expandHome(p)
+		if !filepath.IsAbs(p) {
+			warnings = append(warnings, fmt.Sprintf("aturan kustom #%d: path harus absolut: %s", i+1, r.Path))
+			continue
+		}
+		p = filepath.Clean(p)
+		if rules.IsProtected(p) {
+			warnings = append(warnings, fmt.Sprintf("aturan kustom #%d: path dilindungi: %s", i+1, p))
+			continue
+		}
+		if seen[p] {
+			continue
+		}
+		seen[p] = true
+		risk := strings.ToLower(strings.TrimSpace(r.Risk))
+		switch risk {
+		case "", "warn":
+			risk = "warn"
+		case "safe", "danger":
+		default:
+			warnings = append(warnings, fmt.Sprintf("aturan kustom #%d: risk tidak dikenal: %s", i+1, r.Risk))
+			risk = "warn"
+		}
+		depth := r.Depth
+		if depth <= 0 {
+			depth = 1
+		}
+		if depth > 6 {
+			depth = 6
+		}
+		label := strings.TrimSpace(r.Label)
+		if label == "" {
+			label = filepath.Base(p)
+		}
+		whole := r.Whole
+		if whole {
+			depth = 0
+		}
+		out = append(out, CustomRule{Path: p, Label: label, Risk: risk, Whole: whole, Depth: depth})
+	}
+	return out, warnings
 }
 
 func expandHome(p string) string {

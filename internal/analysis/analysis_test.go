@@ -283,3 +283,25 @@ func TestScanOverviewExtraRoot(t *testing.T) {
 		t.Fatalf("artefak dari extra root tidak ditemukan: %+v", ov.Artifacts)
 	}
 }
+
+func TestFindDuplicatesHardlink(t *testing.T) {
+	root := t.TempDir()
+	const size = 1200 << 10
+	a := filepath.Join(root, "a.bin")
+	b := filepath.Join(root, "b.bin")
+	writeFile(t, a, size, 'x')
+	writeFile(t, b, size, 'x')
+	if err := os.Link(a, filepath.Join(root, "a-hard.bin")); err != nil {
+		t.Skipf("hardlink tidak didukung: %v", err)
+	}
+	dups, err := FindDuplicates(context.Background(), Options{Root: root})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if dups.Hardlinks != 1 || dups.HardlinkBytes != size {
+		t.Fatalf("hardlink = %d/%d", dups.Hardlinks, dups.HardlinkBytes)
+	}
+	if dups.Wasted != size {
+		t.Fatalf("wasted = %d", dups.Wasted)
+	}
+}

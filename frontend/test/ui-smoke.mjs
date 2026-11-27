@@ -59,12 +59,15 @@ let exportFormat = null;
 let direnvPickPath = '/home/u/Projects';
 let savedSettings = null;
 let resetSettingsCalls = 0;
+let scheduleStatus = { installed: false, enabled: false, active: false, interval: 'weekly', servicePath: '/home/u/.config/systemd/user/cleanlie-clean.service', timerPath: '/home/u/.config/systemd/user/cleanlie-clean.timer', detail: 'timer belum dipasang' };
+let scheduleInstalledInterval = null;
+let scheduleRemoveCalls = 0;
 let settingsView = {
   path: '/home/u/.config/cleanlie/config.json',
   config: {
     theme: 'system', language: 'id', showRisky: true, deleteMode: 'trash',
     autoSelectSafe: true, notify: true, journalTarget: '500M', largeBytes: 104857600,
-    staleDays: 365, artifactRoots: [], direnvRoots: [], excluded: []
+    staleDays: 365, artifactRoots: [], direnvRoots: [], excluded: [], customRules: []
   }
 };
 
@@ -105,6 +108,7 @@ const dom = new JSDOM(html, {
   beforeParse(window) {
     window.addEventListener('error', e => { throw e.error || new Error(e.message); });
     window.runtime = { EventsOn() {}, ClipboardSetText: async () => {} };
+    window.confirm = () => true;
     window.go = { main: { App: {
       Diagnostics: async () => ({ home: '/home/u', version: 'test' }),
       ScanJunk: async () => { scans++; return report; },
@@ -259,6 +263,17 @@ const dom = new JSDOM(html, {
         };
       },
       OpenInFileManager: async p => { analysisOpened = p; },
+      ScheduleStatus: async () => scheduleStatus,
+      ScheduleInstall: async interval => {
+        scheduleInstalledInterval = interval;
+        scheduleStatus = Object.assign({}, scheduleStatus, { installed: true, enabled: true, active: true, interval, detail: 'timer aktif' });
+        return scheduleStatus;
+      },
+      ScheduleRemove: async () => {
+        scheduleRemoveCalls++;
+        scheduleStatus = Object.assign({}, scheduleStatus, { installed: false, enabled: false, active: false, detail: 'timer dihapus' });
+        return scheduleStatus;
+      },
       Settings: async () => settingsView,
       SaveSettings: async c => {
         savedSettings = c;
@@ -273,7 +288,7 @@ const dom = new JSDOM(html, {
           config: {
             theme: 'system', language: 'id', showRisky: true, deleteMode: 'trash',
             autoSelectSafe: true, notify: true, journalTarget: '500M', largeBytes: 104857600,
-            staleDays: 365, artifactRoots: [], direnvRoots: [], excluded: []
+            staleDays: 365, artifactRoots: [], direnvRoots: [], excluded: [], customRules: []
           }
         };
         return settingsView;
@@ -550,6 +565,7 @@ try {
   $('large-mb').value = '250';
   $('stale-days').value = '30';
   $('artifact-roots').value = '~/Projects, ~/work';
+  $('custom-rules').value = '~/work/cache | cache kerja | safe';
   $('settings-save').click();
   await sleep(100);
   assert.ok(savedSettings, 'SaveSettings dipanggil');
@@ -560,7 +576,20 @@ try {
   assert.equal(JSON.stringify(savedSettings.artifactRoots), '["~/Projects","~/work"]');
   assert.equal(JSON.stringify(savedSettings.excluded), '["~/Downloads"]');
   assert.equal(savedSettings.notify, true, 'notifikasi desktop tersimpan');
+  assert.equal(savedSettings.customRules.length, 1, 'aturan kustom tersimpan');
+  assert.equal(savedSettings.customRules[0].path, '~/work/cache');
+  assert.equal(savedSettings.customRules[0].risk, 'safe');
   assert.match($('settings-status').textContent, /Settings saved/);
+
+  $('schedule-interval').value = 'daily';
+  $('schedule-install').click();
+  await sleep(80);
+  assert.equal(scheduleInstalledInterval, 'daily', 'interval timer dikirim');
+  assert.match($('schedule-state').textContent, /installed/, 'status timer terpasang');
+  assert.match($('schedule-detail').textContent, /timer aktif/);
+  $('schedule-remove').click();
+  await sleep(80);
+  assert.equal(scheduleRemoveCalls, 1, 'timer dihapus lewat binding');
 
   $('settings-reset').click();
   await sleep(100);
@@ -569,7 +598,7 @@ try {
   assert.equal($('lang-select').value, 'id');
   assert.equal($('large-mb').value, '100');
 
-  console.log('UI smoke OK: scan, gate permanen, trash, hasil, preview, rescan, Nix, GC, Android, dashboard, analisis, direnv, Riwayat, settings, tema, i18n');
+  console.log('UI smoke OK: scan, gate permanen, trash, hasil, preview, rescan, Nix, GC, Android, dashboard, analisis, direnv, Riwayat, settings, tema, i18n, aturan kustom, timer');
 } finally {
   w.close();
 }

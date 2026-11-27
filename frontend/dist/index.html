@@ -56,7 +56,7 @@
       <div class="swatches">
         <i style="background:var(--accent)"></i><i style="background:var(--accent-2)"></i><i style="background:var(--warn)"></i><i style="background:var(--danger)"></i>
       </div>
-      <div class="side-note" data-i18n="side.note">M7 · direnv scan</div>
+      <div class="side-note" data-i18n="side.note">M10 · otomasi & cakupan</div>
     </div>
   </aside>
 
@@ -595,6 +595,33 @@
               <div class="label"><b data-i18n="settings.artifactRoots">Root scan tambahan</b><span data-i18n="settings.artifactRootsHint">Pisahkan dengan koma; dipakai untuk scan artefak</span></div>
               <div class="ctrl"><input type="text" id="artifact-roots" placeholder="~/Projects, ~/work" style="width:220px" aria-label="Root scan tambahan"></div>
             </div>
+          </div>
+
+          <div class="card">
+            <h3 style="margin-bottom:6px" data-i18n="settings.customRules">Aturan kustom</h3>
+            <div class="field" style="align-items:flex-start">
+              <div class="label"><b data-i18n="settings.customRulesLabel">Folder cache tambahan</b><span data-i18n="settings.customRulesHint">Satu baris: path | label | risk | whole</span></div>
+              <div class="ctrl" style="flex:1;max-width:340px">
+                <textarea id="custom-rules" rows="4" style="width:100%" placeholder="~/work/cache | cache kerja | safe" aria-label="Aturan kustom"></textarea>
+              </div>
+            </div>
+            <div class="tiny dim" data-i18n="settings.customRulesNote">risk: safe/warn/danger · whole opsional · maks 32 aturan</div>
+          </div>
+
+          <div class="card">
+            <h3 style="margin-bottom:6px" data-i18n="settings.automation">Otomasi</h3>
+            <div class="field">
+              <div class="label"><b data-i18n="settings.scheduleInterval">Jadwal auto-clean</b><span data-i18n="settings.scheduleIntervalHint">Timer user systemd; hanya item aman ke trash</span></div>
+              <div class="ctrl"><select id="schedule-interval" aria-label="Jadwal auto-clean">
+                <option value="weekly" data-i18n="settings.weekly">Mingguan</option>
+                <option value="daily" data-i18n="settings.daily">Harian</option>
+              </select></div>
+            </div>
+            <div class="field">
+              <div class="label"><b data-i18n="settings.timer">Timer</b><span id="schedule-detail">memeriksa…</span></div>
+              <div class="ctrl"><span class="chip" id="schedule-state">—</span><button class="btn ghost" id="schedule-install" data-i18n="settings.installTimer">Pasang</button><button class="btn ghost" id="schedule-remove" data-i18n="settings.removeTimer">Hapus</button></div>
+            </div>
+            <div class="tiny dim" data-i18n="settings.autoCleanNote">Auto-clean memakai --yes, mode trash, dan tidak pernah menghapus permanen.</div>
           </div>
 
           <div class="card">

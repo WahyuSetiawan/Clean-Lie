@@ -4,6 +4,29 @@ Semua perubahan penting pada Cleanlie. Format mengikuti
 [Keep a Changelog](https://keepachangelog.com/id/1.1.0/) dan versi mengikuti
 [Semantic Versioning](https://semver.org/lang/id/).
 
+## [0.10.0] — 2026-11-27
+
+### Ditambahkan — M10 Otomasi & Cakupan
+
+- **Aturan kustom** di Pengaturan dan `config.json` (`customRules`): path, label,
+  risk, `whole`, depth; maks 32, path protected ditolak, group `custom`.
+- **Timer user systemd**: `--schedule-install`, `--schedule-remove`,
+  `--schedule-status`, `--interval daily|weekly`; kartu Otomasi di Pengaturan.
+  Unit hanya menulis `~/.config/systemd/user/` dan berjalan sebagai user.
+- **`--auto-clean`**: hanya group `app`, `dev.*`, `custom` dengan risk `safe`, tanpa
+  root, selalu mode trash, wajib `--yes` (kecuali `--dry-run`), audit batch `auto-*`.
+- **Hardlink-aware duplicate**: `hardlinks`/`hardlinkBytes` di hasil analisis;
+  `wasted` tidak menghitung hardlink; UI menampilkan jumlah yang dilewati.
+- Test `internal/schedule`, aturan kustom, hardlink, `--auto-clean`, CLI schedule,
+  dan UI smoke (textarea aturan, kartu Otomasi).
+
+### Catatan
+
+- Versi aplikasi menjadi **0.10.0** (`Makefile`, `flake.nix`, `package.nix`, `main.go`).
+- Auto-clean sengaja tidak menyentuh `/var/tmp`/log sistem dan tidak pernah memakai
+  `ModePermanent`. Timer user berhenti saat logout bila lingering tidak diaktifkan.
+- Reflink belum dideteksi (butuh FIEMAP); hanya hardlink yang dihitung.
+
 ## [0.9.0] — 2026-11-27
 
 ### Ditambahkan — M9 Visibilitas: insight, ekspor, notifikasi

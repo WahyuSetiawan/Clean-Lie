@@ -9,7 +9,7 @@
     id: {
       'brand.tagline': 'cleaner untuk NixOS',
       'brand.tagline.macos': 'cleaner untuk macOS',
-      'side.note': 'M9 · insight & laporan',
+      'side.note': 'M10 · otomasi & cakupan',
       'nav.dashboard': 'Dashboard',
       'nav.cleanup': 'Bersihkan',
       'nav.analysis': 'Analisis',
@@ -122,6 +122,24 @@
       'settings.days': 'hari',
       'settings.artifactRoots': 'Root scan tambahan',
       'settings.artifactRootsHint': 'Pisahkan dengan koma; dipakai untuk scan artefak',
+      'settings.customRules': 'Aturan kustom',
+      'settings.customRulesLabel': 'Folder cache tambahan',
+      'settings.customRulesHint': 'Satu baris: path | label | risk | whole',
+      'settings.customRulesNote': 'risk: safe/warn/danger · whole opsional · maks 32 aturan',
+      'settings.automation': 'Otomasi',
+      'settings.scheduleInterval': 'Jadwal auto-clean',
+      'settings.scheduleIntervalHint': 'Timer user systemd; hanya item aman ke trash',
+      'settings.weekly': 'Mingguan',
+      'settings.daily': 'Harian',
+      'settings.timer': 'Timer',
+      'settings.installTimer': 'Pasang',
+      'settings.removeTimer': 'Hapus',
+      'settings.autoCleanNote': 'Auto-clean memakai --yes, mode trash, dan tidak pernah menghapus permanen.',
+      'settings.timerInstalled': 'terpasang',
+      'settings.timerActive': 'aktif',
+      'settings.timerOff': 'belum dipasang',
+      'settings.timerFailed': 'Gagal mengatur timer: ',
+      'settings.timerConfirm': 'Hapus timer auto-clean?',
       'settings.exclusions': 'Pengecualian & akses',
       'settings.excluded': 'Path dikecualikan',
       'settings.excludedHint': 'Tidak pernah dipindai atau dihapus',
@@ -208,8 +226,12 @@
     },
     en: {
       'brand.tagline': 'cleaner for NixOS',
+<<<<<<< HEAD
       'brand.tagline.macos': 'cleaner for macOS',
       'side.note': 'M9 · insight & laporan',
+=======
+      'side.note': 'M10 · automation & coverage',
+>>>>>>> c26b989 (feat(m10): aturan kustom, hardlink, dan timer auto-clean)
       'nav.dashboard': 'Dashboard',
       'nav.cleanup': 'Clean',
       'nav.analysis': 'Analysis',
@@ -322,6 +344,24 @@
       'settings.days': 'days',
       'settings.artifactRoots': 'Extra scan roots',
       'settings.artifactRootsHint': 'Comma separated; used for artifact scans',
+      'settings.customRules': 'Custom rules',
+      'settings.customRulesLabel': 'Extra cache folders',
+      'settings.customRulesHint': 'One line: path | label | risk | whole',
+      'settings.customRulesNote': 'risk: safe/warn/danger · whole optional · max 32 rules',
+      'settings.automation': 'Automation',
+      'settings.scheduleInterval': 'Auto-clean schedule',
+      'settings.scheduleIntervalHint': 'User systemd timer; safe items to trash only',
+      'settings.weekly': 'Weekly',
+      'settings.daily': 'Daily',
+      'settings.timer': 'Timer',
+      'settings.installTimer': 'Install',
+      'settings.removeTimer': 'Remove',
+      'settings.autoCleanNote': 'Auto-clean uses --yes, trash mode, and never deletes permanently.',
+      'settings.timerInstalled': 'installed',
+      'settings.timerActive': 'active',
+      'settings.timerOff': 'not installed',
+      'settings.timerFailed': 'Could not configure timer: ',
+      'settings.timerConfirm': 'Remove the auto-clean timer?',
       'settings.exclusions': 'Exclusions & access',
       'settings.excluded': 'Excluded paths',
       'settings.excludedHint': 'Never scanned or deleted',
@@ -418,7 +458,7 @@
   const DEFAULTS = {
     theme: 'system', language: 'id', showRisky: false, deleteMode: 'trash',
     autoSelectSafe: true, showRisky: true, notify: true, journalTarget: '500M', largeBytes: 100 * MIB,
-    staleDays: 365, artifactRoots: [], direnvRoots: [], excluded: []
+    staleDays: 365, artifactRoots: [], direnvRoots: [], excluded: [], customRules: []
   };
   let state = Object.assign({}, DEFAULTS);
   let view = null;
@@ -486,6 +526,35 @@
     txt.textContent = warning;
   }
 
+  function customRulesText(list) {
+    return (list || []).map(r => {
+      const parts = [r.path || '', r.label || '', r.risk || 'warn'];
+      if (r.whole) parts.push('whole');
+      return parts.join(' | ');
+    }).join('\n');
+  }
+
+  function parseCustomRules(text) {
+    return String(text || '').split('\n').map(line => line.trim()).filter(Boolean).map(line => {
+      const p = line.split('|').map(s => s.trim());
+      const whole = /^(whole|folder|1|true|yes)$/i.test(p[3] || '');
+      return { path: p[0] || '', label: p[1] || '', risk: (p[2] || 'warn').toLowerCase(), whole: whole };
+    }).filter(r => r.path);
+  }
+
+  function renderSchedule(st) {
+    const chip = byId('schedule-state');
+    const detail = byId('schedule-detail');
+    const interval = byId('schedule-interval');
+    if (!st) return;
+    if (interval && st.interval) interval.value = st.interval;
+    if (chip) {
+      chip.textContent = st.installed ? t('settings.timerInstalled') + (st.active ? ' · ' + t('settings.timerActive') : '') : t('settings.timerOff');
+      chip.className = 'chip ' + (st.installed ? (st.active ? 'safe' : 'warn') : '');
+    }
+    if (detail) detail.textContent = st.detail || '';
+  }
+
   function fillSettings() {
     const theme = byId('theme-select');
     const lang = byId('lang-select');
@@ -509,6 +578,8 @@
     }
     const roots = byId('artifact-roots');
     if (roots) roots.value = (state.artifactRoots || []).map(shortPath).join(', ');
+    const custom = byId('custom-rules');
+    if (custom) custom.value = customRulesText(state.customRules);
     renderExcluded();
   }
 
@@ -520,6 +591,7 @@
     state.artifactRoots = Array.isArray(c.artifactRoots) ? c.artifactRoots.slice() : [];
     state.direnvRoots = Array.isArray(c.direnvRoots) ? c.direnvRoots.slice() : [];
     state.excluded = Array.isArray(c.excluded) ? c.excluded.slice() : [];
+    state.customRules = Array.isArray(c.customRules) ? c.customRules.slice() : [];
     setTheme(state.theme);
     fillSettings();
     applyLanguage(state.language);
@@ -555,7 +627,8 @@
       artifactRoots: ((byId('artifact-roots') && byId('artifact-roots').value) || '')
         .split(',').map(x => x.trim()).filter(Boolean),
       direnvRoots: (state.direnvRoots || []).slice(),
-      excluded: state.excluded.slice()
+      excluded: state.excluded.slice(),
+      customRules: parseCustomRules(byId('custom-rules') && byId('custom-rules').value)
     };
   }
 
@@ -586,6 +659,9 @@
       document.querySelectorAll('[data-i18n="settings.polkit"]').forEach(el => el.textContent = t('settings.polkit'));
       if (isMac()) applyLanguage(LANG);
     } catch (e) { /* diagnostik opsional */ }
+    try {
+      if (bridge.ScheduleStatus) renderSchedule(await bridge.ScheduleStatus());
+    } catch (e) { /* status timer opsional */ }
   }
 
   async function saveSettings(reset) {
@@ -618,6 +694,36 @@
     markDirty();
   }
 
+  async function installTimer() {
+    const btn = byId('schedule-install');
+    const interval = (byId('schedule-interval') && byId('schedule-interval').value) || 'weekly';
+    if (!bridge || !bridge.ScheduleInstall) return;
+    if (btn) btn.disabled = true;
+    try {
+      renderSchedule(await bridge.ScheduleInstall(interval));
+      toast(t('settings.saved'));
+    } catch (e) {
+      toast(t('settings.timerFailed') + errMsg(e));
+    } finally {
+      if (btn) btn.disabled = false;
+    }
+  }
+
+  async function removeTimer() {
+    if (!bridge || !bridge.ScheduleRemove) return;
+    if (!window.confirm(t('settings.timerConfirm'))) return;
+    const btn = byId('schedule-remove');
+    if (btn) btn.disabled = true;
+    try {
+      renderSchedule(await bridge.ScheduleRemove());
+      toast(t('settings.saved'));
+    } catch (e) {
+      toast(t('settings.timerFailed') + errMsg(e));
+    } finally {
+      if (btn) btn.disabled = false;
+    }
+  }
+
   function bind() {
     if (!byId('view-settings')) return;
     const theme = byId('theme-select');
@@ -637,10 +743,14 @@
     });
     const del = byId('delete-mode');
     if (del) del.addEventListener('change', markDirty);
-    ['journal-target', 'large-mb', 'stale-days', 'artifact-roots'].forEach(id => {
+    ['journal-target', 'large-mb', 'stale-days', 'artifact-roots', 'custom-rules'].forEach(id => {
       const el = byId(id);
       if (el) el.addEventListener('input', markDirty);
     });
+    const schedInst = byId('schedule-install');
+    if (schedInst) schedInst.addEventListener('click', installTimer);
+    const schedDel = byId('schedule-remove');
+    if (schedDel) schedDel.addEventListener('click', removeTimer);
     const add = byId('excluded-add');
     if (add) add.addEventListener('click', addExcluded);
     const input = byId('excluded-input');

@@ -20,6 +20,7 @@ import (
 	"github.com/Juragan-Koding/cleanlie/internal/nix"
 	"github.com/Juragan-Koding/cleanlie/internal/privileged"
 	"github.com/Juragan-Koding/cleanlie/internal/rules"
+	"github.com/Juragan-Koding/cleanlie/internal/schedule"
 	"github.com/Juragan-Koding/cleanlie/internal/trash"
 )
 
@@ -42,6 +43,8 @@ func runCLI(args []string) (handled bool, code int) {
 			"--trash-delete", "-trash-delete", "--trash-empty", "-trash-empty",
 			"--history", "-history", "--undo", "-undo",
 			"--insight", "-insight", "--report", "-report",
+			"--auto-clean", "-auto-clean", "--schedule-install", "-schedule-install",
+			"--schedule-remove", "-schedule-remove", "--schedule-status", "-schedule-status",
 			"--version", "-version", "--help", "-help", "-h":
 			headless = true
 		}
@@ -79,6 +82,11 @@ func runCLI(args []string) (handled bool, code int) {
 		yes        = fs.Bool("yes", false, "izinkan tindakan destruktif tanpa prompt")
 		insightOut = fs.Bool("insight", false, "ringkasan mingguan + tren disk (JSON)")
 		reportFmt  = fs.String("report", "", "cetak laporan: md, json, atau csv")
+		autoClean  = fs.Bool("auto-clean", false, "pindai item aman lalu pindahkan ke trash (butuh --yes)")
+		schedInst  = fs.Bool("schedule-install", false, "pasang timer user systemd")
+		schedDel   = fs.Bool("schedule-remove", false, "hapus timer user systemd")
+		schedStat  = fs.Bool("schedule-status", false, "status timer user systemd (JSON)")
+		interval   = fs.String("interval", schedule.Weekly, "jadwal timer: daily atau weekly")
 	)
 	fs.Usage = func() {
 		fmt.Fprintf(os.Stderr, `Cleanlie %s
@@ -103,6 +111,10 @@ Pemakaian:
   cleanlie --undo BATCH            undo sesi trash (butuh --yes)
   cleanlie --insight               ringkasan mingguan + tren (JSON)
   cleanlie --report md|json|csv    cetak laporan ke stdout
+  cleanlie --auto-clean            pindai item aman -> trash (butuh --yes)
+  cleanlie --schedule-install      pasang timer user systemd (--interval daily|weekly)
+  cleanlie --schedule-remove       hapus timer user systemd
+  cleanlie --schedule-status       status timer (JSON)
   cleanlie --version
 
 Opsi destruktif selalu butuh --yes; --dry-run menampilkan rencana.
@@ -118,6 +130,61 @@ Opsi:
 	if *showVer {
 		fmt.Printf("cleanlie %s (%s)\n", version, commit)
 		return true, 0
+	}
+
+	if *schedStat || *schedInst || *schedDel {
+		if *schedInst {
+			exe, err := selfExecutable()
+			if err != nil {
+				fmt.Fprintln(os.Stderr, "cleanlie:", err)
+				return true, 1
+			}
+			if *dryRun {
+				svc, tmr, err := schedule.Render(exe, *interval)
+				if err != nil {
+					fmt.Fprintln(os.Stderr, "cleanlie:", err)
+					return true, 2
+				}
+				svcPath, timerPath := schedule.Paths()
+				fmt.Println("# " + svcPath)
+				fmt.Print(svc)
+				fmt.Println("# " + timerPath)
+				fmt.Print(tmr)
+				return true, 0
+			}
+			st, err := schedule.Install(exe, *interval, false)
+			if err != nil {
+				fmt.Fprintln(os.Stderr, "cleanlie:", err)
+				return true, 1
+			}
+			printSchedule(st, *jsonOut)
+			return true, 0
+		}
+		if *schedDel {
+			st, err := schedule.Remove(*dryRun)
+			if err != nil {
+				fmt.Fprintln(os.Stderr, "cleanlie:", err)
+				return true, 1
+			}
+			printSchedule(st, *jsonOut)
+			return true, 0
+		}
+		st, err := schedule.ReadStatus()
+		if err != nil {
+			fmt.Fprintln(os.Stderr, "cleanlie:", err)
+			return true, 1
+		}
+		printSchedule(st, true)
+		return true, 0
+	}
+
+	if *autoClean {
+		if !*dryRun && !*yes {
+			fmt.Fprintln(os.Stderr, "cleanlie: tindakan ini butuh --yes (atau pakai --dry-run)")
+			return true, 2
+		}
+		cfg, _ := config.Load()
+		return true, runAutoClean(context.Background(), cfg, *group, *workers, *dryRun, *jsonOut)
 	}
 
 	if *insightOut || *reportFmt != "" {
@@ -225,7 +292,11 @@ Opsi:
 	}
 
 	ctx := context.Background()
+	cfg, _ := config.Load()
 	list := rules.DefaultRules()
+	if !*scanOnly {
+		list = append(list, customRules(cfg)...)
+	}
 	if *scanOnly {
 		root, err := filepath.Abs(rules.ExpandHome(*path))
 		if err != nil {
@@ -249,7 +320,7 @@ Opsi:
 	}
 
 	var lastProgress time.Time
-	opts := rules.PlanOptions{Workers: *workers}
+	opts := rules.PlanOptions{Workers: *workers, Excluded: cfg.Excluded}
 	if !*jsonOut {
 		opts.Progress = func(p rules.Progress) {
 			if time.Since(lastProgress) < 200*time.Millisecond || p.Total == 0 {
@@ -699,5 +770,97 @@ func printActionResult(res trash.ActionResult, jsonOut bool) int {
 		}
 		return 1
 	}
+	return 0
+}
+
+func autoCleanGroup(id string) bool {
+	return id == "app" || id == "custom" || strings.HasPrefix(id, "dev.")
+}
+
+func printSchedule(st schedule.Status, jsonOut bool) {
+	if jsonOut {
+		printJSON(st)
+		return
+	}
+	state := "belum dipasang"
+	if st.Installed {
+		state = "terpasang"
+		if st.Active {
+			state += " · aktif"
+		}
+	}
+	fmt.Printf("Timer: %s · interval %s\n", state, st.Interval)
+	fmt.Printf("  service: %s\n  timer:   %s\n", st.ServicePath, st.TimerPath)
+	if st.Detail != "" {
+		fmt.Printf("  %s\n", st.Detail)
+	}
+}
+
+// runAutoClean memindai katalog + aturan kustom, lalu hanya memindahkan item
+// safe (tanpa root) ke trash. Tidak pernah memakai mode permanen.
+func runAutoClean(ctx context.Context, cfg config.Config, group string, workers int, dryRun, jsonOut bool) int {
+	list := append(rules.DefaultRules(), customRules(cfg)...)
+	filtered := list[:0]
+	for _, r := range list {
+		if !autoCleanGroup(r.Group) {
+			continue
+		}
+		if group != "" && r.Group != group {
+			continue
+		}
+		filtered = append(filtered, r)
+	}
+	list = filtered
+	report, err := rules.Plan(ctx, list, rules.PlanOptions{Workers: workers, Excluded: cfg.Excluded})
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "cleanlie:", err)
+		return 1
+	}
+	targets := make([]clean.Target, 0)
+	for _, g := range report.Groups {
+		for _, it := range g.Items {
+			if it.Risk != rules.RiskSafe || it.RequiresRoot {
+				continue
+			}
+			if !autoCleanGroup(g.ID) {
+				continue
+			}
+			targets = append(targets, clean.Target{
+				ID: it.ID, Path: it.Path, Root: it.Root, Label: it.Label,
+				Whole: it.Whole, Depth: it.Depth, Bytes: it.Bytes,
+				Command: it.Command, FallbackOK: it.FallbackOK, RequiresRoot: it.RequiresRoot,
+			})
+		}
+	}
+	if len(targets) == 0 {
+		res := clean.Result{Mode: clean.ModeTrash, Items: []clean.ItemResult{}}
+		if jsonOut {
+			printJSON(res)
+		} else {
+			fmt.Println("Auto-clean: tidak ada item aman.")
+		}
+		return 0
+	}
+	res := clean.Execute(ctx, clean.Request{Targets: targets, Mode: clean.ModeTrash, DryRun: dryRun}, clean.Options{
+		Batch: clean.NewBatch("auto-"),
+	})
+	if res.AuditError != "" {
+		fmt.Fprintln(os.Stderr, "cleanlie: audit:", res.AuditError)
+	}
+	if jsonOut {
+		printJSON(res)
+		return 0
+	}
+	removed := 0
+	for _, it := range res.Items {
+		if it.Status == clean.StatusRemoved {
+			removed++
+		}
+	}
+	prefix := "Auto-clean"
+	if dryRun {
+		prefix = "Auto-clean (dry run)"
+	}
+	fmt.Printf("%s: %d item dipindah ke trash · %s dibebaskan · batch %s\n", prefix, removed, fsx.Human(res.Freed), res.Batch)
 	return 0
 }

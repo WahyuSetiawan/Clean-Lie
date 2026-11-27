@@ -13,6 +13,7 @@ import (
 	"github.com/Juragan-Koding/cleanlie/internal/clean"
 	"github.com/Juragan-Koding/cleanlie/internal/insight"
 	"github.com/Juragan-Koding/cleanlie/internal/rules"
+	"github.com/Juragan-Koding/cleanlie/internal/schedule"
 	"github.com/Juragan-Koding/cleanlie/internal/trash"
 )
 
@@ -247,4 +248,110 @@ func TestRunCLIInsightAndReport(t *testing.T) {
 			t.Fatalf("format asing handled=%v code=%d", handled, code)
 		}
 	})
+}
+
+func TestRunCLIAutoCleanRequiresYes(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+	t.Setenv("XDG_STATE_HOME", t.TempDir())
+	t.Setenv("XDG_DATA_HOME", t.TempDir())
+	handled, code := runCLI([]string{"--auto-clean"})
+	if !handled || code != 2 {
+		t.Fatalf("handled=%v code=%d", handled, code)
+	}
+}
+
+func TestRunCLIAutoClean(t *testing.T) {
+	home := t.TempDir()
+	state := t.TempDir()
+	data := t.TempDir()
+	t.Setenv("HOME", home)
+	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+	t.Setenv("XDG_STATE_HOME", state)
+	t.Setenv("XDG_DATA_HOME", data)
+	t.Setenv("CLEANLIE_NO_GIO", "1")
+	cache := filepath.Join(home, ".cache", "opencode", "blob")
+	if err := os.MkdirAll(filepath.Dir(cache), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(cache, []byte("cache"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	// Dry-run tidak boleh mengubah apa pun.
+	out := captureStdout(t, func() {
+		if _, code := runCLI([]string{"--auto-clean", "--dry-run", "--json"}); code != 0 {
+			t.Fatalf("dry-run code=%d", code)
+		}
+	})
+	var dry clean.Result
+	if err := json.Unmarshal([]byte(out), &dry); err != nil {
+		t.Fatalf("json dry: %v\n%s", err, out)
+	}
+	if _, err := os.Stat(cache); err != nil {
+		t.Fatalf("dry-run menghapus file: %v", err)
+	}
+
+	out = captureStdout(t, func() {
+		if _, code := runCLI([]string{"--auto-clean", "--yes", "--json"}); code != 0 {
+			t.Fatalf("auto-clean code=%d", code)
+		}
+	})
+	var res clean.Result
+	if err := json.Unmarshal([]byte(out), &res); err != nil {
+		t.Fatalf("json: %v\n%s", err, out)
+	}
+	if res.Mode != clean.ModeTrash || len(res.Items) == 0 {
+		t.Fatalf("result = %+v", res)
+	}
+	if _, err := os.Stat(cache); !os.IsNotExist(err) {
+		t.Fatalf("file masih ada: %v", err)
+	}
+	if res.Batch == "" || !strings.HasPrefix(res.Batch, "auto-") {
+		t.Fatalf("batch = %q", res.Batch)
+	}
+	sessions, err := clean.ReadSessions("", 10)
+	if err != nil || len(sessions.Sessions) == 0 {
+		t.Fatalf("audit = %v %v", sessions, err)
+	}
+}
+
+func TestRunCLISchedule(t *testing.T) {
+	cfg := t.TempDir()
+	t.Setenv("XDG_CONFIG_HOME", cfg)
+	t.Setenv("CLEANLIE_NO_SYSTEMCTL", "1")
+
+	out := captureStdout(t, func() {
+		if _, code := runCLI([]string{"--schedule-install", "--dry-run"}); code != 0 {
+			t.Fatalf("dry-run code=%d", code)
+		}
+	})
+	if !strings.Contains(out, "ExecStart=") || !strings.Contains(out, "OnCalendar=weekly") {
+		t.Fatalf("unit dry-run:\n%s", out)
+	}
+
+	out = captureStdout(t, func() {
+		if _, code := runCLI([]string{"--schedule-install", "--interval", "daily", "--json"}); code != 0 {
+			t.Fatalf("install code=%d", code)
+		}
+	})
+	var st schedule.Status
+	if err := json.Unmarshal([]byte(out), &st); err != nil || !st.Installed || st.Interval != "daily" {
+		t.Fatalf("status install: %+v %v\n%s", st, err, out)
+	}
+	for _, name := range []string{"cleanlie-clean.service", "cleanlie-clean.timer"} {
+		if _, err := os.Stat(filepath.Join(cfg, "systemd", "user", name)); err != nil {
+			t.Fatalf("%s: %v", name, err)
+		}
+	}
+
+	out = captureStdout(t, func() {
+		if _, code := runCLI([]string{"--schedule-remove", "--json"}); code != 0 {
+			t.Fatalf("remove code=%d", code)
+		}
+	})
+	var rm schedule.Status
+	if err := json.Unmarshal([]byte(out), &rm); err != nil || rm.Installed {
+		t.Fatalf("status remove: %+v %v\n%s", rm, err, out)
+	}
 }

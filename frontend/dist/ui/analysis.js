@@ -335,6 +335,7 @@
     const count = dups.groupCount || (dups.groups || []).length;
     const shown = (dups.groups || []).length;
     byId('an-dup-summary').textContent = count + ' grup · ' + human(dups.wasted || 0) + ' bisa dibebaskan'
+      + (dups.hardlinks ? ' · ' + dups.hardlinks + ' hardlink dilewati' : '')
       + (shown < count ? ' · menampilkan ' + shown + ' teratas' : '');
     const body = byId('an-dup-body');
     if (!body) return;
