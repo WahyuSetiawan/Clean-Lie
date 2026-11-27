@@ -2,7 +2,9 @@ package clean
 
 import (
 	"os"
+	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strconv"
 	"strings"
 )
@@ -26,9 +28,46 @@ var procRules = []procRule{
 	{".android/avd", []string{"qemu-system"}, "emulator Android"},
 }
 
-// Processes membaca /proc/*/comm → pid. Bisa diarahkan ke root palsu di test.
+// Processes membaca daftar proses yang sedang berjalan (nama → pid).
+// Di Linux dibaca dari /proc, di macOS lewat `ps` karena /proc tidak ada.
 func Processes() map[string]int {
+	if runtime.GOOS == "darwin" {
+		out, err := exec.Command("ps", "-axo", "pid=,comm=").Output()
+		if err != nil {
+			return map[string]int{}
+		}
+		return parsePS(string(out))
+	}
 	return processesFrom("/proc")
+}
+
+// parsePS membaca keluaran `ps -axo pid=,comm=`. comm berupa path binary di
+// macOS, jadi dipakai base name-nya supaya cocok dengan procRules.
+func parsePS(out string) map[string]int {
+	res := map[string]int{}
+	self := os.Getpid()
+	for _, line := range strings.Split(out, "\n") {
+		line = strings.TrimSpace(line)
+		if line == "" {
+			continue
+		}
+		pidStr, rest, ok := strings.Cut(line, " ")
+		if !ok {
+			continue
+		}
+		pid, err := strconv.Atoi(pidStr)
+		if err != nil || pid == self {
+			continue
+		}
+		name := filepath.Base(strings.TrimSpace(rest))
+		if name == "" || name == "." {
+			continue
+		}
+		if _, dup := res[name]; !dup {
+			res[name] = pid
+		}
+	}
+	return res
 }
 
 func processesFrom(procRoot string) map[string]int {

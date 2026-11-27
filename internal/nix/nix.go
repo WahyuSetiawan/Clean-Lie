@@ -12,6 +12,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"runtime"
 	"sort"
 	"strconv"
 	"strings"
@@ -210,6 +211,11 @@ func storeInfo(ctx context.Context, opts Options) (storeSummary, error) {
 }
 
 func journalUsage(ctx context.Context, opts Options) (int64, string, error) {
+	if runtime.GOOS == "darwin" {
+		// macOS tidak punya systemd journal; log sistem dibaca lewat `log show`
+		// dan tidak dihitung di sini.
+		return 0, "", nil
+	}
 	out := opts.run(ctx, []string{"journalctl", "--disk-usage"}, 15*time.Second)
 	raw := strings.TrimSpace(out.Stdout)
 	if out.Err != nil {

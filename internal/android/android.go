@@ -7,7 +7,9 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"runtime"
 	"sort"
 	"strconv"
 	"strings"
@@ -433,6 +435,10 @@ func readIni(path string) map[string]string {
 }
 
 func emulatorProcesses(procRoot string) []string {
+	// macOS tidak punya /proc; baca daftar proses lewat ps.
+	if runtime.GOOS == "darwin" && procRoot == "/proc" {
+		return emulatorProcessesPS()
+	}
 	entries, err := os.ReadDir(procRoot)
 	if err != nil {
 		return nil
@@ -455,6 +461,23 @@ func emulatorProcesses(procRoot string) []string {
 		}
 	}
 	return out
+}
+
+// emulatorProcessesPS mendeteksi emulator Android lewat `ps` untuk platform
+// tanpa /proc (macOS).
+func emulatorProcessesPS() []string {
+	out, err := exec.Command("ps", "-axo", "command=").Output()
+	if err != nil {
+		return nil
+	}
+	var lines []string
+	for _, line := range strings.Split(string(out), "\n") {
+		low := strings.ToLower(line)
+		if strings.Contains(low, "qemu-system") || (strings.Contains(low, "emulator") && strings.Contains(low, "-avd")) {
+			lines = append(lines, low)
+		}
+	}
+	return lines
 }
 
 func processUsesAVD(lines []string, name, path string) bool {

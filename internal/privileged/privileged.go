@@ -1,5 +1,6 @@
-// Package privileged menjalankan perintah yang butuh root dengan dua jalur:
-// pkexec (bila polkit agent tersedia) atau perintah sudo siap-copy.
+// Package privileged menjalankan perintah yang butuh root lewat prompt admin
+// platform: pkexec (polkit) di Linux, osascript di macOS. Bila prompt tidak
+// tersedia atau dibatalkan, hasilnya berisi perintah sudo siap-copy.
 //
 // Tidak pernah gagal senyap: hasil selalu membawa exit code, stderr, preview
 // perintah, dan (bila perlu) perintah sudo untuk disalin user.
@@ -85,37 +86,16 @@ func Execute(ctx context.Context, cmd []string, opts Options) Result {
 		return run(ctx, opts, absCmd, res, started)
 	}
 
-	if !opts.HasAgent {
-		res.NeedsSudo = true
-		res.Used = "sudo"
-		res.SudoCommand = SudoCommand(absCmd)
-		res.Preview = res.SudoCommand
-		res.Error = "polkit agent tidak terdeteksi; jalankan perintah sudo di bawah"
-		return res
-	}
+	return elevate(ctx, opts, absCmd, res, started)
+}
 
-	pkexec, err := opts.LookPath("pkexec")
-	if err != nil {
-		res.NeedsSudo = true
-		res.Used = "sudo"
-		res.SudoCommand = SudoCommand(absCmd)
-		res.Preview = res.SudoCommand
-		res.Error = "pkexec tidak tersedia; jalankan perintah sudo di bawah"
-		return res
-	}
-
-	runCmd := append([]string{pkexec}, absCmd...)
-	res.Used = "pkexec"
-	res.Preview = tools.Preview(runCmd)
-	res = run(ctx, opts, runCmd, res, started)
-	if res.ExitCode == 126 || res.ExitCode == 127 {
-		res.NeedsSudo = true
-		res.Used = "sudo"
-		res.SudoCommand = SudoCommand(absCmd)
-		if res.Error == "" {
-			res.Error = "pkexec gagal (agent tidak merespons); jalankan perintah sudo di bawah"
-		}
-	}
+// sudoFallback menandai hasil supaya UI menampilkan perintah sudo siap-copy.
+func sudoFallback(absCmd []string, res Result, msg string) Result {
+	res.NeedsSudo = true
+	res.Used = "sudo"
+	res.SudoCommand = SudoCommand(absCmd)
+	res.Preview = res.SudoCommand
+	res.Error = msg
 	return res
 }
 
@@ -139,8 +119,13 @@ func SudoCommand(cmd []string) string {
 	return "sudo " + tools.Preview(cmd)
 }
 
-// Preview mengembalikan preview yang akan dipakai: pkexec bila agent ada,
-// selain itu perintah sudo.
+// DetectAgent melaporkan apakah aksi root bisa memunculkan prompt admin:
+// agent polkit di Linux, osascript di macOS.
+func DetectAgent() bool {
+	return detectAgent()
+}
+
+// Preview mengembalikan preview perintah admin sesuai platform.
 func Preview(cmd []string, hasAgent bool) string {
 	if len(cmd) == 0 {
 		return ""
@@ -149,17 +134,7 @@ func Preview(cmd []string, hasAgent bool) string {
 	if p, err := exec.LookPath(cmd[0]); err == nil {
 		abs = append([]string{p}, cmd[1:]...)
 	}
-	if hasAgent {
-		if p, err := exec.LookPath("pkexec"); err == nil {
-			return tools.Preview(append([]string{p}, abs...))
-		}
-	}
-	return SudoCommand(abs)
-}
-
-// DetectAgent melaporkan apakah ada proses polkit agent yang hidup.
-func DetectAgent() bool {
-	return hasAgentFrom("/proc")
+	return adminPreview(abs, hasAgent)
 }
 
 func hasAgentFrom(procRoot string) bool {
@@ -187,4 +162,4 @@ func hasAgentFrom(procRoot string) bool {
 }
 
 // ErrNoAgent bisa dipakai pemanggil yang butuh error bertipe.
-var ErrNoAgent = errors.New("polkit agent tidak tersedia")
+var ErrNoAgent = errors.New("prompt admin tidak tersedia")

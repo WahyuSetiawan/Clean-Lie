@@ -83,12 +83,17 @@
             env = {
               CGO_ENABLED = "1";
               GOTOOLCHAIN = "local";
+              # Wails (lewat go-toast) memakai UTType yang butuh framework ini;
+              # tanpa flag eksplisit, linker gagal dengan "_OBJC_CLASS_$_UTType".
+              CGO_LDFLAGS = "-framework UniformTypeIdentifiers";
             };
 
             shellHook = ''
               echo "cleanlie dev shell (macOS) · go $(go version | awk '{print $3}') · wails $(wails version 2>/dev/null | head -1)"
-              echo "  make test    # go test -tags desktop,production,webkit2_41 ./..."
-              echo "  catatan: target cleanlie (NixOS) tidak bisa di-build/dijalankan di sini."
+              echo "  make test    # go test ./..."
+              echo "  make build   # bin/cleanlie"
+              echo "  make app     # Cleanlie.app (wails build)"
+              echo "  catatan: target cleanlie (NixOS) hanya bisa di-build di Linux; di macOS fitur Nix tetap jalan bila Nix terpasang."
             '';
           };
     in

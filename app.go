@@ -91,7 +91,10 @@ type Diagnostics struct {
 	NixStore     bool   `json:"nixStore"`
 	PolkitAgent  bool   `json:"polkitAgent"`
 	PolkitDetail string `json:"polkitDetail"`
-	StartedAt    string `json:"startedAt"`
+	// AdminKind menjelaskan cara aksi root diprompt: "polkit" (Linux) atau
+	// "osascript" (macOS).
+	AdminKind string `json:"adminKind"`
+	StartedAt string `json:"startedAt"`
 }
 
 func (a *App) Diagnostics() Diagnostics {
@@ -111,13 +114,24 @@ func (a *App) Diagnostics() Diagnostics {
 		NixStore:     nixErr == nil,
 		PolkitAgent:  polkit,
 		PolkitDetail: detail,
+		AdminKind:    adminKind(),
 		StartedAt:    a.startedAt.Format(time.RFC3339),
 	}
 }
 
-// detectPolkitAgent mencari agent polkit di sesi ini. Hyprland tidak
-// menjalankan agent secara default; tanpa agent, pkexec tidak memunculkan prompt.
+func adminKind() string {
+	if runtime.GOOS == "darwin" {
+		return "osascript"
+	}
+	return "polkit"
+}
+
+// detectPolkitAgent mencari cara prompt admin yang tersedia. Di macOS,
+// osascript selalu ada sehingga dialog admin native bisa dipakai.
 func detectPolkitAgent() (bool, string) {
+	if runtime.GOOS == "darwin" {
+		return true, "dialog admin macOS (osascript) — setara pkexec"
+	}
 	out, err := exec.Command("pgrep", "-af", "polkit.*agent|hyprpolkitagent").Output()
 	if err != nil {
 		return false, "tidak terdeteksi — aksi root akan memakai perintah sudo siap-copy"

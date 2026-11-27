@@ -4,6 +4,7 @@ import (
 	"context"
 	"path/filepath"
 	"regexp"
+	"runtime"
 	"strconv"
 	"strings"
 	"time"
@@ -12,13 +13,13 @@ import (
 	"github.com/Juragan-Koding/cleanlie/internal/tools"
 )
 
-// DefaultRules mengembalikan seluruh katalog v1.
+// DefaultRules mengembalikan seluruh katalog yang relevan untuk OS ini.
 func DefaultRules() []Rule {
 	out := make([]Rule, 0, 64)
 	out = append(out, devRules()...)
 	out = append(out, androidRules()...)
 	out = append(out, appRules()...)
-	out = append(out, logRules()...)
+	out = append(out, platformRules()...)
 	out = append(out, trashRules()...)
 	return out
 }
@@ -95,10 +96,16 @@ func logRules() []Rule {
 }
 
 func trashRules() []Rule {
+	path := filepath.Join(Home(), ".local", "share", "Trash", "files")
+	note := "setelah dikosongkan tidak bisa di-restore"
+	if runtime.GOOS == "darwin" {
+		path = filepath.Join(Home(), ".Trash")
+		note = "isi ~/.Trash; setelah dikosongkan tidak bisa di-restore"
+	}
 	return []Rule{{
-		ID: "trash", Group: "trash", Label: "isi Trash", Path: filepath.Join(Home(), ".local", "share", "Trash", "files"),
+		ID: "trash", Group: "trash", Label: "isi Trash", Path: path,
 		Depth: 1, IncludeFiles: true, Risk: RiskWarn, Priority: 25,
-		Note: "setelah dikosongkan tidak bisa di-restore",
+		Note: note,
 	}}
 }
 

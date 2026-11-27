@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 	"time"
@@ -38,23 +39,25 @@ func TestManualTrash(t *testing.T) {
 	if _, err := os.Stat(info.TrashPath); err != nil {
 		t.Fatalf("file trash hilang: %v", err)
 	}
-	if !HasTrashInfo(info.InfoPath) {
-		t.Fatalf("metadata trash tidak valid: %s", info.InfoPath)
-	}
-
-	body, err := os.ReadFile(info.InfoPath)
-	if err != nil {
-		t.Fatal(err)
-	}
-	var encoded string
-	for _, line := range strings.Split(string(body), "\n") {
-		if strings.HasPrefix(line, "Path=") {
-			encoded = strings.TrimPrefix(line, "Path=")
+	if runtime.GOOS != "darwin" {
+		if !HasTrashInfo(info.InfoPath) {
+			t.Fatalf("metadata trash tidak valid: %s", info.InfoPath)
 		}
-	}
-	decoded, err := url.PathUnescape(encoded)
-	if err != nil || decoded != src {
-		t.Fatalf("Path di trashinfo = %q (%q), mau %q", encoded, decoded, src)
+
+		body, err := os.ReadFile(info.InfoPath)
+		if err != nil {
+			t.Fatal(err)
+		}
+		var encoded string
+		for _, line := range strings.Split(string(body), "\n") {
+			if strings.HasPrefix(line, "Path=") {
+				encoded = strings.TrimPrefix(line, "Path=")
+			}
+		}
+		decoded, err := url.PathUnescape(encoded)
+		if err != nil || decoded != src {
+			t.Fatalf("Path di trashinfo = %q (%q), mau %q", encoded, decoded, src)
+		}
 	}
 
 	// restore manual (yang dilakukan file manager): pindahkan kembali.

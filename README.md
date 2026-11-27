@@ -1,13 +1,15 @@
 # Cleanlie
 
-Disk cleaner & analyzer GUI untuk NixOS. Go + Wails v2, UI statis (tanpa Node).
+Disk cleaner & analyzer GUI untuk NixOS dan macOS. Go + Wails v2, UI statis (tanpa Node).
 
 > Status: **M7 — direnv**. Scan katalog, dry-run CLI, eksekusi hapus
 > (trash/perm), audit, layar Nix (store, generasi, dead paths, GC, vacuum journal,
 > fallback pkexec/sudo), layar Android (AVD/SDK, saran >90 hari, hapus/wipe/uninstall),
 > layar Analisis (tree, file besar, duplikat, file lama, artefak), layar **direnv**
 > (folder `.direnv` per proyek + cache global), Dashboard nyata,
-> Pengaturan persisten, tema system/light/dark, dan i18n ID/EN sudah jalan. Lihat
+> Pengaturan persisten, tema system/light/dark, dan i18n ID/EN sudah jalan. Build
+> macOS memakai WKWebView, katalog `~/Library`, Trash `~/.Trash`, dan prompt admin
+> `osascript`. Lihat
 > [`docs/tasks/cleanlie-v1.md`](docs/tasks/cleanlie-v1.md),
 > [`docs/implementation/`](docs/implementation/) (m1–m7), dan
 > [`CHANGELOG.md`](CHANGELOG.md).
@@ -34,6 +36,36 @@ Atau tanpa shell interaktif:
 nix develop -c make build
 ./bin/cleanlie
 ```
+
+## macOS
+
+Dev shell di macOS tidak memuat GTK/WebKitGTK karena Wails memakai WKWebView
+sistem. Isinya `go`, `gopls`, `wails` 2.17.1, `node`, dan `jq`:
+
+```sh
+direnv allow        # devShell aarch64-darwin
+make build          # bin/cleanlie
+make test
+make app            # Cleanlie.app via `wails build` (butuh wails di PATH)
+```
+
+Yang berbeda di macOS:
+
+- **Aksi root** memakai dialog admin native `osascript` (setara `pkexec`), bukan
+  polkit. Kalau prompt dibatalkan, UI menampilkan perintah `sudo` siap-copy.
+- **Katalog clean** menambahkan `~/Library/Caches`, `~/Library/Logs`,
+  `~/Library/Developer/Xcode` (DerivedData, iOS DeviceSupport, Archives),
+  CoreSimulator, Homebrew cache, dan tool dev yang menyimpan cache di
+  `~/Library` (Go, gopls, uv, pip, pnpm, Playwright, Cypress). Rule systemd
+  journal/`/var/log`/`/var/tmp` tidak dimuat.
+- **Trash** memakai `~/.Trash` milik Finder (tanpa metadata `.trashinfo`).
+- **Layar Nix** tetap ada bila Nix terpasang (multi-user/determinate); bagian
+  journal disembunyikan karena macOS tidak punya systemd.
+- **Guard proses** membaca `ps` (macOS tidak punya `/proc`), jadi item cache
+  browser/IDE/emulator tetap diblokir saat aplikasinya berjalan.
+
+Catatan: `package.nix`/`nix build .#cleanlie` tetap Linux-only (butuh GTK3,
+WebKitGTK, systemd, polkit). Di macOS pakai `make build`/`make app`.
 
 ## Build paket
 

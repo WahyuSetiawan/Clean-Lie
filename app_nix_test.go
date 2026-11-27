@@ -1,6 +1,7 @@
 package main
 
 import (
+	"runtime"
 	"strings"
 	"testing"
 )
@@ -14,7 +15,12 @@ func TestNixPreview(t *testing.T) {
 	if got := a.NixPreview("delete", "user", []int{719, 718}); !strings.Contains(got, "--delete-generations 718 719") {
 		t.Fatalf("preview delete = %q", got)
 	}
-	if got := a.NixPreview("journal", "500M", nil); !strings.Contains(got, "--vacuum-size=500M") {
+	if runtime.GOOS == "darwin" {
+		// macOS tidak punya systemd journal; kartu vacuum disembunyikan di UI.
+		if got := a.NixPreview("journal", "500M", nil); got != "" {
+			t.Fatalf("preview journal di macOS = %q, mau kosong", got)
+		}
+	} else if got := a.NixPreview("journal", "500M", nil); !strings.Contains(got, "--vacuum-size=500M") {
 		t.Fatalf("preview journal = %q", got)
 	}
 	if got := a.NixPreview("tidak-ada", "", nil); got != "" {

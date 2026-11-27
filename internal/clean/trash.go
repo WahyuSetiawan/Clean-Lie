@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strconv"
 	"strings"
 	"syscall"
@@ -26,8 +27,12 @@ type TrashInfo struct {
 	InfoPath  string `json:"infoPath"`
 }
 
-// TrashDir mengembalikan direktori trash freedesktop milik user.
+// TrashDir mengembalikan direktori trash milik user: ~/.Trash di macOS,
+// freedesktop (~/.local/share/Trash) di Linux.
 func TrashDir() string {
+	if runtime.GOOS == "darwin" {
+		return filepath.Join(homeDir(), ".Trash")
+	}
 	if d := os.Getenv("XDG_DATA_HOME"); d != "" {
 		return filepath.Join(d, "Trash")
 	}
@@ -42,10 +47,10 @@ func homeDir() string {
 	return h
 }
 
-// MoveToTrash memakai `gio trash` bila tersedia, lalu fallback manual
-// (files + info) supaya tetap bisa di-restore file manager.
+// MoveToTrash memakai `gio trash` bila tersedia (Linux), lalu fallback
+// manual. Di macOS langsung dipakai ~/.Trash milik Finder.
 func MoveToTrash(ctx context.Context, path string) (TrashInfo, error) {
-	if tools.Available("gio") {
+	if runtime.GOOS != "darwin" && tools.Available("gio") {
 		res := tools.Run(ctx, []string{"gio", "trash", "--", path}, 2*time.Minute)
 		if res.Err == nil {
 			return TrashInfo{Path: path}, nil
@@ -66,12 +71,19 @@ func manualTrash(path string) (TrashInfo, error) {
 	trash := TrashDir()
 	filesDir := filepath.Join(trash, "files")
 	infoDir := filepath.Join(trash, "info")
+	if runtime.GOOS == "darwin" {
+		// macOS tidak punya metadata .trashinfo; Finder cukup melihat isi ~/.Trash.
+		filesDir = trash
+		infoDir = ""
+	}
 
 	if err := os.MkdirAll(filesDir, 0o700); err != nil {
 		return TrashInfo{}, err
 	}
-	if err := os.MkdirAll(infoDir, 0o700); err != nil {
-		return TrashInfo{}, err
+	if infoDir != "" {
+		if err := os.MkdirAll(infoDir, 0o700); err != nil {
+			return TrashInfo{}, err
+		}
 	}
 
 	var srcDev, trashDev syscall.Stat_t
@@ -101,13 +113,16 @@ func manualTrash(path string) (TrashInfo, error) {
 		return TrashInfo{}, err
 	}
 
-	infoPath := filepath.Join(infoDir, filepath.Base(dest)+".trashinfo")
-	body := fmt.Sprintf("[Trash Info]\nPath=%s\nDeletionDate=%s\n",
-		escapeTrashPath(abs), time.Now().Format("2006-01-02T15:04:05"))
-	if err := os.WriteFile(infoPath, []byte(body), 0o600); err != nil {
-		// kembalikan file supaya tidak ada sampah tanpa metadata restore.
-		_ = os.Rename(dest, abs)
-		return TrashInfo{}, err
+	infoPath := ""
+	if infoDir != "" {
+		infoPath = filepath.Join(infoDir, filepath.Base(dest)+".trashinfo")
+		body := fmt.Sprintf("[Trash Info]\nPath=%s\nDeletionDate=%s\n",
+			escapeTrashPath(abs), time.Now().Format("2006-01-02T15:04:05"))
+		if err := os.WriteFile(infoPath, []byte(body), 0o600); err != nil {
+			// kembalikan file supaya tidak ada sampah tanpa metadata restore.
+			_ = os.Rename(dest, abs)
+			return TrashInfo{}, err
+		}
 	}
 
 	return TrashInfo{Path: abs, TrashPath: dest, InfoPath: infoPath}, nil

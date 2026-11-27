@@ -2,6 +2,7 @@ package rules
 
 import (
 	"path/filepath"
+	"runtime"
 	"strings"
 )
 
@@ -26,13 +27,22 @@ func ProtectedPaths() []string {
 		filepath.Join(h, ".local", "share"),
 		filepath.Join(h, ".local", "state"),
 	}
+	if runtime.GOOS == "darwin" {
+		exact = append(exact,
+			"/System", "/Library", "/Applications", "/private", "/Volumes", "/cores",
+			"/opt", "/usr/local",
+			filepath.Join(h, "Library"),
+			filepath.Join(h, "Movies"),
+			filepath.Join(h, "Public"),
+		)
+	}
 	return exact
 }
 
 // ProtectedPrefixes adalah awalan path yang tidak boleh disentuh.
 func ProtectedPrefixes() []string {
 	h := Home()
-	return []string{
+	prefixes := []string{
 		"/nix/store/", "/nix/var/",
 		"/etc/", "/usr/", "/bin/", "/sbin/", "/lib/", "/lib64/", "/boot/",
 		"/dev/", "/proc/", "/sys/", "/run/",
@@ -43,6 +53,23 @@ func ProtectedPrefixes() []string {
 		filepath.Join(h, ".password-store") + "/",
 		filepath.Join(h, ".local", "share", "keyrings") + "/",
 	}
+	if runtime.GOOS == "darwin" {
+		// ~/Library/Caches dan ~/Library/Logs sengaja tidak diprefix, karena
+		// justru itu yang dibersihkan; data aplikasi tetap dilindungi.
+		prefixes = append(prefixes,
+			"/System/", "/Library/", "/Applications/", "/private/", "/Volumes/",
+			"/opt/homebrew/", "/usr/local/",
+			filepath.Join(h, "Library", "Application Support")+"/",
+			filepath.Join(h, "Library", "Containers")+"/",
+			filepath.Join(h, "Library", "Group Containers")+"/",
+			filepath.Join(h, "Library", "Keychains")+"/",
+			filepath.Join(h, "Library", "Mobile Documents")+"/",
+			filepath.Join(h, "Library", "Preferences")+"/",
+			filepath.Join(h, "Library", "Mail")+"/",
+			filepath.Join(h, "Library", "Messages")+"/",
+		)
+	}
+	return prefixes
 }
 
 // IsProtected melaporkan apakah path tidak boleh dihapus.
