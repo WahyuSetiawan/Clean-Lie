@@ -8,6 +8,7 @@
   const STRINGS = {
     id: {
       'brand.tagline': 'cleaner untuk NixOS',
+      'brand.tagline.macos': 'cleaner untuk macOS',
       'side.note': 'M7 · direnv scan',
       'nav.dashboard': 'Dashboard',
       'nav.cleanup': 'Bersihkan',
@@ -78,7 +79,7 @@
       'settings.excluded': 'Path dikecualikan',
       'settings.excludedHint': 'Tidak pernah dipindai atau dihapus',
       'settings.rootAction': 'Aksi root',
-      'settings.rootActionHint': 'Status polkit agent di sesi ini',
+      'settings.rootActionHint': 'Cara aksi root diprompt di sesi ini',
       'settings.history': 'Riwayat',
       'settings.historyHint': 'Audit log semua aksi hapus',
       'settings.open': 'Buka',
@@ -99,6 +100,7 @@
       'settings.polkit': 'Polkit',
       'settings.polkitYes': 'agent terdeteksi',
       'settings.polkitNo': 'tidak ada agent',
+      'settings.adminOsascript': 'dialog admin macOS',
       'analysis.tab.tree': 'Disk usage',
       'analysis.tab.large': 'File besar',
       'analysis.tab.dup': 'Duplikat',
@@ -131,7 +133,7 @@
       'dashboard.nix': 'Nix store',
       'dashboard.cache': 'Cache dev',
       'dashboard.log': 'Log & journal',
-      'dashboard.home': 'Pemakaian /home',
+      'dashboard.home': 'Pemakaian home',
       'dashboard.reclaim': 'Ruang yang bisa direbut kembali',
       'dashboard.status': 'Status',
       'dashboard.refresh': 'Scan ulang',
@@ -142,7 +144,7 @@
       'dashboard.gcOff': 'GC otomatis',
       'dashboard.gcOffHint': 'selalu manual + ketik GC',
       'dashboard.trashCross': 'Trash di filesystem berbeda',
-      'dashboard.trashCrossHint': '/nix & /var → konfirmasi permanen',
+      'dashboard.trashCrossHint': '/nix & volume lain → konfirmasi permanen',
       'dashboard.note': 'Scan hanya membaca disk. Semua aksi hapus lewat guard: dry-run, trash, lalu ukur ulang ruang yang benar-benar dibebaskan. GC tetap manual.',
       'common.scanAgain': 'Scan ulang',
       'common.cancel': 'Batal',
@@ -153,6 +155,7 @@
     },
     en: {
       'brand.tagline': 'cleaner for NixOS',
+      'brand.tagline.macos': 'cleaner for macOS',
       'side.note': 'M7 · direnv scan',
       'nav.dashboard': 'Dashboard',
       'nav.cleanup': 'Clean',
@@ -223,7 +226,7 @@
       'settings.excluded': 'Excluded paths',
       'settings.excludedHint': 'Never scanned or deleted',
       'settings.rootAction': 'Root actions',
-      'settings.rootActionHint': 'Polkit agent status in this session',
+      'settings.rootActionHint': 'How root actions are prompted in this session',
       'settings.history': 'History',
       'settings.historyHint': 'Audit log for every delete',
       'settings.open': 'Open',
@@ -244,6 +247,7 @@
       'settings.polkit': 'Polkit',
       'settings.polkitYes': 'agent detected',
       'settings.polkitNo': 'no agent',
+      'settings.adminOsascript': 'macOS admin dialog',
       'analysis.tab.tree': 'Disk usage',
       'analysis.tab.large': 'Large files',
       'analysis.tab.dup': 'Duplicates',
@@ -276,7 +280,7 @@
       'dashboard.nix': 'Nix store',
       'dashboard.cache': 'Dev cache',
       'dashboard.log': 'Logs & journal',
-      'dashboard.home': '/home usage',
+      'dashboard.home': 'Home usage',
       'dashboard.reclaim': 'Reclaimable space',
       'dashboard.status': 'Status',
       'dashboard.refresh': 'Scan again',
@@ -287,7 +291,7 @@
       'dashboard.gcOff': 'Automatic GC',
       'dashboard.gcOffHint': 'always manual + type GC',
       'dashboard.trashCross': 'Trash is on a different filesystem',
-      'dashboard.trashCrossHint': '/nix & /var → permanent confirmation',
+      'dashboard.trashCrossHint': '/nix & other volumes → permanent confirmation',
       'dashboard.note': 'Scans are read-only. Every delete goes through the guard: dry-run, trash, then re-measure the space actually freed. GC stays manual.',
       'common.scanAgain': 'Scan again',
       'common.cancel': 'Cancel',
@@ -314,11 +318,17 @@
   let view = null;
   let warning = '';
 
+  function isMac() {
+    return String(window.__cleanliePlatform || '').startsWith('darwin');
+  }
+
   function applyLanguage(lang) {
     LANG = lang === 'en' ? 'en' : 'id';
     document.documentElement.lang = LANG;
     document.querySelectorAll('[data-i18n]').forEach(el => {
-      const text = t(el.dataset.i18n);
+      let key = el.dataset.i18n;
+      if (key === 'brand.tagline' && isMac()) key = 'brand.tagline.macos';
+      const text = t(key);
       if (text) el.textContent = text;
     });
     document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
@@ -459,11 +469,14 @@
       const chip = byId('settings-polkit');
       const detail = byId('settings-polkit-detail');
       if (chip) {
-        chip.textContent = d.polkitAgent ? t('settings.polkitYes') : t('settings.polkitNo');
+        chip.textContent = d.adminKind === 'osascript'
+          ? t('settings.adminOsascript')
+          : (d.polkitAgent ? t('settings.polkitYes') : t('settings.polkitNo'));
         chip.className = 'chip ' + (d.polkitAgent ? 'safe' : 'warn');
       }
       if (detail) detail.textContent = d.polkitDetail || '';
       document.querySelectorAll('[data-i18n="settings.polkit"]').forEach(el => el.textContent = t('settings.polkit'));
+      if (isMac()) applyLanguage(LANG);
     } catch (e) { /* diagnostik opsional */ }
   }
 

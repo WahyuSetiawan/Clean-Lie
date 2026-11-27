@@ -6,6 +6,25 @@ Semua perubahan penting pada Cleanlie. Format mengikuti
 
 ## [Unreleased]
 
+### Ditambahkan — dukungan macOS
+- Build & jalankan di macOS (arm64) lewat devShell `aarch64-darwin`; Wails memakai
+  WKWebView sistem, tag `webkit2_41` hanya dipakai di Linux.
+- Aksi root di macOS memakai dialog admin `osascript` (pengganti `pkexec`);
+  pembatalan prompt jatuh ke perintah `sudo` siap-copy. `Diagnostics.adminKind`
+  memberi tahu UI cara prompt yang dipakai.
+- Katalog clean macOS: `~/Library/Caches`, `~/Library/Logs`, Saved Application
+  State, Homebrew cache, cache dev di `~/Library` (Go, gopls, uv, pip, pnpm,
+  Playwright, Cypress), serta Xcode DerivedData/iOS DeviceSupport/Archives dan
+  CoreSimulator. Grup baru `dev.macos`.
+- Guard proses membaca `ps` di macOS (tanpa `/proc`); deteksi emulator Android
+  juga lewat `ps`.
+- Trash memakai `~/.Trash` (Finder) dan tanpa metadata `.trashinfo`.
+- Rule systemd journal/`/var/log`/`/var/tmp` dan vacuum journal tidak dimuat di
+  macOS; kartu Journal disembunyikan, layar Nix tetap berfungsi.
+- Path lindung macOS: `/System`, `/Library`, `/Applications`, `/private`,
+  `/opt/homebrew`, `~/Library` (kecuali Caches/Logs/Developer), Keychains,
+  Application Support, Containers, Mobile Documents, Preferences.
+
 ### Ditambahkan
 - Output flake `overlays.default` dan `nixosModules.default`, plus `package.nix`
   yang bisa dipanggil dengan nixpkgs konsumen. Cleanlie sekarang bisa dipakai dari

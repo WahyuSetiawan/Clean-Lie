@@ -122,7 +122,7 @@ type Progress struct {
 
 // GroupOrder menentukan urutan grup di UI.
 var GroupOrder = []string{
-	"dev.node", "dev.jvm", "dev.python", "dev.dart", "dev.rustgo", "dev.android",
+	"dev.node", "dev.jvm", "dev.python", "dev.dart", "dev.rustgo", "dev.android", "dev.macos",
 	"app", "sys.log", "trash",
 }
 
@@ -133,6 +133,7 @@ var groupLabels = map[string]string{
 	"dev.dart":    "Dart / Flutter",
 	"dev.rustgo":  "Rust / Go",
 	"dev.android": "Android SDK/AVD",
+	"dev.macos":   "Xcode / Simulator",
 	"app":         "Cache aplikasi",
 	"sys.log":     "Log & journal",
 	"trash":       "Trash",

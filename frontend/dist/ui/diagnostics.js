@@ -10,6 +10,11 @@
     const d = await bridge.Diagnostics();
     if (badge) { badge.textContent = 'v' + d.version; badge.title = 'commit ' + d.commit; }
 
+    const platform = String(d.platform || '');
+    const isMac = platform.startsWith('darwin');
+    window.__cleanliePlatform = platform;
+    window.__cleanlieAdminKind = d.adminKind || 'polkit';
+
     const set = (id, text) => { const el = document.getElementById(id); if (el) el.textContent = text; };
     set('diag-version', d.version);
     set('diag-commit', d.commit);
@@ -24,8 +29,14 @@
       chip.textContent = d.polkitAgent ? 'ok' : '!';
       chip.className = 'chip ' + (d.polkitAgent ? 'safe' : 'warn');
     }
-    set('st-polkit', d.polkitAgent ? 'Polkit agent terdeteksi' : 'Polkit agent tidak ada');
-    set('st-polkit-detail', d.polkitAgent ? 'aksi root via pkexec' : 'fallback: perintah sudo siap-copy');
+    set('st-polkit', isMac ? 'Dialog admin macOS tersedia' : (d.polkitAgent ? 'Polkit agent terdeteksi' : 'Polkit agent tidak ada'));
+    set('st-polkit-detail', isMac ? 'aksi root via osascript' : (d.polkitAgent ? 'aksi root via pkexec' : 'fallback: perintah sudo siap-copy'));
+
+    // systemd journal tidak ada di macOS; sembunyikan kartu vacuum-nya.
+    if (isMac) {
+      const journal = document.getElementById('nix-journal-card');
+      if (journal) journal.style.display = 'none';
+    }
   } catch (e) {
     console.error('diagnostics', e);
     if (badge) badge.title = 'binding error: ' + e;

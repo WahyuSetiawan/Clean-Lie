@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
+	"runtime"
 	"sort"
 	"strconv"
 	"strings"
@@ -125,6 +126,9 @@ func CollectGarbage(ctx context.Context, confirm string, opts Options) (ActionRe
 
 // VacuumJournal mengecilkan journal ke target (mis. "500M").
 func VacuumJournal(ctx context.Context, target string, opts Options) (ActionResult, error) {
+	if runtime.GOOS == "darwin" {
+		return ActionResult{}, errors.New("systemd journal tidak tersedia di macOS")
+	}
 	target = normalizeVacuumTarget(target)
 	if !vacuumTargetRe.MatchString(target) {
 		return ActionResult{}, fmt.Errorf("target journal tidak valid: %q", target)
@@ -245,5 +249,8 @@ func trimOutput(s string) string {
 
 // JournalPreview mengembalikan perintah vacuum journal.
 func JournalPreview(target string, agent bool) string {
+	if runtime.GOOS == "darwin" {
+		return ""
+	}
 	return privileged.Preview([]string{"journalctl", "--vacuum-size=" + target}, agent)
 }
