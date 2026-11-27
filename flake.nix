@@ -6,19 +6,25 @@
   outputs =
     { self, nixpkgs }:
     let
-      systems = [
+      # Paket, overlay, dan nixosModules hanya masuk akal di Linux: build-nya
+      # butuh gtk3/webkitgtk_4_1, dan runtime-nya butuh nix/systemd/polkit.
+      linuxSystems = [
         "x86_64-linux"
         "aarch64-linux"
       ];
-      each = f: nixpkgs.lib.genAttrs systems (system: f nixpkgs.legacyPackages.${system});
+      # macOS cuma dapat devShell untuk `go test` dan kerja di sisi Go+frontend.
+      # x86_64-darwin sengaja tidak didaftarkan: nixpkgs 26.11 sudah drop platform itu.
+      darwinSystems = [ "aarch64-darwin" ];
+      eachLinux = f: nixpkgs.lib.genAttrs linuxSystems (system: f nixpkgs.legacyPackages.${system});
+      each = f: nixpkgs.lib.genAttrs (linuxSystems ++ darwinSystems) (system: f nixpkgs.legacyPackages.${system});
       version = "0.7.0";
-    in
-    {
-      devShells = each (
+
+      devShellFor =
         pkgs:
         let
           # nixpkgs membawa wails 2.17.0, sedangkan go.mod memakai library 2.17.1.
           # CLI 2.17.0 men-downgrade go.mod tiap `wails dev`; pin CLI ke versi library.
+          # Override ini platform-agnostik; nixpkgs sendiri yang membatasi gtk/webkit ke Linux.
           wails = pkgs.wails.overrideAttrs (_old: {
             version = "2.17.1";
             src = pkgs.fetchFromGitHub {
@@ -30,6 +36,17 @@
             vendorHash = "sha256-jvj8M8bXcxyOkoxfnYaTuG7Zk7+O6f1mdnpws2AHvto=";
           });
 
+          commonPackages = with pkgs; [
+            go
+            gopls
+            gotools
+            pkg-config
+            gnumake
+            git
+            jq
+            nodejs # frontend/test/ui-smoke.mjs (jsdom)
+          ];
+
           # Library runtime untuk `wails dev` dan binary cgo hasil `go build`.
           runtimeLibs = with pkgs; [
             gtk3
@@ -38,19 +55,9 @@
             libsoup_3
           ];
         in
-        {
-          default = pkgs.mkShell {
-            packages = with pkgs; [
-              go
-              gopls
-              gotools
-              wails
-              pkg-config
-              gnumake
-              git
-              jq
-              nodejs # frontend/test/ui-smoke.mjs (jsdom)
-            ] ++ runtimeLibs;
+        if pkgs.stdenv.hostPlatform.isLinux then
+          pkgs.mkShell {
+            packages = commonPackages ++ [ wails ] ++ runtimeLibs;
 
             env = {
               CGO_ENABLED = "1";
@@ -67,11 +74,30 @@
               echo "  make build   # bin/cleanlie"
               echo "  make test"
             '';
-          };
-        }
-      );
+          }
+        else
+          pkgs.mkShell {
+            # Tanpa gtk/webkitgtk: backend Wails di macOS memakai WKWebView sistem.
+            packages = commonPackages ++ [ wails ];
 
-      packages = each (pkgs: {
+            env = {
+              CGO_ENABLED = "1";
+              GOTOOLCHAIN = "local";
+            };
+
+            shellHook = ''
+              echo "cleanlie dev shell (macOS) · go $(go version | awk '{print $3}') · wails $(wails version 2>/dev/null | head -1)"
+              echo "  make test    # go test -tags desktop,production,webkit2_41 ./..."
+              echo "  catatan: target cleanlie (NixOS) tidak bisa di-build/dijalankan di sini."
+            '';
+          };
+    in
+    {
+      devShells = each (pkgs: {
+        default = devShellFor pkgs;
+      });
+
+      packages = eachLinux (pkgs: {
         cleanlie = pkgs.callPackage ./package.nix {
           inherit version;
           commit = self.shortRev or "dirty";
@@ -100,7 +126,7 @@
           environment.systemPackages = [ pkgs.cleanlie ];
         };
 
-      apps = each (pkgs: {
+      apps = eachLinux (pkgs: {
         default = {
           type = "app";
           program = "${self.packages.${pkgs.stdenv.hostPlatform.system}.cleanlie}/bin/cleanlie";
