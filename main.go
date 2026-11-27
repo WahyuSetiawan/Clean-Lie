@@ -15,7 +15,7 @@ var assets embed.FS
 
 // Diisi lewat -ldflags saat build (lihat Makefile / flake.nix).
 var (
-	version = "0.7.0-dev"
+	version = "0.8.0-dev"
 	commit  = "unknown"
 )
 

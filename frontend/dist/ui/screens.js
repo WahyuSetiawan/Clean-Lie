@@ -10,8 +10,10 @@
     if (view === "cleanup") C.ensureScan();
     if (view === "nix") C.ensureNix();
     if (view === "android") C.ensureAndroid();
+    if (view === "history" && C.ensureHistory) C.ensureHistory();
   };
   if (current === "cleanup") C.ensureScan();
   if (current === "nix") C.ensureNix();
   if (current === "android") C.ensureAndroid();
+  if (current === "history" && C.ensureHistory) C.ensureHistory();
 })();

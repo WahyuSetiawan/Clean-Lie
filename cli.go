@@ -12,12 +12,14 @@ import (
 
 	"github.com/Juragan-Koding/cleanlie/internal/analysis"
 	"github.com/Juragan-Koding/cleanlie/internal/android"
+	"github.com/Juragan-Koding/cleanlie/internal/clean"
 	"github.com/Juragan-Koding/cleanlie/internal/config"
 	"github.com/Juragan-Koding/cleanlie/internal/direnv"
 	"github.com/Juragan-Koding/cleanlie/internal/fsx"
 	"github.com/Juragan-Koding/cleanlie/internal/nix"
 	"github.com/Juragan-Koding/cleanlie/internal/privileged"
 	"github.com/Juragan-Koding/cleanlie/internal/rules"
+	"github.com/Juragan-Koding/cleanlie/internal/trash"
 )
 
 // runCLI menangani mode headless. Return handled=false berarti jalankan GUI.
@@ -35,6 +37,9 @@ func runCLI(args []string) (handled bool, code int) {
 			"--analysis-tree", "-analysis-tree", "--analysis-overview", "-analysis-overview",
 			"--analysis-dups", "-analysis-dups",
 			"--direnv-scan", "-direnv-scan",
+			"--trash-list", "-trash-list", "--trash-restore", "-trash-restore",
+			"--trash-delete", "-trash-delete", "--trash-empty", "-trash-empty",
+			"--history", "-history", "--undo", "-undo",
 			"--version", "-version", "--help", "-help", "-h":
 			headless = true
 		}
@@ -61,6 +66,15 @@ func runCLI(args []string) (handled bool, code int) {
 		anDups     = fs.Bool("analysis-dups", false, "file duplikat sebagai JSON")
 		dirScan    = fs.Bool("direnv-scan", false, "scan folder .direnv sebagai JSON")
 		anDepth    = fs.Int("depth", 2, "kedalaman tree analisis")
+		trashList  = fs.Bool("trash-list", false, "daftar isi trash (JSON)")
+		noSize     = fs.Bool("no-size", false, "jangan ukur ukuran trash")
+		trashRest  = fs.String("trash-restore", "", "pulihkan item trash berdasarkan ID (pisahkan koma)")
+		trashDel   = fs.String("trash-delete", "", "hapus permanen item trash berdasarkan ID (pisahkan koma)")
+		trashEmpty = fs.Bool("trash-empty", false, "kosongkan seluruh trash")
+		history    = fs.Bool("history", false, "riwayat sesi pembersihan (JSON)")
+		undoBatch  = fs.String("undo", "", "undo satu sesi berdasarkan batch")
+		limit      = fs.Int("limit", 50, "jumlah sesi/entry maksimum")
+		yes        = fs.Bool("yes", false, "izinkan tindakan destruktif tanpa prompt")
 	)
 	fs.Usage = func() {
 		fmt.Fprintf(os.Stderr, `Cleanlie %s
@@ -77,7 +91,15 @@ Pemakaian:
   cleanlie --analysis-overview     file besar, lama, artefak (JSON)
   cleanlie --analysis-dups         file duplikat (JSON)
   cleanlie --direnv-scan           folder .direnv di --path (JSON)
+  cleanlie --trash-list            isi trash (JSON; --no-size)
+  cleanlie --trash-restore ID      pulihkan item trash (butuh --yes)
+  cleanlie --trash-delete ID       hapus permanen item trash (butuh --yes)
+  cleanlie --trash-empty           kosongkan trash (butuh --yes)
+  cleanlie --history               riwayat sesi (JSON; --limit)
+  cleanlie --undo BATCH            undo sesi trash (butuh --yes)
   cleanlie --version
+
+Opsi destruktif selalu butuh --yes; --dry-run menampilkan rencana.
 
 Opsi:
 `, version)
@@ -90,6 +112,10 @@ Opsi:
 	if *showVer {
 		fmt.Printf("cleanlie %s (%s)\n", version, commit)
 		return true, 0
+	}
+
+	if *trashList || *trashRest != "" || *trashDel != "" || *trashEmpty || *history || *undoBatch != "" {
+		return true, runTrashCLI(*trashList, *noSize, *trashRest, *trashDel, *trashEmpty, *history, *undoBatch, *limit, *yes, *dryRun, *jsonOut)
 	}
 
 	if *andStat {
@@ -287,4 +313,366 @@ func printJSON(v any) {
 	if err := enc.Encode(v); err != nil {
 		fmt.Fprintln(os.Stderr, "cleanlie:", err)
 	}
+}
+
+// runTrashCLI menangani perintah trash/riwayat headless. Semua tindakan
+// destruktif wajib --yes (kecuali --dry-run) dan tidak pernah menebak path.
+func runTrashCLI(list, noSize bool, restore, del string, empty, history bool, undo string, limit int, yes, dryRun, jsonOut bool) int {
+	ctx := context.Background()
+
+	if list {
+		rep, err := trash.List(ctx, trash.ListOptions{MaxEntries: 5000})
+		if err != nil {
+			fmt.Fprintln(os.Stderr, "cleanlie:", err)
+			return 1
+		}
+		if !noSize {
+			rep.Entries = trash.SizeEntries(ctx, rep.Entries, trash.SizeOptions{Workers: 4})
+			rep.Bytes = sumTrashBytes(rep.Entries)
+		}
+		if jsonOut {
+			printJSON(rep)
+		} else {
+			printTrashReport(rep)
+		}
+		return 0
+	}
+
+	if history {
+		page, err := clean.ReadSessions("", limit)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, "cleanlie:", err)
+			return 1
+		}
+		printJSON(page)
+		return 0
+	}
+
+	destructive := restore != "" || del != "" || empty || undo != ""
+	if destructive && !dryRun && !yes {
+		fmt.Fprintln(os.Stderr, "cleanlie: tindakan ini butuh --yes (atau pakai --dry-run)")
+		return 2
+	}
+
+	if restore != "" {
+		return runRestoreCLI(ctx, restore, dryRun, jsonOut)
+	}
+	if del != "" {
+		return runDeleteCLI(ctx, del, dryRun, jsonOut)
+	}
+	if empty {
+		return runEmptyCLI(ctx, dryRun, jsonOut)
+	}
+	if undo != "" {
+		return runUndoCLI(ctx, undo, dryRun, jsonOut)
+	}
+	return 0
+}
+
+func splitIDs(s string) ([]string, error) {
+	seen := map[string]bool{}
+	var out []string
+	for _, id := range strings.Split(s, ",") {
+		id = strings.TrimSpace(id)
+		if id == "" || seen[id] {
+			continue
+		}
+		seen[id] = true
+		out = append(out, id)
+	}
+	if len(out) == 0 {
+		return nil, fmt.Errorf("ID trash kosong")
+	}
+	return out, nil
+}
+
+func trashByID(ctx context.Context, ids []string) ([]trash.Entry, error) {
+	rep, err := trash.List(ctx, trash.ListOptions{MaxEntries: 5000})
+	if err != nil {
+		return nil, err
+	}
+	byID := make(map[string]trash.Entry, len(rep.Entries))
+	for _, e := range rep.Entries {
+		byID[e.ID] = e
+	}
+	out := make([]trash.Entry, 0, len(ids))
+	for _, id := range ids {
+		e, ok := byID[id]
+		if !ok {
+			return nil, fmt.Errorf("item trash tidak dikenal: %s", id)
+		}
+		out = append(out, e)
+	}
+	return out, nil
+}
+
+func printTrashReport(rep trash.Report) {
+	fmt.Printf("Trash: %d item · %s\n", len(rep.Entries), fsx.Human(rep.Bytes))
+	for _, e := range rep.Entries {
+		size := "—"
+		if e.Bytes >= 0 {
+			size = fsx.Human(e.Bytes)
+		}
+		state := "pulih"
+		if !e.Restorable {
+			state = "tidak: " + e.Reason
+		}
+		fmt.Printf("  %-12s %9s  %-28s %s\n", e.ID, size, truncate(e.Name, 28), shorten(e.OriginalPath))
+		if !e.Restorable {
+			fmt.Printf("               %s\n", state)
+		}
+	}
+}
+
+func printAction(res trash.ActionResult) {
+	fmt.Printf("Restored: %d · Deleted: %d · Skipped: %d · Failed: %d · %s\n",
+		res.Restored, res.Deleted, res.Skipped, res.Failed, fsx.Human(res.Bytes))
+	for _, it := range res.Items {
+		fmt.Printf("  %-10s %-28s %s\n", it.Status, truncate(it.OriginalPath, 28), it.Reason)
+	}
+}
+
+func runRestoreCLI(ctx context.Context, raw string, dryRun, jsonOut bool) int {
+	ids, err := splitIDs(raw)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "cleanlie:", err)
+		return 1
+	}
+	entries, err := trashByID(ctx, ids)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "cleanlie:", err)
+		return 1
+	}
+	res := trash.ActionResult{Items: make([]trash.ItemResult, 0, len(entries))}
+	if dryRun {
+		for _, e := range entries {
+			ir := trash.ItemResult{ID: e.ID, Name: e.Name, OriginalPath: e.OriginalPath, Status: "planned", Bytes: maxBytes(e.Bytes)}
+			if !e.Restorable {
+				ir.Status, ir.Reason = "skipped", e.Reason
+				res.Skipped++
+			} else {
+				res.Restored++
+				res.Bytes += ir.Bytes
+			}
+			res.Items = append(res.Items, ir)
+		}
+		return printActionResult(res, jsonOut)
+	}
+	if err := clean.RotateAudit(""); err != nil {
+		fmt.Fprintln(os.Stderr, "cleanlie:", err)
+		return 1
+	}
+	batch := clean.NewBatch("restore-")
+	started := time.Now().Format(time.RFC3339)
+	var audits []clean.Entry
+	for _, e := range entries {
+		ir := trash.ItemResult{ID: e.ID, Name: e.Name, OriginalPath: e.OriginalPath}
+		if !e.Restorable {
+			ir.Status, ir.Reason = "skipped", e.Reason
+			res.Skipped++
+			res.Items = append(res.Items, ir)
+			continue
+		}
+		if err := trash.Restore(ctx, e); err != nil {
+			ir.Status, ir.Reason = "failed", err.Error()
+			res.Failed++
+		} else {
+			ir.Status, ir.Bytes = "restored", maxBytes(e.Bytes)
+			res.Restored++
+			res.Bytes += ir.Bytes
+		}
+		res.Items = append(res.Items, ir)
+		status := clean.StatusRemoved
+		if ir.Status == "failed" {
+			status = clean.StatusFailed
+		}
+		audits = append(audits, clean.Entry{Time: started, Mode: clean.ModeTrash, ID: e.ID, Path: e.OriginalPath,
+			BytesBefore: ir.Bytes, Status: status, Reason: ir.Reason, TrashPath: e.FilesPath, Batch: batch, Action: "restore"})
+	}
+	if err := clean.AppendAuditBatch("", audits); err != nil {
+		res.AuditError = err.Error()
+	}
+	return printActionResult(res, jsonOut)
+}
+
+func runDeleteCLI(ctx context.Context, raw string, dryRun, jsonOut bool) int {
+	ids, err := splitIDs(raw)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "cleanlie:", err)
+		return 1
+	}
+	entries, err := trashByID(ctx, ids)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "cleanlie:", err)
+		return 1
+	}
+	if dryRun {
+		res := trash.ActionResult{Items: make([]trash.ItemResult, 0, len(entries))}
+		for _, e := range entries {
+			b := maxBytes(e.Bytes)
+			res.Deleted++
+			res.Bytes += b
+			res.Items = append(res.Items, trash.ItemResult{ID: e.ID, Name: e.Name, OriginalPath: e.OriginalPath, Status: "planned", Bytes: b})
+		}
+		return printActionResult(res, jsonOut)
+	}
+	if err := clean.RotateAudit(""); err != nil {
+		fmt.Fprintln(os.Stderr, "cleanlie:", err)
+		return 1
+	}
+	res := trash.Delete(ctx, entries)
+	started := time.Now().Format(time.RFC3339)
+	batch := clean.NewBatch("trash-")
+	var audits []clean.Entry
+	for _, ir := range res.Items {
+		if ir.Status == "skipped" {
+			continue
+		}
+		status := clean.StatusRemoved
+		if ir.Status != "deleted" {
+			status = clean.StatusFailed
+		}
+		audits = append(audits, clean.Entry{Time: started, Mode: clean.ModePermanent, ID: ir.ID, Path: ir.OriginalPath,
+			BytesBefore: ir.Bytes, Freed: ir.Bytes, Status: status, Reason: ir.Reason, Batch: batch, Action: "trash-delete"})
+	}
+	if err := clean.AppendAuditBatch("", audits); err != nil {
+		res.AuditError = err.Error()
+	}
+	return printActionResult(res, jsonOut)
+}
+
+func runEmptyCLI(ctx context.Context, dryRun, jsonOut bool) int {
+	roots := trash.DiscoverRoots()
+	if dryRun {
+		rep, err := trash.List(ctx, trash.ListOptions{Roots: roots})
+		if err != nil {
+			fmt.Fprintln(os.Stderr, "cleanlie:", err)
+			return 1
+		}
+		res := trash.ActionResult{Items: make([]trash.ItemResult, 0, len(rep.Entries))}
+		for _, e := range rep.Entries {
+			b := maxBytes(e.Bytes)
+			res.Deleted++
+			res.Bytes += b
+			res.Items = append(res.Items, trash.ItemResult{ID: e.ID, Name: e.Name, OriginalPath: e.OriginalPath, Status: "planned", Bytes: b})
+		}
+		return printActionResult(res, jsonOut)
+	}
+	if err := clean.RotateAudit(""); err != nil {
+		fmt.Fprintln(os.Stderr, "cleanlie:", err)
+		return 1
+	}
+	res, err := trash.Empty(ctx, roots, "KOSONGKAN")
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "cleanlie:", err)
+		return 1
+	}
+	started := time.Now().Format(time.RFC3339)
+	batch := clean.NewBatch("trash-")
+	var audits []clean.Entry
+	for _, ir := range res.Items {
+		if ir.Status == "skipped" {
+			continue
+		}
+		status := clean.StatusRemoved
+		if ir.Status != "deleted" {
+			status = clean.StatusFailed
+		}
+		audits = append(audits, clean.Entry{Time: started, Mode: clean.ModePermanent, ID: ir.ID, Path: ir.OriginalPath,
+			BytesBefore: ir.Bytes, Freed: ir.Bytes, Status: status, Reason: ir.Reason, Batch: batch, Action: "trash-empty"})
+	}
+	if err := clean.AppendAuditBatch("", audits); err != nil {
+		res.AuditError = err.Error()
+	}
+	return printActionResult(res, jsonOut)
+}
+
+func runUndoCLI(ctx context.Context, batch string, dryRun, jsonOut bool) int {
+	items, ok, err := clean.ReadSessionEntries("", batch)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "cleanlie:", err)
+		return 1
+	}
+	if !ok {
+		fmt.Fprintln(os.Stderr, "cleanlie: sesi tidak ditemukan:", batch)
+		return 1
+	}
+	res := trash.ActionResult{Items: make([]trash.ItemResult, 0, len(items))}
+	if dryRun {
+		for _, e := range items {
+			ir := trash.ItemResult{ID: e.ID, Name: e.ID, OriginalPath: e.Path}
+			if !clean.RestorableEntry(e) {
+				ir.Status, ir.Reason = "skipped", "item tidak bisa di-undo (permanen/perintah)"
+				res.Skipped++
+			} else {
+				ir.Status = "planned"
+				res.Restored++
+			}
+			res.Items = append(res.Items, ir)
+		}
+		return printActionResult(res, jsonOut)
+	}
+	if err := clean.RotateAudit(""); err != nil {
+		fmt.Fprintln(os.Stderr, "cleanlie:", err)
+		return 1
+	}
+	undoBatch := clean.NewBatch("undo-")
+	started := time.Now().Format(time.RFC3339)
+	var audits []clean.Entry
+	for _, e := range items {
+		ir := trash.ItemResult{ID: e.ID, Name: e.ID, OriginalPath: e.Path}
+		if !clean.RestorableEntry(e) || e.Path == "" {
+			ir.Status, ir.Reason = "skipped", "item tidak bisa di-undo"
+			res.Skipped++
+			res.Items = append(res.Items, ir)
+			continue
+		}
+		tr, found := trash.Resolve(ctx, e.Path)
+		if !found {
+			ir.Status, ir.Reason = "skipped", "jejak trash tidak ditemukan"
+			res.Skipped++
+			res.Items = append(res.Items, ir)
+			continue
+		}
+		if !tr.Restorable {
+			ir.Status, ir.Reason = "skipped", tr.Reason
+			res.Skipped++
+			res.Items = append(res.Items, ir)
+			continue
+		}
+		if err := trash.Restore(ctx, tr); err != nil {
+			ir.Status, ir.Reason = "failed", err.Error()
+			res.Failed++
+		} else {
+			ir.Status, ir.Bytes = "restored", maxBytes(e.BytesBefore)
+			res.Restored++
+			res.Bytes += ir.Bytes
+		}
+		res.Items = append(res.Items, ir)
+		status := clean.StatusRemoved
+		if ir.Status == "failed" {
+			status = clean.StatusFailed
+		}
+		audits = append(audits, clean.Entry{Time: started, Mode: clean.ModeTrash, ID: e.ID, Path: e.Path,
+			BytesBefore: ir.Bytes, Status: status, Reason: ir.Reason, TrashPath: tr.FilesPath, Batch: undoBatch, Action: "restore"})
+	}
+	if err := clean.AppendAuditBatch("", audits); err != nil {
+		res.AuditError = err.Error()
+	}
+	return printActionResult(res, jsonOut)
+}
+
+func printActionResult(res trash.ActionResult, jsonOut bool) int {
+	if jsonOut {
+		printJSON(res)
+	} else {
+		printAction(res)
+	}
+	if res.Failed > 0 || res.AuditError != "" {
+		if res.AuditError != "" {
+			fmt.Fprintln(os.Stderr, "cleanlie: audit:", res.AuditError)
+		}
+		return 1
+	}
+	return 0
 }

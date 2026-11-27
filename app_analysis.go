@@ -243,6 +243,7 @@ func (a *App) AnalysisClean(req AnalysisCleanRequest) (clean.Result, error) {
 			}
 		}
 		a.analysisMu.Unlock()
+		a.invalidateAfterMutation()
 	}
 	return res, nil
 }

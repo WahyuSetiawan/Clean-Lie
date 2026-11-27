@@ -183,6 +183,7 @@ func (a *App) Clean(req CleanRequest) (clean.Result, error) {
 			}
 		}
 		a.scanMu.Unlock()
+		a.invalidateAfterMutation()
 	}
 	return res, nil
 }

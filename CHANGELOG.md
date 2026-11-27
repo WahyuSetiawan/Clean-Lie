@@ -32,6 +32,39 @@ Semua perubahan penting pada Cleanlie. Format mengikuti
 - Workflow `.github/workflows/cachix.yml`: build `.#cleanlie` di `main` dan push
   closure ke cache Cachix `juragankoding-cachix` (secret `CACHIX_AUTH_TOKEN`).
 
+## [0.8.0] — 2026-11-27
+
+### Ditambahkan — M8 Trust: Trash Manager, Undo, Riwayat, Preview
+
+- `internal/trash`: baca trash freedesktop (home + volume `.Trash-$uid`), parsing
+  `.trashinfo` yang aman, deteksi orphan, ukuran allocated dengan dedupe hardlink,
+  restore tanpa menimpa (gio URI hanya untuk home; volume lewat `os.Rename`), hapus
+  permanen dengan cek mount, dan `Empty` bergerbang `KOSONGKAN`/`EMPTY`.
+- `internal/clean/history.go`: audit batch + aksi (`clean`, `restore`, `trash-delete`,
+  `trash-empty`), pembacaan sesi 50 terakhir/200 item, rotasi 8 MiB, dan aturan
+  `RestorableEntry` (hanya item `mode=trash`, `status=removed`, punya jejak trash).
+- Binding baru: `TrashList`, `TrashRefresh`, `TrashRestore`, `TrashDelete`,
+  `TrashEmpty`, `HistorySessions`, `UndoSession`, `PreviewCleanup`, `PreviewTrash`.
+  UI hanya mengirim ID; restore selalu membaca ulang `.trashinfo` (audit hanya hint).
+- `internal/preview`: preview file/folder read-only (20 entri, batas 1,5 s, symlink
+  tidak diikuti, ukuran allocated, flag blocked/truncated/timed out).
+- Layar **Riwayat** (layar ke-8) dengan tab **Aktivitas** (sesi, filter, detail,
+  undo parsial) dan **Trash** (cari, pilih, restore, hapus, kosongkan, ukuran
+  streaming, badge tidak-restorable). Tombol **Lihat isi** di Bersihkan/Analisis/Trash.
+- Modal hasil `Clean` menampilkan **Undo sesi ini** bila batch punya item restorable.
+- CLI: `--trash-list` (`--no-size`), `--trash-restore`, `--trash-delete`,
+  `--trash-empty`, `--history` (`--limit`), `--undo`; tindakan destruktif butuh
+  `--yes`, `--dry-run` tetap aman. `scripts/verify-trash.sh` menguji alur penuh di
+  HOME/XDG sementara dengan `CLEANLIE_NO_GIO=1`.
+- Test: `internal/trash`, `internal/preview`, `internal/clean` (audit/sesi), binding
+  app, CLI, dan UI smoke (sesi, trash, preview, restore, kosongkan, undo).
+
+### Catatan
+
+- Versi aplikasi menjadi **0.8.0** (`Makefile`, `flake.nix`, `package.nix`, `main.go`).
+- Restore tidak pernah menimpa file, tidak me-rename otomatis, dan tidak membuat parent
+  yang hilang; konflik dilaporkan per item. `EXDEV` adalah error, bukan copy diam-diam.
+
 ## [0.7.0] — 2026-11-26
 
 ### Ditambahkan — M7 direnv
@@ -222,4 +255,6 @@ Semua perubahan penting pada Cleanlie. Format mengikuti
 
 ## Rencana berikutnya
 
-- **M6** — Pengaturan, i18n, packaging, dan verifikasi akhir v1.
+- **M9** — Visibilitas: ekspor laporan, notifikasi, tren disk, dan ringkasan mingguan.
+- **M10** — Otomasi/cakupan: systemd timer, aturan kustom, dan dedupe hardlink.
+- **M11** — Polish: i18n penuh, single-instance, CI test/lint, dan disk health.

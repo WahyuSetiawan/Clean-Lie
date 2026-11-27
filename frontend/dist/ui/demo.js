@@ -85,7 +85,7 @@ function renderCleanup(){
     const disabled = it.risk === 'blocked' ? 'disabled' : '';
     return `<tr>
       <td><input type="checkbox" class="check" data-path="${it.p}" data-mb="${it.mb}" id="${id}" ${checked} ${disabled}></td>
-      <td class="path mono">${it.p}</td>
+      <td class="path mono">${it.p}${it.id ? ` <button class="btn ghost" style="padding:3px 7px;font-size:11px" data-preview-id="${it.id}">Lihat</button>` : ''}</td>
       <td class="r num">${fmt(it.mb)}</td>
       <td><span class="chip ${cls}">${label}</span></td>
       <td class="small muted">${it.note}</td>
@@ -118,6 +118,7 @@ const META = {
   android:['Android','AVD, system image, dan NDK'],
   direnv:['direnv','Cari folder .direnv yang berat dan bisa dibuat ulang'],
   analysis:['Analisis','Disk usage, file besar, duplikat, file lama, artefak build'],
+  history:['Riwayat','Aktivitas pembersihan dan isi trash'],
   settings:['Pengaturan','Preferensi pembersihan dan tampilan'],
 };
 let current = 'dashboard';

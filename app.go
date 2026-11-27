@@ -16,6 +16,7 @@ import (
 	"github.com/Juragan-Koding/cleanlie/internal/direnv"
 	"github.com/Juragan-Koding/cleanlie/internal/nix"
 	"github.com/Juragan-Koding/cleanlie/internal/rules"
+	"github.com/Juragan-Koding/cleanlie/internal/trash"
 )
 
 // App adalah jembatan Go ↔ UI: diagnostik, scan/clean, Nix, Android,
@@ -62,6 +63,13 @@ type App struct {
 	direnvKey           string
 	direnvAt            time.Time
 	direnvTargets       map[string]clean.Target
+
+	trashMu         sync.Mutex
+	trashReport     *trash.Report
+	trashEntries    map[string]trash.Entry
+	trashAt         time.Time
+	trashGen        int
+	trashSizeCancel context.CancelFunc
 }
 
 func NewApp(version, commit string) *App {

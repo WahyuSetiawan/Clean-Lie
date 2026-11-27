@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/Juragan-Koding/cleanlie/internal/tools"
+	"github.com/Juragan-Koding/cleanlie/internal/trash"
 )
 
 // ErrCrossDevice dikembalikan bila path berada di filesystem lain dan
@@ -50,10 +51,15 @@ func homeDir() string {
 // MoveToTrash memakai `gio trash` bila tersedia (Linux), lalu fallback
 // manual. Di macOS langsung dipakai ~/.Trash milik Finder.
 func MoveToTrash(ctx context.Context, path string) (TrashInfo, error) {
-	if runtime.GOOS != "darwin" && tools.Available("gio") {
+	if runtime.GOOS != "darwin" && os.Getenv("CLEANLIE_NO_GIO") != "1" && tools.Available("gio") {
 		res := tools.Run(ctx, []string{"gio", "trash", "--", path}, 2*time.Minute)
 		if res.Err == nil {
-			return TrashInfo{Path: path}, nil
+			info := TrashInfo{Path: path}
+			if e, ok := trash.Resolve(ctx, path); ok {
+				info.TrashPath = e.FilesPath
+				info.InfoPath = e.InfoPath
+			}
+			return info, nil
 		}
 	}
 	return manualTrash(path)

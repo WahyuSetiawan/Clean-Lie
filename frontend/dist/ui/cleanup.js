@@ -186,7 +186,9 @@
     }
     body += '<div class="row" style="gap:8px;margin-top:12px">'
       + '<button class="btn ghost" id="res-trash">Buka trash</button>'
-      + '<button class="btn ghost" id="res-copy">Salin log</button></div>'
+      + '<button class="btn ghost" id="res-copy">Salin log</button>'
+      + (mode === 'trash' && res.batch ? '<button class="btn ghost" id="res-undo">Undo sesi ini</button>' : '')
+      + '</div>'
       + '<div class="tiny dim mono" style="margin-top:10px">' + esc(shortPath(res.auditPath)) + '</div>';
     byId('m-body').innerHTML = body;
     byId('m-cancel').textContent = 'Tutup';
@@ -201,6 +203,22 @@
     });
     byId('res-trash').addEventListener('click', async () => {
       try { await bridge.OpenTrash(); } catch (e) { toast('Gagal membuka trash: ' + e); }
+    });
+    const undo = byId('res-undo');
+    if (undo) undo.addEventListener('click', async () => {
+      undo.disabled = true;
+      undo.textContent = 'Mengembalikan…';
+      try {
+        const ur = await bridge.UndoSession(res.batch, false);
+        toast((ur.restored || 0) + ' item dipulihkan, ' + (ur.skipped || 0) + ' dilewati');
+        backdrop.classList.remove('open');
+        report = null;
+        ensureScan(true);
+      } catch (e) {
+        undo.disabled = false;
+        undo.textContent = 'Undo sesi ini';
+        toast('Undo gagal: ' + (typeof e === 'string' ? e : (e && e.message) || String(e)));
+      }
     });
   }
 
@@ -238,4 +256,12 @@
 
   C.ensureScan = ensureScan;
   C.report = () => report;
+
+  const rowsEl = byId('rows');
+  if (rowsEl) rowsEl.addEventListener('click', e => {
+    const b = e.target.closest('[data-preview-id]');
+    if (!b || !b.dataset.previewId) return;
+    e.preventDefault();
+    if (C.previewCleanup) C.previewCleanup(b.dataset.previewId);
+  });
 })();

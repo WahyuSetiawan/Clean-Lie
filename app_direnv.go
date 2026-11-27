@@ -239,6 +239,7 @@ func (a *App) DirenvClean(req DirenvCleanRequest) (clean.Result, error) {
 			a.direnvKey = ""
 		}
 		a.direnvMu.Unlock()
+		a.invalidateAfterMutation()
 	}
 	return res, nil
 }

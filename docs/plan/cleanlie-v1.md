@@ -1,6 +1,6 @@
 # Cleanlie v1 — Plan (GUI cleaner untuk NixOS)
 
-> Status: **M7 selesai** (direnv scan) · v1 + direnv lengkap
+> Status: **M8 selesai** (Trust: trash manager, undo, riwayat, preview) · v1 + direnv + M8 lengkap
 > Target mesin: NixOS 26.11, Hyprland/Wayland, uid 1000 (`juragankoding`)
 
 ## 1. Ringkasan
@@ -379,8 +379,9 @@ tanpa membuka window. Ini yang dipakai di integration test.
 | **M5** ✅ | `internal/analysis` (tree, large, dup, stale) + `artifacts.go` + 4 layar analisis + dashboard kartu & top-reclaim | semua layar terisi data nyata | 1 d |
 | **M6** ✅ | Pengaturan + persistensi (default tanpa centang untuk item ⚠/⛔), laporan hasil, i18n ID/EN, tema, packaging flake (`package.cleanlie`), ikon, README | `nix build .#cleanlie` → binary + desktop item | 0.5 d |
 | **M7** ✅ | `internal/direnv` (cari `.direnv` per proyek + cache global) + layar direnv + root config + CLI `--direnv-scan` | tambah folder → scan → ukuran cocok `du`, trash lewat guard M2 | 0.5 d |
+| **M8** ✅ | Trash Manager (home+volume), restore aman, Undo sesi, Riwayat 8, preview, CLI trash/undo — lihat [`cleanlie-m8-trust.md`](cleanlie-m8-trust.md) | list→restore→undo→delete→empty hijau; UI smoke Riwayat hijau; versi 0.8.0 | 2,7 d |
 
-Total ~6 hari kerja. Urutan wajib M1 → M2 sebelum M3/M4/M5 (engine & planner dipakai bersama).
+Total ~8,7 hari kerja (M0–M8). Urutan wajib M1 → M2 sebelum M3/M4/M5 (engine & planner dipakai bersama).
 
 ## 10. Packaging Nix
 

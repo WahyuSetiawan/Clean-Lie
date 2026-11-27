@@ -53,6 +53,7 @@ let direnvAdded = null;
 let direnvRemoved = null;
 let direnvCleanReq = null;
 let direnvPickCalls = 0;
+let previewCleanupID = null;
 let direnvPickPath = '/home/u/Projects';
 let savedSettings = null;
 let resetSettingsCalls = 0;
@@ -110,6 +111,7 @@ const dom = new JSDOM(html, {
         return {
           mode: req.mode, startedAt: 'now', durationMs: 5, before: 1500000, after: 0, freed: 1500000,
           auditPath: '/home/u/.local/state/cleanlie/history.jsonl',
+          batch: 'batch-1',
           items: req.ids.map(id => ({
             id, path: '/home/u/.npm/_cacache', label: 'x', status: 'removed',
             bytesBefore: 1500000, bytesAfter: 0, freed: 1500000, mode: req.mode
@@ -120,6 +122,28 @@ const dom = new JSDOM(html, {
       CopyText: async () => {},
       OpenTrash: async () => {},
       History: async () => [],
+      HistorySessions: async () => ({
+        truncated: false,
+        sessions: [{
+          id: 'batch-1', batch: 'batch-1', action: '', mode: 'trash', startedAt: '2026-11-25T10:00:00Z',
+          removed: 1, failed: 0, restorable: 1, freed: 0, restorableBytes: 1500000,
+          items: [{ time: '2026-11-25T10:00:00Z', mode: 'trash', id: 'npm-cacache', path: '/home/u/.npm/_cacache', status: 'removed', trashPath: '/home/u/.local/share/Trash/files/_cacache', bytesBefore: 1500000 }]
+        }]
+      }),
+      TrashList: async () => ({
+        roots: [], bytes: 1500000, scannedAt: 'now', durationMs: 4, truncated: false,
+        entries: [
+          { id: 'trash-a', name: '_cacache', originalPath: '/home/u/.npm/_cacache', deletedAt: '2026-11-25T10:00:00Z', bytes: 1500000, restorable: true, reason: '', rootKind: 'home' },
+          { id: 'trash-b', name: 'target', originalPath: '/home/u/Projects/app/target', deletedAt: '2026-11-24T10:00:00Z', bytes: -1, restorable: false, reason: 'tujuan restore sudah ada', rootKind: 'home' }
+        ]
+      }),
+      TrashRefresh: async () => true,
+      TrashRestore: async ids => ({ restored: ids.length, deleted: 0, skipped: 0, failed: 0, bytes: 1500000, items: ids.map(id => ({ id, name: id, status: 'restored', bytes: 1500000 })) }),
+      TrashDelete: async ids => ({ restored: 0, deleted: ids.length, skipped: 0, failed: 0, bytes: 1500000, items: ids.map(id => ({ id, name: id, status: 'deleted', bytes: 1500000 })) }),
+      TrashEmpty: async () => ({ restored: 0, deleted: 2, skipped: 0, failed: 0, bytes: 1500000, items: [] }),
+      UndoSession: async () => ({ restored: 1, deleted: 0, skipped: 0, failed: 0, bytes: 1500000, items: [] }),
+      PreviewCleanup: async id => { previewCleanupID = id; return { path: '/home/u/.npm/_cacache', kind: 'dir', bytes: 1500000, files: 2, entries: [{ name: 'index', path: '/home/u/.npm/_cacache/index', bytes: 1000, dir: false, symlink: false, modTime: '2026-11-25T10:00:00Z' }] }; },
+      PreviewTrash: async () => ({ path: '/home/u/.local/share/Trash/files/_cacache', kind: 'dir', bytes: 1500000, files: 2, entries: [] }),
       NixStatus: async () => { nixStatusCalls++; return nixStatus; },
       NixDeadPaths: async () => { nixDeadCalls++; return nixDead; },
       NixPreview: async () => 'pkexec /nix/var/nix/profiles/system --delete-generations 411',
@@ -259,6 +283,12 @@ try {
   assert.equal(d.querySelectorAll('#rows tr').length, 2, '2 item Node tampil');
   assert.equal($('sel-count').textContent, '1', 'default hanya item aman');
   assert.equal($('diag-version').textContent, 'test', 'binding tidak tertimpa fungsi navigasi');
+
+  d.querySelector('#rows [data-preview-id]').click();
+  await sleep(80);
+  assert.equal(previewCleanupID, 'npm-cacache', 'preview memakai ID item');
+  assert.match($('m-title').textContent, /Lihat isi/);
+  $('m-cancel').click();
 
   // Gate hapus permanen
   $('btn-permanent').click();
@@ -422,6 +452,53 @@ try {
   await sleep(120);
   assert.equal(direnvRemoved, '/home/u/Projects', 'folder dihapus lewat binding');
 
+  // M8: Riwayat — aktivitas, trash, preview, restore, kosongkan, undo.
+  d.querySelector('#nav button[data-view="history"]').click();
+  await sleep(300);
+  assert.equal(d.querySelectorAll('#history-sessions tr').length, 2, '1 sesi + detail item');
+  assert.equal($('nav-history-count').textContent, '1', 'badge riwayat terisi');
+  d.querySelector('#history-tabs button[data-htab="trash"]').click();
+  await sleep(300);
+  assert.equal(d.querySelectorAll('#history-trash-body tr').length, 2, '2 item trash tampil');
+  d.querySelector('#history-trash-body [data-trash-id]').click();
+  assert.equal($('history-restore').disabled, false, 'restore terbuka setelah pilih');
+  assert.match($('history-selected').textContent, /1 dipilih/);
+  d.querySelector('#history-trash-body [data-preview]').click();
+  await sleep(80);
+  assert.match($('m-title').textContent, /Lihat isi/);
+  $('m-cancel').click();
+  $('history-restore').click();
+  await sleep(50);
+  assert.match($('m-title').textContent, /Pulihkan 1 item/);
+  $('m-ok').click();
+  await sleep(150);
+  assert.match($('m-title').textContent, /Hasil restore/);
+  $('m-ok').click();
+  await sleep(200);
+
+  $('history-empty').click();
+  await sleep(50);
+  assert.equal($('m-ok').disabled, true, 'kosongkan terkunci sebelum konfirmasi');
+  $('history-empty-input').value = 'KOSONGKAN';
+  $('history-empty-input').dispatchEvent(new w.Event('input', { bubbles: true }));
+  assert.equal($('m-ok').disabled, false, 'kosongkan terbuka setelah ketik KOSONGKAN');
+  $('m-ok').click();
+  await sleep(150);
+  assert.match($('m-title').textContent, /Hasil kosongkan trash/);
+  $('m-ok').click();
+  await sleep(150);
+
+  d.querySelector('#history-tabs button[data-htab="activity"]').click();
+  await sleep(200);
+  d.querySelector('#history-sessions [data-undo]').click();
+  await sleep(150);
+  assert.match($('m-title').textContent, /Undo sesi ini/);
+  $('m-ok').click();
+  await sleep(150);
+  assert.match($('m-title').textContent, /Hasil undo/);
+  $('m-cancel').click();
+  await sleep(100);
+
   // M6: settings, tema, bahasa, dan persistensi.
   d.querySelector('#nav button[data-view="settings"]').click();
   await sleep(150);
@@ -466,7 +543,7 @@ try {
   assert.equal($('lang-select').value, 'id');
   assert.equal($('large-mb').value, '100');
 
-  console.log('UI smoke OK: scan, gate permanen, trash, hasil, rescan, Nix, GC, Android, dashboard, analisis, direnv, settings, tema, i18n');
+  console.log('UI smoke OK: scan, gate permanen, trash, hasil, preview, rescan, Nix, GC, Android, dashboard, analisis, direnv, Riwayat, settings, tema, i18n');
 } finally {
   w.close();
 }

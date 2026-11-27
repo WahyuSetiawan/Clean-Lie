@@ -17,7 +17,7 @@
       darwinSystems = [ "aarch64-darwin" ];
       eachLinux = f: nixpkgs.lib.genAttrs linuxSystems (system: f nixpkgs.legacyPackages.${system});
       each = f: nixpkgs.lib.genAttrs (linuxSystems ++ darwinSystems) (system: f nixpkgs.legacyPackages.${system});
-      version = "0.7.0";
+      version = "0.8.0";
 
       devShellFor =
         pkgs:
