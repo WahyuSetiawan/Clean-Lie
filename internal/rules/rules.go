@@ -137,6 +137,7 @@ var groupLabels = map[string]string{
 	"app":         "Cache aplikasi",
 	"sys.log":     "Log & journal",
 	"trash":       "Trash",
+	"custom":      "Aturan kustom",
 	"scan":        "Hasil scan",
 }
 

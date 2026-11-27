@@ -14,6 +14,12 @@
   Go + Wails v2 · UI statis (tanpa Node) · Linux/NixOS & macOS · dry-run + trash · audit log
 </p>
 
+<p align="center">
+  <sub>Rilis <b>0.12.0</b> · M1–M7 + M8 Trust, M9 Visibility, M10 Automation, M11 Polish &amp; follow-up:
+  Trash Manager/undo/preview, insight mingguan &amp; ekspor, aturan kustom &amp; timer auto-clean,
+  single instance + aktivasi D-Bus, health disk &amp; volume, i18n ID/EN.</sub>
+</p>
+
 ---
 
 Cleanlie menjawab satu pertanyaan yang sering bikin malas bersih-bersih:
@@ -218,6 +224,11 @@ Semua mode berikut **read-only** dan mengeluarkan JSON:
 ./bin/cleanlie --analysis-overview       # file besar/lama/artefak
 ./bin/cleanlie --analysis-dups           # file duplikat
 ./bin/cleanlie --direnv-scan --path DIR  # folder .direnv di DIR
+./bin/cleanlie --trash-list              # isi trash (JSON; --no-size)
+./bin/cleanlie --history                 # riwayat sesi (JSON; --limit 5)
+./bin/cleanlie --insight                 # ringkasan 7 hari + tren disk
+./bin/cleanlie --report md|json|csv      # ekspor laporan ke state dir
+./bin/cleanlie --schedule-status         # status timer auto-clean user
 ./bin/cleanlie --version
 
 make verify                              # bandingkan ukuran vs `du` (toleransi 2%)
@@ -231,6 +242,11 @@ Contoh cron mingguan yang cuma melapor:
 
 Eksekusi hapus ada di GUI: pilih item → konfirmasi → trash/perm. Hasilnya menyimpan
 `freed` terukur dan audit log, jadi kamu bisa melihat apa yang pernah dibuang.
+
+Perintah destruktif (`--trash-restore`, `--trash-delete`, `--trash-empty`, `--undo`,
+`--auto-clean`) wajib memakai `--yes`; tanpa itu exit 2. `--auto-clean` hanya
+menyentuh group `app`/`dev.*`/`custom` dengan risk `safe`, selalu ke trash, dan
+tidak pernah root.
 
 ## Test
 
@@ -257,17 +273,29 @@ gambarnya bisa di-regenerate kapan saja tanpa membocorkan path pribadi.
 
 ```
 main.go                 # wails.Run + embed frontend/dist + dispatch CLI
-cli.go                  # --dry-run / --json / Nix / Android / analisis / direnv
+cli.go                  # --dry-run / --json / Nix / Android / analisis / direnv / trash / auto-clean
 app.go                  # binding Go → window.go.main.App
 app_clean.go            # ScanJunk/CancelScan/Clean/History
 app_nix.go              # NixStatus/NixDeadPaths/NixPreview + aksi
 app_android.go          # AndroidStatus/Refresh/DeleteAVD/Uninstall/Wipe
 app_analysis.go         # tree/overview/duplikat + trash analisis
 app_direnv.go           # scan .direnv + cache global + root config
+app_history.go          # Trash Manager, sesi, undo
+app_preview.go          # preview read-only berbasis ID
+app_insight.go          # insight mingguan + ekspor laporan
+app_notify.go           # notifikasi desktop best-effort
+app_schedule.go         # timer user systemd + i18n detail
+app_focus.go            # aktivasi window instance kedua (D-Bus)
 app_settings.go         # Settings/SaveSettings/ResetSettings
-internal/fsx/           # walker paralel (blok disk, hardlink, one-fs)
+internal/fsx/           # walker paralel + health + mount lokal
 internal/rules/         # katalog rule + plan read-only
 internal/clean/         # guard, trash freedesktop, deteksi proses, audit
+internal/trash/         # baca/restore/hapus trash freedesktop
+internal/preview/       # preview isi file/folder read-only
+internal/insight/       # tren disk, ringkasan minggu, laporan
+internal/notify/        # notify-send best-effort
+internal/schedule/      # unit user systemd daily/weekly
+internal/singleinstance/ # lock GUI + aktivasi D-Bus
 internal/nix/           # generasi, closure, dead paths, GC/vacuum
 internal/android/       # parser AVD/SDK + aksi resmi
 internal/analysis/      # tree, file besar/lama, artefak, duplikat
@@ -280,12 +308,13 @@ frontend/test/          # smoke test jsdom
 packaging/              # desktop entry + ikon
 flake.nix|package.nix   # devShell, package, overlay, nixosModules
 docs/                   # plan, task, wireframe, implementation, screenshot
+.github/workflows/      # CI test/lint/build + Cachix
 ```
 
 ## Dokumentasi
 
 - [`docs/tasks/cleanlie-v1.md`](docs/tasks/cleanlie-v1.md) — rencana & gate v1
-- [`docs/implementation/`](docs/implementation/) — catatan implementasi M1–M7
+- [`docs/implementation/`](docs/implementation/) — catatan implementasi M1–M11 + follow-up
 - [`CHANGELOG.md`](CHANGELOG.md) — riwayat perubahan
 
 ## Platform

@@ -64,6 +64,8 @@ type Options struct {
 	Timeout time.Duration
 	// AuditPath 0 = ~/.local/state/cleanlie/history.jsonl.
 	AuditPath string
+	// Batch bisa dipakai test/undo; kosong = batch baru.
+	Batch string
 	// Now bisa diganti di test.
 	Now func() time.Time
 }
@@ -103,6 +105,7 @@ type Result struct {
 	Items      []ItemResult `json:"items"`
 	AuditPath  string       `json:"auditPath"`
 	AuditError string       `json:"auditError,omitempty"`
+	Batch      string       `json:"batch,omitempty"`
 }
 
 // Execute menjalankan request secara berurutan; item gagal tidak
@@ -128,6 +131,15 @@ func Execute(ctx context.Context, req Request, opts Options) Result {
 		StartedAt: started.Format(time.RFC3339),
 		AuditPath: opts.AuditPath,
 	}
+	res.Batch = opts.Batch
+	if res.Batch == "" {
+		res.Batch = NewBatch("")
+	}
+	if !req.DryRun {
+		if err := RotateAudit(opts.AuditPath); err != nil {
+			res.AuditError = err.Error()
+		}
+	}
 	total := len(req.Targets)
 
 	for i, t := range req.Targets {
@@ -151,6 +163,7 @@ func Execute(ctx context.Context, req Request, opts Options) Result {
 				Reason:      ir.Reason,
 				TrashPath:   ir.TrashPath,
 				CommandLine: ir.CommandLine,
+				Batch:       res.Batch,
 			}
 			if err := AppendAudit(opts.AuditPath, entry); err != nil && res.AuditError == "" {
 				res.AuditError = err.Error()

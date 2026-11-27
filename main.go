@@ -2,9 +2,12 @@ package main
 
 import (
 	"embed"
+	"errors"
+	"fmt"
 	"log"
 	"os"
 
+	"github.com/Juragan-Koding/cleanlie/internal/singleinstance"
 	"github.com/wailsapp/wails/v2"
 	"github.com/wailsapp/wails/v2/pkg/options"
 	"github.com/wailsapp/wails/v2/pkg/options/assetserver"
@@ -15,7 +18,7 @@ var assets embed.FS
 
 // Diisi lewat -ldflags saat build (lihat Makefile / flake.nix).
 var (
-	version = "0.7.0-dev"
+	version = "0.12.0-dev"
 	commit  = "unknown"
 )
 
@@ -29,9 +32,28 @@ func main() {
 	// XWayland kecuali pengguna memilih backend lain lewat GDK_BACKEND.
 	preferXWayland()
 
-	app := NewApp(version, commit)
+	lock, err := singleinstance.Acquire()
+	if errors.Is(err, singleinstance.ErrRunning) {
+		if ferr := singleinstance.Activate(); ferr != nil {
+			fmt.Fprintf(os.Stderr, "cleanlie: aplikasi sudah berjalan (fokus gagal: %v)\n", ferr)
+			os.Exit(1)
+		}
+		os.Exit(0)
+	}
+	if err != nil {
+		log.Printf("cleanlie: lock instance dilewati: %v", err)
+	} else {
+		defer lock.Release()
+	}
 
-	err := wails.Run(&options.App{
+	app := NewApp(version, commit)
+	if focus, ferr := singleinstance.ServeFocus(app.focusWindow); ferr != nil {
+		log.Printf("cleanlie: aktivasi D-Bus nonaktif: %v", ferr)
+	} else {
+		defer focus.Close()
+	}
+
+	err = wails.Run(&options.App{
 		Title:       "Cleanlie",
 		Width:       1280,
 		Height:      820,

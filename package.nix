@@ -6,11 +6,12 @@
   gtk3,
   webkitgtk_4_1,
   glib,
+  libnotify,
   nix,
   systemd,
   polkit,
   xdg-utils,
-  version ? "0.7.0",
+  version ? "0.12.0",
   commit ? "unknown",
   source ? ./.,
 }:
@@ -55,6 +56,7 @@ buildGoModule {
         polkit
         glib
         xdg-utils
+        libnotify
       ]
     })
     gappsWrapperArgs+=(--set-default WEBKIT_DISABLE_COMPOSITING_MODE 1)

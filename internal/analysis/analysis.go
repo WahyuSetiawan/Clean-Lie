@@ -248,15 +248,17 @@ type DuplicateGroup struct {
 
 // Duplicates adalah hasil pencarian duplikat.
 type Duplicates struct {
-	Root       string           `json:"root"`
-	Groups     []DuplicateGroup `json:"groups"`
-	GroupCount int              `json:"groupCount"`
-	Wasted     int64            `json:"wasted"`
-	Candidates int              `json:"candidates"`
-	Hashed     int              `json:"hashed"`
-	Errors     int64            `json:"errors"`
-	ScannedAt  string           `json:"scannedAt"`
-	DurationMs int64            `json:"durationMs"`
+	Root          string           `json:"root"`
+	Groups        []DuplicateGroup `json:"groups"`
+	GroupCount    int              `json:"groupCount"`
+	Wasted        int64            `json:"wasted"`
+	Hardlinks     int              `json:"hardlinks"`
+	HardlinkBytes int64            `json:"hardlinkBytes"`
+	Candidates    int              `json:"candidates"`
+	Hashed        int              `json:"hashed"`
+	Errors        int64            `json:"errors"`
+	ScannedAt     string           `json:"scannedAt"`
+	DurationMs    int64            `json:"durationMs"`
 }
 
 func allocated(fi os.FileInfo) int64 {

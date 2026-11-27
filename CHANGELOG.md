@@ -4,6 +4,99 @@ Semua perubahan penting pada Cleanlie. Format mengikuti
 [Keep a Changelog](https://keepachangelog.com/id/1.1.0/) dan versi mengikuti
 [Semantic Versioning](https://semver.org/lang/id/).
 
+## [0.12.0] — 2026-11-27
+
+### Ditambahkan — follow-up M11
+
+- **Aktivasi instance lama lewat D-Bus**: instance kedua memanggil
+  `org.cleanlie.Cleanlie.Focus`; GUI pertama menampilkan/memunculkan window dan
+  keluar dengan exit 0. Bila session bus tidak tersedia, pesan lama + exit 1.
+- **Volume non-root di dashboard**: `DiskVolumes()` membaca mount lokal
+  (`ext4`/`btrfs`/`xfs`/`f2fs`/`vfat`/`exfat`/`ntfs`/`zfs`/`bcachefs`), dedupe
+  device, dan select volume di kartu Disk dengan chip health masing-masing.
+- **i18n pesan Go**: notifikasi desktop dan detail timer mengikuti bahasa config
+  ID/EN.
+- **CI Cachix opsional**: job `go` dan `build` memakai Cachix bila
+  `CACHIX_AUTH_TOKEN` tersedia; PR/fork tanpa token tetap lolos.
+
+### Catatan
+
+- Versi aplikasi menjadi **0.12.0** (`Makefile`, `flake.nix`, `package.nix`, `main.go`).
+- Fokus window bergantung compositor; Wayland dapat mengabaikan permintaan fokus.
+- Error teknis dari paket internal tetap tidak diterjemahkan.
+
+## [0.11.0] — 2026-11-27
+
+### Ditambahkan — M11 Polish
+
+- **Single instance GUI**: lock `flock` di `<state>/cleanlie/cleanlie.lock`; instance
+  kedua keluar dengan pesan `cleanlie: aplikasi sudah berjalan` (exit 1). Mode CLI
+  tetap bisa berjalan saat GUI terbuka.
+- **Kesehatan disk**: `fsx.ClassifyHealth` (`ok`/`warn`/`critical`/`unknown`),
+  field `health` di `Volume`, dan chip di kartu Disk dashboard.
+- **i18n teks dinamis**: helper `window.__tf`, key ID/EN untuk dashboard, analisis,
+  Riwayat, Nix, dan preview; ganti bahasa langsung me-render ulang data cache tanpa
+  scan ulang.
+- **CI test**: `.github/workflows/test.yml` menjalankan `go test`, `go vet`, cek
+  `gofmt`, UI smoke (Node 20), lalu `nix build`.
+- Test `internal/singleinstance`, `internal/fsx/health`, dan assertion UI smoke
+  untuk chip disk + teks EN dinamis.
+
+### Catatan
+
+- Versi aplikasi menjadi **0.11.0** (`Makefile`, `flake.nix`, `package.nix`, `main.go`).
+- Instance kedua belum mem-fokuskan window lama (butuh D-Bus).
+- Health hanya untuk filesystem root `/`; ini bukan SMART.
+
+## [0.10.0] — 2026-11-27
+
+### Ditambahkan — M10 Otomasi & Cakupan
+
+- **Aturan kustom** di Pengaturan dan `config.json` (`customRules`): path, label,
+  risk, `whole`, depth; maks 32, path protected ditolak, group `custom`.
+- **Timer user systemd**: `--schedule-install`, `--schedule-remove`,
+  `--schedule-status`, `--interval daily|weekly`; kartu Otomasi di Pengaturan.
+  Unit hanya menulis `~/.config/systemd/user/` dan berjalan sebagai user.
+- **`--auto-clean`**: hanya group `app`, `dev.*`, `custom` dengan risk `safe`, tanpa
+  root, selalu mode trash, wajib `--yes` (kecuali `--dry-run`), audit batch `auto-*`.
+- **Hardlink-aware duplicate**: `hardlinks`/`hardlinkBytes` di hasil analisis;
+  `wasted` tidak menghitung hardlink; UI menampilkan jumlah yang dilewati.
+- Test `internal/schedule`, aturan kustom, hardlink, `--auto-clean`, CLI schedule,
+  dan UI smoke (textarea aturan, kartu Otomasi).
+
+### Catatan
+
+- Versi aplikasi menjadi **0.10.0** (`Makefile`, `flake.nix`, `package.nix`, `main.go`).
+- Auto-clean sengaja tidak menyentuh `/var/tmp`/log sistem dan tidak pernah memakai
+  `ModePermanent`. Timer user berhenti saat logout bila lingering tidak diaktifkan.
+- Reflink belum dideteksi (butuh FIEMAP); hanya hardlink yang dihitung.
+
+## [0.9.0] — 2026-11-27
+
+### Ditambahkan — M9 Visibilitas: insight, ekspor, notifikasi
+
+- `internal/insight`: snapshot disk harian di `trend.jsonl` (satu titik per tanggal,
+  maks 90 hari, tulis atomik), ringkasan 7 hari dari audit (dibebaskan vs dipindah ke
+  trash), dan laporan `md`/`json`/`csv`.
+- Dashboard **Minggu ini**: freed, moved, sesi, trash, sparkline tren, dan tombol
+  **Ekspor** ke `~/.local/state/cleanlie/reports/`.
+- Tombol **Ekspor laporan** di Riwayat dengan format Markdown/JSON/CSV.
+- Binding `Insight()` dan `ExportReport(format)`; CLI `--insight` dan
+  `--report md|json|csv` (read-only, aman untuk integrasi).
+- `internal/notify`: notifikasi desktop `notify-send` (best-effort) setelah Clean,
+  AnalysisClean, DirenvClean, GC, hapus generasi, dan vacuum journal. Config baru
+  `notify` (default aktif) + toggle di Pengaturan.
+- `Session.RemovedBytes` untuk memisahkan ruang yang dipindah ke trash dari yang
+  benar-benar dibebaskan.
+- Test `internal/insight`, `internal/notify`, binding export, CLI, dan UI smoke
+  (kartu minggu, sparkline, ekspor dashboard/riwayat, toggle notifikasi).
+
+### Catatan
+
+- Versi aplikasi menjadi **0.9.0** (`Makefile`, `flake.nix`, `package.nix`, `main.go`).
+- Snapshot tren hanya membaca `statfs("/")`; tidak memindai home/Nix. Laporan tidak
+  pernah memuat isi file, hanya path yang sudah terlihat di UI.
+
 ## [Unreleased]
 
 ### Ditambahkan — dukungan macOS
@@ -31,6 +124,39 @@ Semua perubahan penting pada Cleanlie. Format mengikuti
   flake NixOS/Home Manager lain lewat `pkgs.cleanlie` atau modul siap pakai.
 - Workflow `.github/workflows/cachix.yml`: build `.#cleanlie` di `main` dan push
   closure ke cache Cachix `juragankoding-cachix` (secret `CACHIX_AUTH_TOKEN`).
+
+## [0.8.0] — 2026-11-27
+
+### Ditambahkan — M8 Trust: Trash Manager, Undo, Riwayat, Preview
+
+- `internal/trash`: baca trash freedesktop (home + volume `.Trash-$uid`), parsing
+  `.trashinfo` yang aman, deteksi orphan, ukuran allocated dengan dedupe hardlink,
+  restore tanpa menimpa (gio URI hanya untuk home; volume lewat `os.Rename`), hapus
+  permanen dengan cek mount, dan `Empty` bergerbang `KOSONGKAN`/`EMPTY`.
+- `internal/clean/history.go`: audit batch + aksi (`clean`, `restore`, `trash-delete`,
+  `trash-empty`), pembacaan sesi 50 terakhir/200 item, rotasi 8 MiB, dan aturan
+  `RestorableEntry` (hanya item `mode=trash`, `status=removed`, punya jejak trash).
+- Binding baru: `TrashList`, `TrashRefresh`, `TrashRestore`, `TrashDelete`,
+  `TrashEmpty`, `HistorySessions`, `UndoSession`, `PreviewCleanup`, `PreviewTrash`.
+  UI hanya mengirim ID; restore selalu membaca ulang `.trashinfo` (audit hanya hint).
+- `internal/preview`: preview file/folder read-only (20 entri, batas 1,5 s, symlink
+  tidak diikuti, ukuran allocated, flag blocked/truncated/timed out).
+- Layar **Riwayat** (layar ke-8) dengan tab **Aktivitas** (sesi, filter, detail,
+  undo parsial) dan **Trash** (cari, pilih, restore, hapus, kosongkan, ukuran
+  streaming, badge tidak-restorable). Tombol **Lihat isi** di Bersihkan/Analisis/Trash.
+- Modal hasil `Clean` menampilkan **Undo sesi ini** bila batch punya item restorable.
+- CLI: `--trash-list` (`--no-size`), `--trash-restore`, `--trash-delete`,
+  `--trash-empty`, `--history` (`--limit`), `--undo`; tindakan destruktif butuh
+  `--yes`, `--dry-run` tetap aman. `scripts/verify-trash.sh` menguji alur penuh di
+  HOME/XDG sementara dengan `CLEANLIE_NO_GIO=1`.
+- Test: `internal/trash`, `internal/preview`, `internal/clean` (audit/sesi), binding
+  app, CLI, dan UI smoke (sesi, trash, preview, restore, kosongkan, undo).
+
+### Catatan
+
+- Versi aplikasi menjadi **0.8.0** (`Makefile`, `flake.nix`, `package.nix`, `main.go`).
+- Restore tidak pernah menimpa file, tidak me-rename otomatis, dan tidak membuat parent
+  yang hilang; konflik dilaporkan per item. `EXDEV` adalah error, bukan copy diam-diam.
 
 ## [0.7.0] — 2026-11-26
 
@@ -222,4 +348,6 @@ Semua perubahan penting pada Cleanlie. Format mengikuti
 
 ## Rencana berikutnya
 
-- **M6** — Pengaturan, i18n, packaging, dan verifikasi akhir v1.
+- **M9** — Visibilitas: ekspor laporan, notifikasi, tren disk, dan ringkasan mingguan.
+- **M10** — Otomasi/cakupan: systemd timer, aturan kustom, dan dedupe hardlink.
+- **M11** — Polish: i18n penuh, single-instance, CI test/lint, dan disk health.

@@ -14,7 +14,7 @@ func TestLoadMissingUsesDefaults(t *testing.T) {
 	if warn != "" {
 		t.Fatalf("warning = %q", warn)
 	}
-	if c.Theme != ThemeSystem || c.Language != LanguageID || c.DeleteMode != DeleteTrash || !c.AutoSelectSafe {
+	if c.Theme != ThemeSystem || c.Language != LanguageID || c.DeleteMode != DeleteTrash || !c.AutoSelectSafe || !c.Notify {
 		t.Fatalf("default = %+v", c)
 	}
 	if c.LargeBytes != 100<<20 || c.StaleDays != 365 {
@@ -83,5 +83,47 @@ func TestNormalizeClamps(t *testing.T) {
 	}
 	if c.Theme != ThemeSystem || c.Language != LanguageID || c.DeleteMode != DeleteTrash || c.LargeBytes != 100<<20 || c.StaleDays != 3650 {
 		t.Fatalf("normalized = %+v", c)
+	}
+}
+
+func TestCustomRulesNormalize(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+	c := Default()
+	c.CustomRules = []CustomRule{
+		{Path: "~/work/cache", Risk: "safe", Depth: 3},
+		{Path: "~/work/cache", Label: "duplikat"},
+		{Path: "~/.ssh", Label: "secret"},
+		{Path: "relative", Label: "rel"},
+		{Path: "~/work/other", Risk: "unknown"},
+	}
+	got, warnings := Normalize(c)
+	if len(got.CustomRules) != 2 {
+		t.Fatalf("rules = %+v warnings=%v", got.CustomRules, warnings)
+	}
+	if got.CustomRules[0].Path != filepath.Join(home, "work", "cache") || got.CustomRules[0].Depth != 3 {
+		t.Fatalf("rule = %+v", got.CustomRules[0])
+	}
+	if got.CustomRules[1].Risk != "warn" {
+		t.Fatalf("risk = %+v", got.CustomRules[1])
+	}
+	if len(warnings) < 3 {
+		t.Fatalf("warnings = %v", warnings)
+	}
+}
+
+func TestCustomRulesLimit(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+	c := Default()
+	for i := 0; i < 40; i++ {
+		c.CustomRules = append(c.CustomRules, CustomRule{Path: filepath.Join(home, "cache", string(rune('a'+i)))})
+	}
+	got, warnings := Normalize(c)
+	if len(got.CustomRules) != 32 {
+		t.Fatalf("rules = %d", len(got.CustomRules))
+	}
+	if len(warnings) == 0 {
+		t.Fatal("harus ada warning batas")
 	}
 }

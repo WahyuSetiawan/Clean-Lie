@@ -55,7 +55,8 @@ func (a *App) ScanJunk() (rules.Report, error) {
 	}()
 
 	var lastEmit time.Time
-	report, err := rules.Plan(ctx, rules.DefaultRules(), rules.PlanOptions{
+	list := append(rules.DefaultRules(), customRules(a.settings())...)
+	report, err := rules.Plan(ctx, list, rules.PlanOptions{
 		Excluded: a.settings().Excluded,
 		Progress: func(p rules.Progress) {
 			if time.Since(lastEmit) < 120*time.Millisecond {
@@ -183,6 +184,8 @@ func (a *App) Clean(req CleanRequest) (clean.Result, error) {
 			}
 		}
 		a.scanMu.Unlock()
+		a.invalidateAfterMutation()
+		a.notifyCleanResult("clean", res)
 	}
 	return res, nil
 }

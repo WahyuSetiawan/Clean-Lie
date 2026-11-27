@@ -1,5 +1,5 @@
 APP      := cleanlie
-VERSION  ?= 0.7.0
+VERSION  ?= 0.12.0
 COMMIT   ?= $(shell git rev-parse --short HEAD 2>/dev/null || echo unknown)
 
 # Tag webkit2_41 hanya berarti di Linux (backend WebKitGTK). Di macOS Wails

@@ -9,10 +9,11 @@
     id: {
       'brand.tagline': 'cleaner untuk NixOS',
       'brand.tagline.macos': 'cleaner untuk macOS',
-      'side.note': 'M7 · direnv scan',
+      'side.note': 'M11 · polish & keandalan',
       'nav.dashboard': 'Dashboard',
       'nav.cleanup': 'Bersihkan',
       'nav.analysis': 'Analisis',
+      'nav.history': 'Riwayat',
       'nav.direnv': 'direnv',
       'nav.settings': 'Pengaturan',
       'page.dashboard.title': 'Dashboard',
@@ -27,6 +28,89 @@
       'page.analysis.sub': 'Disk usage, file besar, duplikat, file lama, artefak build',
       'page.direnv.title': 'direnv',
       'page.direnv.sub': 'Cari folder .direnv yang berat dan bisa dibuat ulang',
+      'page.history.title': 'Riwayat',
+      'page.history.sub': 'Aktivitas pembersihan dan isi trash',
+      'history.tab.activity': 'Aktivitas',
+      'history.tab.trash': 'Trash',
+      'history.refresh': 'Muat ulang',
+      'history.openTrash': 'Buka folder trash',
+      'history.openFolder': 'Buka folder',
+      'history.sessions': 'Sesi pembersihan',
+      'history.sessionsHint': 'Satu sesi = satu batch audit; item yang masih di trash bisa dipulihkan.',
+      'history.time': 'Waktu',
+      'history.action': 'Aksi',
+      'history.items': 'Item',
+      'history.freed': 'Dibebaskan',
+      'history.undoable': 'Bisa di-undo',
+      'history.actions': 'Aksi',
+      'history.trashTitle': 'Isi trash',
+      'history.trashHint': 'Ukuran dihitung di background. Pulihkan hanya item yang tidak bentrok.',
+      'history.search': 'Cari nama atau path…',
+      'history.restore': 'Pulihkan',
+      'history.delete': 'Hapus permanen',
+      'history.empty': 'Kosongkan…',
+      'history.name': 'Nama',
+      'history.origin': 'Asal',
+      'history.deletedAt': 'Dihapus',
+      'history.size': 'Ukuran',
+      'history.state': 'Status',
+      'history.undo': 'Undo sesi ini',
+      'history.preview': 'Lihat isi',
+      'history.selected': 'dipilih',
+      'history.selectedCount': '{n} dipilih',
+      'history.sessionsCount': '{n} sesi',
+      'history.itemCount': '{n} item',
+      'history.failedCount': '+{n} gagal',
+      'history.actionClean': 'bersihkan',
+      'history.actionRestore': 'pulihkan',
+      'history.actionDelete': 'hapus permanen',
+      'history.actionEmpty': 'kosongkan',
+      'history.statusRemoved': 'dihapus',
+      'history.statusSkipped': 'dilewati',
+      'history.statusFailed': 'gagal',
+      'history.volume': 'volume',
+      'history.searchEmpty': 'Tidak ada hasil pencarian.',
+      'history.loadingSessions': 'Memuat sesi…',
+      'history.loadingTrash': 'Memuat trash…',
+      'history.loadFail': 'Gagal memuat riwayat: ',
+      'history.trashLoadFail': 'Gagal memuat trash: ',
+      'history.noSessions': 'Belum ada aktivitas pembersihan.',
+      'preview.fail': 'Preview gagal: ',
+      'nix.loadingStore': 'memuat ukuran NAR…',
+      'nix.loadingDead': 'menghitung dead paths (bisa ~30 detik)…',
+      'nix.loadingGens': 'memuat generasi…',
+      'nix.loadingGensRow': 'Memuat generasi…',
+      'nix.fail': 'gagal: ',
+      'nix.pathsHint': '{n} path · NAR · sisa {free} / {total}',
+      'nix.noProfile': 'tidak ada profile',
+      'nix.oldest': 'terlama: ',
+      'nix.noGenerations': 'Tidak ada generasi yang terbaca.',
+      'nix.processing': 'Memproses…',
+      'nix.cancel': 'Batal',
+      'nix.close': 'Tutup',
+      'nix.done': 'Selesai: ',
+      'nix.needSudo': 'Perlu sudo: ',
+      'nix.failed': 'Gagal: ',
+      'nix.noChange': 'Tidak ada perubahan yang diklaim berhasil.',
+      'nix.copyOk': 'Perintah disalin',
+      'nix.copyFail': 'Gagal menyalin: ',
+      'nix.busyDead': 'Dead paths masih dihitung',
+      'nix.noOld': 'Tidak ada generasi > 30 hari',
+
+      'history.noTrash': 'Trash kosong.',
+      'history.notRestorable': 'tidak bisa dipulihkan',
+      'history.emptyConfirm': 'Ketik KOSONGKAN atau EMPTY untuk mengosongkan seluruh trash. Tindakan ini tidak bisa dibatalkan.',
+      'history.deleteConfirm': 'Hapus permanen item terpilih? Tindakan ini tidak bisa dibatalkan.',
+      'history.result': 'Hasil',
+      'history.close': 'Tutup',
+      'history.blocked': 'terkunci proses',
+      'history.truncated': 'Daftar dipotong; gunakan pencarian untuk mempersempit.',
+      'history.emptyOk': 'Kosongkan',
+      'history.deleteOk': 'Hapus permanen',
+      'history.restoreOk': 'Pulihkan',
+      'history.export': 'Ekspor laporan',
+      'settings.openHistory': 'Lihat riwayat',
+      'settings.openFolder': 'Folder',
       'direnv.roots': 'Folder proyek',
       'direnv.rootsHint': 'maks 32',
       'direnv.rootsNote': 'Klik Pilih folder… atau ketik path. Cleanlie mencari folder .direnv di dalamnya; nix-direnv menyimpan profil yang bisa besar.',
@@ -65,6 +149,8 @@
       'settings.permanent': 'Hapus permanen',
       'settings.autoSafe': 'Item aman otomatis dicentang',
       'settings.autoSafeHint': 'Item ⚠/⛔ tidak pernah otomatis',
+      'settings.notify': 'Notifikasi desktop',
+      'settings.notifyHint': 'Kabari saat pembersihan atau GC selesai',
       'settings.journalTarget': 'Target journal',
       'settings.journalTargetHint': 'Vacuum system dan user journal',
       'settings.analysis': 'Analisis',
@@ -75,6 +161,24 @@
       'settings.days': 'hari',
       'settings.artifactRoots': 'Root scan tambahan',
       'settings.artifactRootsHint': 'Pisahkan dengan koma; dipakai untuk scan artefak',
+      'settings.customRules': 'Aturan kustom',
+      'settings.customRulesLabel': 'Folder cache tambahan',
+      'settings.customRulesHint': 'Satu baris: path | label | risk | whole',
+      'settings.customRulesNote': 'risk: safe/warn/danger · whole opsional · maks 32 aturan',
+      'settings.automation': 'Otomasi',
+      'settings.scheduleInterval': 'Jadwal auto-clean',
+      'settings.scheduleIntervalHint': 'Timer user systemd; hanya item aman ke trash',
+      'settings.weekly': 'Mingguan',
+      'settings.daily': 'Harian',
+      'settings.timer': 'Timer',
+      'settings.installTimer': 'Pasang',
+      'settings.removeTimer': 'Hapus',
+      'settings.autoCleanNote': 'Auto-clean memakai --yes, mode trash, dan tidak pernah menghapus permanen.',
+      'settings.timerInstalled': 'terpasang',
+      'settings.timerActive': 'aktif',
+      'settings.timerOff': 'belum dipasang',
+      'settings.timerFailed': 'Gagal mengatur timer: ',
+      'settings.timerConfirm': 'Hapus timer auto-clean?',
       'settings.exclusions': 'Pengecualian & akses',
       'settings.excluded': 'Path dikecualikan',
       'settings.excludedHint': 'Tidak pernah dipindai atau dihapus',
@@ -116,6 +220,35 @@
       'analysis.largeTitle': 'File ≥',
       'analysis.allocated': 'Ukuran allocated, bukan logical',
       'analysis.selected': 'dipilih',
+      'analysis.selectedCount': '{n} dipilih',
+      'analysis.groupCount': '{n} grup',
+      'analysis.wasted': '{size} bisa dibebaskan',
+      'analysis.hardlinks': '{n} hardlink dilewati',
+      'analysis.topShown': 'menampilkan {n} teratas',
+      'analysis.loadingTree': 'Memuat disk usage…',
+      'analysis.loading': 'Memuat…',
+      'analysis.emptyFolder': 'Folder kosong.',
+      'analysis.noSubfolder': 'Tidak ada subfolder.',
+      'analysis.noLarge': 'Tidak ada file ≥ {size}.',
+      'analysis.noStale': 'Tidak ada file lama.',
+      'analysis.noArtifacts': 'Tidak ada artefak.',
+      'analysis.noDuplicates': 'Tidak ada file identik ≥ 1 MiB.',
+      'analysis.staleSummary': 'Tidak diubah > {days} hari · {n} file',
+      'analysis.pickFirst': 'Pilih item dulu',
+      'analysis.moveTitle': 'Pindahkan {n} item ke Trash?',
+      'analysis.noChange': 'Tidak ada item yang berubah.',
+      'analysis.fail': 'Gagal: ',
+      'analysis.scanLarge': 'Memindai file besar…',
+      'analysis.scanStale': 'Memindai file lama…',
+      'analysis.scanArtifacts': 'Memindai artefak build…',
+      'analysis.scanDups': 'Membaca isi file untuk mencari duplikat…',
+      'analysis.more': 'lainnya',
+      'analysis.days': 'hari',
+      'analysis.active': 'aktif',
+      'analysis.safe': 'aman',
+      'analysis.keep': 'simpan',
+      'analysis.duplicate': 'duplikat',
+      'common.files': 'file',
       'analysis.selectSafe': 'Pilih aman',
       'analysis.toTrash': 'Pindah ke trash',
       'analysis.trashDup': 'Pindahkan duplikat ke trash',
@@ -129,7 +262,34 @@
       'analysis.action': 'Aksi',
       'analysis.project': 'Proyek',
       'analysis.artifact': 'Artefak',
-      'dashboard.disk': 'Disk /',
+      'dashboard.disk': 'Disk',
+      'disk.ok': 'Sehat',
+      'disk.warn': 'Tipis',
+      'disk.critical': 'Kritis',
+      'disk.unknown': 'Tidak diketahui',
+      'dashboard.used': 'terpakai',
+      'dashboard.free': 'sisa',
+      'dashboard.sparkEmpty': 'belum ada data tren',
+      'dashboard.noTrend': 'belum ada data',
+      'dashboard.item': 'item',
+      'dashboard.generations': 'generasi',
+      'dashboard.profiles': 'profil',
+      'dashboard.noCache': 'tidak ada cache terdeteksi',
+      'dashboard.logHint': 'journal + /var/log · target 500 MB',
+      'dashboard.tools': '{n} tool dev terdeteksi',
+      'dashboard.noItems': 'Tidak ada item.',
+      'dashboard.scanFail': 'Dashboard gagal: ',
+      'dashboard.exportOnly': 'Ekspor hanya tersedia di aplikasi.',
+      'dashboard.exporting': 'Mengekspor…',
+      'dashboard.exportDone': 'Laporan diekspor: ',
+      'dashboard.exportFail': 'Ekspor gagal: ',
+      'dashboard.scanning': 'Memindai…',
+      'dashboard.week': 'Minggu ini',
+      'dashboard.freed': 'dibebaskan',
+      'dashboard.moved': 'dipindah ke trash',
+      'dashboard.sessions': 'sesi',
+      'dashboard.trash': 'trash',
+      'dashboard.export': 'Ekspor',
       'dashboard.nix': 'Nix store',
       'dashboard.cache': 'Cache dev',
       'dashboard.log': 'Log & journal',
@@ -156,10 +316,11 @@
     en: {
       'brand.tagline': 'cleaner for NixOS',
       'brand.tagline.macos': 'cleaner for macOS',
-      'side.note': 'M7 · direnv scan',
+      'side.note': 'M11 · polish & reliability',
       'nav.dashboard': 'Dashboard',
       'nav.cleanup': 'Clean',
       'nav.analysis': 'Analysis',
+      'nav.history': 'History',
       'nav.direnv': 'direnv',
       'nav.settings': 'Settings',
       'page.dashboard.title': 'Dashboard',
@@ -174,6 +335,89 @@
       'page.analysis.sub': 'Disk usage, large files, duplicates, stale files, build artifacts',
       'page.direnv.title': 'direnv',
       'page.direnv.sub': 'Find heavy .direnv folders that can be regenerated',
+      'page.history.title': 'History',
+      'page.history.sub': 'Cleanup activity and trash contents',
+      'history.tab.activity': 'Activity',
+      'history.tab.trash': 'Trash',
+      'history.refresh': 'Reload',
+      'history.openTrash': 'Open trash folder',
+      'history.openFolder': 'Open folder',
+      'history.sessions': 'Cleanup sessions',
+      'history.sessionsHint': 'One session = one audit batch; items still in trash can be restored.',
+      'history.time': 'Time',
+      'history.action': 'Action',
+      'history.items': 'Items',
+      'history.freed': 'Freed',
+      'history.undoable': 'Undoable',
+      'history.actions': 'Actions',
+      'history.trashTitle': 'Trash contents',
+      'history.trashHint': 'Sizes are measured in the background. Restore only items without conflicts.',
+      'history.search': 'Search name or path…',
+      'history.restore': 'Restore',
+      'history.delete': 'Delete permanently',
+      'history.empty': 'Empty…',
+      'history.name': 'Name',
+      'history.origin': 'Origin',
+      'history.deletedAt': 'Deleted',
+      'history.size': 'Size',
+      'history.state': 'Status',
+      'history.undo': 'Undo this session',
+      'history.preview': 'Preview',
+      'history.selected': 'selected',
+      'history.selectedCount': '{n} selected',
+      'history.sessionsCount': '{n} sessions',
+      'history.itemCount': '{n} items',
+      'history.failedCount': '+{n} failed',
+      'history.actionClean': 'clean',
+      'history.actionRestore': 'restore',
+      'history.actionDelete': 'delete permanently',
+      'history.actionEmpty': 'empty',
+      'history.statusRemoved': 'removed',
+      'history.statusSkipped': 'skipped',
+      'history.statusFailed': 'failed',
+      'history.volume': 'volume',
+      'history.searchEmpty': 'No search results.',
+      'history.loadingSessions': 'Loading sessions…',
+      'history.loadingTrash': 'Loading trash…',
+      'history.loadFail': 'Could not load history: ',
+      'history.trashLoadFail': 'Could not load trash: ',
+      'history.noSessions': 'No cleanup activity yet.',
+      'preview.fail': 'Preview failed: ',
+      'nix.loadingStore': 'loading NAR size…',
+      'nix.loadingDead': 'counting dead paths (may take ~30 seconds)…',
+      'nix.loadingGens': 'loading generations…',
+      'nix.loadingGensRow': 'Loading generations…',
+      'nix.fail': 'failed: ',
+      'nix.pathsHint': '{n} paths · NAR · {free} free / {total}',
+      'nix.noProfile': 'no profile',
+      'nix.oldest': 'oldest: ',
+      'nix.noGenerations': 'No readable generations.',
+      'nix.processing': 'Processing…',
+      'nix.cancel': 'Cancel',
+      'nix.close': 'Close',
+      'nix.done': 'Done: ',
+      'nix.needSudo': 'sudo required: ',
+      'nix.failed': 'Failed: ',
+      'nix.noChange': 'No changes were reported as successful.',
+      'nix.copyOk': 'Command copied',
+      'nix.copyFail': 'Copy failed: ',
+      'nix.busyDead': 'Dead paths are still being counted',
+      'nix.noOld': 'No generations older than 30 days',
+
+      'history.noTrash': 'Trash is empty.',
+      'history.notRestorable': 'not restorable',
+      'history.emptyConfirm': 'Type KOSONGKAN or EMPTY to empty the whole trash. This cannot be undone.',
+      'history.deleteConfirm': 'Permanently delete selected items? This cannot be undone.',
+      'history.result': 'Result',
+      'history.close': 'Close',
+      'history.blocked': 'process blocked',
+      'history.truncated': 'List truncated; use search to narrow it down.',
+      'history.emptyOk': 'Empty',
+      'history.deleteOk': 'Delete permanently',
+      'history.restoreOk': 'Restore',
+      'history.export': 'Export report',
+      'settings.openHistory': 'View history',
+      'settings.openFolder': 'Folder',
       'direnv.roots': 'Project folders',
       'direnv.rootsHint': 'max 32',
       'direnv.rootsNote': 'Click Choose folder… or type a path. Cleanlie looks for .direnv inside; nix-direnv profiles can be large.',
@@ -212,6 +456,8 @@
       'settings.permanent': 'Delete permanently',
       'settings.autoSafe': 'Auto-select safe items',
       'settings.autoSafeHint': '⚠/⛔ items are never auto-selected',
+      'settings.notify': 'Desktop notifications',
+      'settings.notifyHint': 'Notify when cleaning or GC finishes',
       'settings.journalTarget': 'Journal target',
       'settings.journalTargetHint': 'Vacuum system and user journal',
       'settings.analysis': 'Analysis',
@@ -222,6 +468,24 @@
       'settings.days': 'days',
       'settings.artifactRoots': 'Extra scan roots',
       'settings.artifactRootsHint': 'Comma separated; used for artifact scans',
+      'settings.customRules': 'Custom rules',
+      'settings.customRulesLabel': 'Extra cache folders',
+      'settings.customRulesHint': 'One line: path | label | risk | whole',
+      'settings.customRulesNote': 'risk: safe/warn/danger · whole optional · max 32 rules',
+      'settings.automation': 'Automation',
+      'settings.scheduleInterval': 'Auto-clean schedule',
+      'settings.scheduleIntervalHint': 'User systemd timer; safe items to trash only',
+      'settings.weekly': 'Weekly',
+      'settings.daily': 'Daily',
+      'settings.timer': 'Timer',
+      'settings.installTimer': 'Install',
+      'settings.removeTimer': 'Remove',
+      'settings.autoCleanNote': 'Auto-clean uses --yes, trash mode, and never deletes permanently.',
+      'settings.timerInstalled': 'installed',
+      'settings.timerActive': 'active',
+      'settings.timerOff': 'not installed',
+      'settings.timerFailed': 'Could not configure timer: ',
+      'settings.timerConfirm': 'Remove the auto-clean timer?',
       'settings.exclusions': 'Exclusions & access',
       'settings.excluded': 'Excluded paths',
       'settings.excludedHint': 'Never scanned or deleted',
@@ -263,6 +527,35 @@
       'analysis.largeTitle': 'Files ≥',
       'analysis.allocated': 'Allocated size, not logical',
       'analysis.selected': 'selected',
+      'analysis.selectedCount': '{n} selected',
+      'analysis.groupCount': '{n} groups',
+      'analysis.wasted': '{size} reclaimable',
+      'analysis.hardlinks': '{n} hardlinks skipped',
+      'analysis.topShown': 'showing top {n}',
+      'analysis.loadingTree': 'Loading disk usage…',
+      'analysis.loading': 'Loading…',
+      'analysis.emptyFolder': 'Empty folder.',
+      'analysis.noSubfolder': 'No subfolders.',
+      'analysis.noLarge': 'No files ≥ {size}.',
+      'analysis.noStale': 'No stale files.',
+      'analysis.noArtifacts': 'No artifacts.',
+      'analysis.noDuplicates': 'No identical files ≥ 1 MiB.',
+      'analysis.staleSummary': 'Unchanged > {days} days · {n} files',
+      'analysis.pickFirst': 'Select items first',
+      'analysis.moveTitle': 'Move {n} items to Trash?',
+      'analysis.noChange': 'No items changed.',
+      'analysis.fail': 'Failed: ',
+      'analysis.scanLarge': 'Scanning large files…',
+      'analysis.scanStale': 'Scanning stale files…',
+      'analysis.scanArtifacts': 'Scanning build artifacts…',
+      'analysis.scanDups': 'Reading file contents to find duplicates…',
+      'analysis.more': 'more',
+      'analysis.days': 'days',
+      'analysis.active': 'active',
+      'analysis.safe': 'safe',
+      'analysis.keep': 'keep',
+      'analysis.duplicate': 'duplicate',
+      'common.files': 'files',
       'analysis.selectSafe': 'Select safe',
       'analysis.toTrash': 'Move to trash',
       'analysis.trashDup': 'Move duplicates to trash',
@@ -276,7 +569,34 @@
       'analysis.action': 'Action',
       'analysis.project': 'Project',
       'analysis.artifact': 'Artifact',
-      'dashboard.disk': 'Disk /',
+      'dashboard.disk': 'Disk',
+      'disk.ok': 'Healthy',
+      'disk.warn': 'Low',
+      'disk.critical': 'Critical',
+      'disk.unknown': 'Unknown',
+      'dashboard.used': 'used',
+      'dashboard.free': 'free',
+      'dashboard.sparkEmpty': 'no trend data yet',
+      'dashboard.noTrend': 'no data yet',
+      'dashboard.item': 'items',
+      'dashboard.generations': 'generations',
+      'dashboard.profiles': 'profiles',
+      'dashboard.noCache': 'no cache detected',
+      'dashboard.logHint': 'journal + /var/log · target 500 MB',
+      'dashboard.tools': '{n} dev tools detected',
+      'dashboard.noItems': 'No items.',
+      'dashboard.scanFail': 'Dashboard failed: ',
+      'dashboard.exportOnly': 'Export is only available in the app.',
+      'dashboard.exporting': 'Exporting…',
+      'dashboard.exportDone': 'Report exported: ',
+      'dashboard.exportFail': 'Export failed: ',
+      'dashboard.scanning': 'Scanning…',
+      'dashboard.week': 'This week',
+      'dashboard.freed': 'freed',
+      'dashboard.moved': 'moved to trash',
+      'dashboard.sessions': 'sessions',
+      'dashboard.trash': 'trash',
+      'dashboard.export': 'Export',
       'dashboard.nix': 'Nix store',
       'dashboard.cache': 'Dev cache',
       'dashboard.log': 'Logs & journal',
@@ -311,8 +631,8 @@
 
   const DEFAULTS = {
     theme: 'system', language: 'id', showRisky: false, deleteMode: 'trash',
-    autoSelectSafe: true, showRisky: true, journalTarget: '500M', largeBytes: 100 * MIB,
-    staleDays: 365, artifactRoots: [], direnvRoots: [], excluded: []
+    autoSelectSafe: true, showRisky: true, notify: true, journalTarget: '500M', largeBytes: 100 * MIB,
+    staleDays: 365, artifactRoots: [], direnvRoots: [], excluded: [], customRules: []
   };
   let state = Object.assign({}, DEFAULTS);
   let view = null;
@@ -347,6 +667,11 @@
       if (tEl && title) tEl.textContent = title;
       if (sEl && sub) sEl.textContent = sub;
     }
+    if (window.__scheduleStatus) {
+      renderSchedule(window.__scheduleStatus);
+      if (bridge && bridge.ScheduleStatus) bridge.ScheduleStatus().then(renderSchedule).catch(() => {});
+    }
+    try { window.dispatchEvent(new Event('cleanlie:lang')); } catch (_) {}
   }
 
   function shortPath(p) {
@@ -380,6 +705,36 @@
     txt.textContent = warning;
   }
 
+  function customRulesText(list) {
+    return (list || []).map(r => {
+      const parts = [r.path || '', r.label || '', r.risk || 'warn'];
+      if (r.whole) parts.push('whole');
+      return parts.join(' | ');
+    }).join('\n');
+  }
+
+  function parseCustomRules(text) {
+    return String(text || '').split('\n').map(line => line.trim()).filter(Boolean).map(line => {
+      const p = line.split('|').map(s => s.trim());
+      const whole = /^(whole|folder|1|true|yes)$/i.test(p[3] || '');
+      return { path: p[0] || '', label: p[1] || '', risk: (p[2] || 'warn').toLowerCase(), whole: whole };
+    }).filter(r => r.path);
+  }
+
+  function renderSchedule(st) {
+    window.__scheduleStatus = st;
+    const chip = byId('schedule-state');
+    const detail = byId('schedule-detail');
+    const interval = byId('schedule-interval');
+    if (!st) return;
+    if (interval && st.interval) interval.value = st.interval;
+    if (chip) {
+      chip.textContent = st.installed ? t('settings.timerInstalled') + (st.active ? ' · ' + t('settings.timerActive') : '') : t('settings.timerOff');
+      chip.className = 'chip ' + (st.installed ? (st.active ? 'safe' : 'warn') : '');
+    }
+    if (detail) detail.textContent = st.detail || '';
+  }
+
   function fillSettings() {
     const theme = byId('theme-select');
     const lang = byId('lang-select');
@@ -387,6 +742,7 @@
     if (lang) lang.value = state.language;
     setToggle(byId('show-risky'), state.showRisky);
     setToggle(byId('auto-safe'), state.autoSelectSafe);
+    setToggle(byId('notify-desktop'), state.notify);
     const del = byId('delete-mode');
     if (del) del.value = state.deleteMode;
     const journal = byId('journal-target');
@@ -402,6 +758,8 @@
     }
     const roots = byId('artifact-roots');
     if (roots) roots.value = (state.artifactRoots || []).map(shortPath).join(', ');
+    const custom = byId('custom-rules');
+    if (custom) custom.value = customRulesText(state.customRules);
     renderExcluded();
   }
 
@@ -413,6 +771,7 @@
     state.artifactRoots = Array.isArray(c.artifactRoots) ? c.artifactRoots.slice() : [];
     state.direnvRoots = Array.isArray(c.direnvRoots) ? c.direnvRoots.slice() : [];
     state.excluded = Array.isArray(c.excluded) ? c.excluded.slice() : [];
+    state.customRules = Array.isArray(c.customRules) ? c.customRules.slice() : [];
     setTheme(state.theme);
     fillSettings();
     applyLanguage(state.language);
@@ -441,13 +800,15 @@
       showRisky: !!(byId('show-risky') && byId('show-risky').classList.contains('on')),
       deleteMode: (byId('delete-mode') && byId('delete-mode').value) || state.deleteMode,
       autoSelectSafe: !!(byId('auto-safe') && byId('auto-safe').classList.contains('on')),
+      notify: !!(byId('notify-desktop') && byId('notify-desktop').classList.contains('on')),
       journalTarget: ((byId('journal-target') && byId('journal-target').value) || '500M').trim(),
       largeBytes: Math.round(num('large-mb', 100) * MIB),
       staleDays: Math.round(num('stale-days', 365)),
       artifactRoots: ((byId('artifact-roots') && byId('artifact-roots').value) || '')
         .split(',').map(x => x.trim()).filter(Boolean),
       direnvRoots: (state.direnvRoots || []).slice(),
-      excluded: state.excluded.slice()
+      excluded: state.excluded.slice(),
+      customRules: parseCustomRules(byId('custom-rules') && byId('custom-rules').value)
     };
   }
 
@@ -478,6 +839,9 @@
       document.querySelectorAll('[data-i18n="settings.polkit"]').forEach(el => el.textContent = t('settings.polkit'));
       if (isMac()) applyLanguage(LANG);
     } catch (e) { /* diagnostik opsional */ }
+    try {
+      if (bridge.ScheduleStatus) renderSchedule(await bridge.ScheduleStatus());
+    } catch (e) { /* status timer opsional */ }
   }
 
   async function saveSettings(reset) {
@@ -510,6 +874,36 @@
     markDirty();
   }
 
+  async function installTimer() {
+    const btn = byId('schedule-install');
+    const interval = (byId('schedule-interval') && byId('schedule-interval').value) || 'weekly';
+    if (!bridge || !bridge.ScheduleInstall) return;
+    if (btn) btn.disabled = true;
+    try {
+      renderSchedule(await bridge.ScheduleInstall(interval));
+      toast(t('settings.saved'));
+    } catch (e) {
+      toast(t('settings.timerFailed') + errMsg(e));
+    } finally {
+      if (btn) btn.disabled = false;
+    }
+  }
+
+  async function removeTimer() {
+    if (!bridge || !bridge.ScheduleRemove) return;
+    if (!window.confirm(t('settings.timerConfirm'))) return;
+    const btn = byId('schedule-remove');
+    if (btn) btn.disabled = true;
+    try {
+      renderSchedule(await bridge.ScheduleRemove());
+      toast(t('settings.saved'));
+    } catch (e) {
+      toast(t('settings.timerFailed') + errMsg(e));
+    } finally {
+      if (btn) btn.disabled = false;
+    }
+  }
+
   function bind() {
     if (!byId('view-settings')) return;
     const theme = byId('theme-select');
@@ -520,7 +914,7 @@
       applyLanguage(lang.value);
       markDirty();
     });
-    ['show-risky', 'auto-safe'].forEach(id => {
+    ['show-risky', 'auto-safe', 'notify-desktop'].forEach(id => {
       const el = byId(id);
       if (el) el.addEventListener('click', () => {
         setToggle(el, !el.classList.contains('on'));
@@ -529,10 +923,14 @@
     });
     const del = byId('delete-mode');
     if (del) del.addEventListener('change', markDirty);
-    ['journal-target', 'large-mb', 'stale-days', 'artifact-roots'].forEach(id => {
+    ['journal-target', 'large-mb', 'stale-days', 'artifact-roots', 'custom-rules'].forEach(id => {
       const el = byId(id);
       if (el) el.addEventListener('input', markDirty);
     });
+    const schedInst = byId('schedule-install');
+    if (schedInst) schedInst.addEventListener('click', installTimer);
+    const schedDel = byId('schedule-remove');
+    if (schedDel) schedDel.addEventListener('click', removeTimer);
     const add = byId('excluded-add');
     if (add) add.addEventListener('click', addExcluded);
     const input = byId('excluded-input');
@@ -551,6 +949,10 @@
     if (reset) reset.addEventListener('click', () => saveSettings(true));
     const hist = byId('history-open');
     if (hist) hist.addEventListener('click', () => {
+      navigate('history');
+    });
+    const folder = byId('history-folder');
+    if (folder) folder.addEventListener('click', () => {
       if (bridge) bridge.OpenInFileManager('~/.local/state/cleanlie').catch(e => toast(t('settings.saveFailed') + errMsg(e)));
     });
     window.__themeChanged = mode => { state.theme = mode; markDirty(); };

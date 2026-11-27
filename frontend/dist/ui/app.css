@@ -225,11 +225,12 @@
   .field .label b{display:block;font-size:13px;font-weight:600}
   .field .label span{font-size:11.5px;color:var(--dim)}
   .field .ctrl{margin-left:auto;display:flex;align-items:center;gap:8px}
-  select,input[type=text],input[type=number]{
+  select,input[type=text],input[type=number],textarea{
     background:var(--panel-2);border:1px solid var(--line);border-radius:8px;padding:7px 10px;
     font-size:12.5px;color:var(--text);outline:none
   }
-  select:focus,input:focus{border-color:var(--accent-2)}
+  textarea{font-family:var(--mono,monospace);resize:vertical;min-height:76px}
+  select:focus,input:focus,textarea:focus{border-color:var(--accent-2)}
   .toggle{width:38px;height:22px;border-radius:99px;background:var(--chip);border:1px solid var(--line);position:relative;transition:.15s}
   .toggle::after{content:"";position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:99px;background:var(--muted);transition:.15s}
   .toggle.on{background:color-mix(in srgb,var(--accent) 35%,transparent);border-color:color-mix(in srgb,var(--accent) 45%,transparent)}

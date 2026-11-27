@@ -13,6 +13,8 @@
   let home = '';
   let dashBusy = false;
   let tree = null, overview = null, dups = null;
+  let lastVolume = null, lastNix = null, lastInsight = null, lastReport = null;
+  let lastMounts = null, lastMountPath = '/';
   let treePath = '';
   let treeSeq = 0;
   const loaded = { tree: false, overview: false, dups: false };
@@ -33,22 +35,103 @@
   }
 
   const short = p => home && p && p.startsWith(home + '/') ? '~' + p.slice(home.length) : (p || '');
+  const tf = (k, v, f) => window.__tf ? window.__tf(k, v, f) : (f || k);
 
   /* ---------------- dashboard ---------------- */
   function setDash(id, text) { const el = byId(id); if (el) el.textContent = text; }
 
+  function diskHealth(vol) {
+    const total = vol.total || 0, free = vol.free || 0;
+    if (total <= 0) return 'unknown';
+    if (free <= 0) return 'critical';
+    const pct = free / total;
+    if (pct < 0.05 || free < 2 * 1073741824) return 'critical';
+    if (pct < 0.12 || free < 10 * 1073741824) return 'warn';
+    return 'ok';
+  }
+
+  function renderMounts(mounts) {
+    if (!Array.isArray(mounts) || !mounts.length) return false;
+    lastMounts = mounts;
+    const sel = byId('dash-disk-select');
+    if (!sel) return false;
+    const prev = sel.value || lastMountPath;
+    sel.innerHTML = mounts.map(m => '<option value="' + esc(m.path) + '">' + esc(m.path) + '</option>').join('');
+    const cur = mounts.find(m => m.path === prev) || mounts[0];
+    sel.value = cur.path;
+    lastMountPath = cur.path;
+    renderDisk(cur);
+    return true;
+  }
+
   function renderDisk(vol) {
+    lastVolume = vol;
     const used = vol.used || 0, total = vol.total || 1, pct = Math.min(100, Math.round(used / total * 100));
     setDash('dash-disk-used', human(used));
     setDash('dash-disk-total', human(total));
-    setDash('dash-disk-hint', pct + '% terpakai · sisa ' + human(vol.free || 0));
+    setDash('dash-disk-hint', pct + '% ' + tf('dashboard.used', null, 'terpakai') + ' · ' + tf('dashboard.free', null, 'sisa') + ' ' + human(vol.free || 0));
     const bar = byId('dash-disk-bar'); if (bar) bar.style.width = pct + '%';
+    const health = vol.health || diskHealth(vol);
+    const chip = byId('dash-disk-health');
+    if (chip) {
+      chip.textContent = tf('disk.' + health, null, health);
+      chip.className = 'chip ' + (health === 'critical' ? 'danger' : health === 'warn' ? 'warn' : health === 'ok' ? 'safe' : '');
+    }
   }
 
   function renderNix(st) {
+    lastNix = st;
     setDash('dash-nix-size', human(st.storeBytes || 0));
-    setDash('dash-nix-dead', (st.generations || []).length + ' generasi · ' + (st.profiles || []).length + ' profil');
+    setDash('dash-nix-dead', (st.generations || []).length + ' ' + tf('dashboard.generations', null, 'generasi') + ' · ' + (st.profiles || []).length + ' ' + tf('dashboard.profiles', null, 'profil'));
     setDash('dash-nix-gens', 'journal ' + human(st.journalBytes || 0) + ' · ' + (st.storePaths || 0).toLocaleString('id-ID') + ' path');
+  }
+
+  function renderSpark(points) {
+    const svg = byId('dash-spark');
+    if (!svg) return;
+    if (!points || points.length < 2) {
+      svg.innerHTML = '<text x="50" y="21" text-anchor="middle" font-size="8" fill="#64748b">' + esc(tf('dashboard.sparkEmpty', null, 'belum ada data tren')) + '</text>';
+      return;
+    }
+    const vals = points.map(p => Number(p.free) || 0);
+    const min = Math.min(...vals), max = Math.max(...vals);
+    const span = Math.max(max - min, 1);
+    const pts = vals.map((v, i) => {
+      const x = (i / (vals.length - 1)) * 100;
+      const y = 34 - ((v - min) / span) * 30;
+      return x.toFixed(2) + ',' + y.toFixed(2);
+    }).join(' ');
+    svg.innerHTML = '<polyline points="' + pts + '" fill="none" stroke="var(--accent)" stroke-width="1.6" vector-effect="non-scaling-stroke"/>';
+  }
+
+  function renderInsight(rep) {
+    lastInsight = rep;
+    if (!rep) return;
+    const w = rep.week || {};
+    setDash('dash-week-freed', human(w.freedBytes || 0));
+    setDash('dash-week-moved', human(w.movedBytes || 0) + ' · ' + (w.removed || 0) + ' ' + tf('dashboard.item', null, 'item'));
+    setDash('dash-week-sessions', String(w.sessions || 0));
+    setDash('dash-week-trash', (w.trashEntries || 0) + ' · ' + human(w.trashBytes || 0));
+    const trend = rep.trend || [];
+    setDash('dash-week-range', trend.length ? trend[0].date + ' → ' + trend[trend.length - 1].date : tf('dashboard.noTrend', null, 'belum ada data'));
+    renderSpark(trend);
+  }
+
+  async function doExport() {
+    if (!bridge || !bridge.ExportReport) { toast(tf('dashboard.exportOnly', null, 'Ekspor hanya tersedia di aplikasi.')); return; }
+    const sel = byId('dash-export-format');
+    const btn = byId('dash-export');
+    const format = sel ? sel.value : 'md';
+    if (btn) { btn.disabled = true; btn.textContent = tf('dashboard.exporting', null, 'Mengekspor…'); }
+    try {
+      const path = await bridge.ExportReport(format);
+      setDash('dash-export-path', path || '');
+      toast(tf('dashboard.exportDone', null, 'Laporan diekspor: ') + path);
+    } catch (e) {
+      toast(tf('dashboard.exportFail', null, 'Ekspor gagal: ') + errMsg(e));
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = tf('dashboard.export', null, 'Ekspor'); }
+    }
   }
 
   function renderHome(tr) {
@@ -76,6 +159,7 @@
   }
 
   function renderReport(r) {
+    lastReport = r;
     if (!r) return;
     let cache = 0, log = 0, tools = [];
     for (const g of r.groups || []) {
@@ -88,11 +172,11 @@
     setDash('dash-cache-size', human(cache));
     setDash('dash-log-size', human(log));
     const cacheHint = tools.slice(0, 3).map(g => g.id.split('.').pop() + ' ' + human(g.bytes)).join(' · ');
-    setDash('dash-cache-hint', cacheHint || 'tidak ada cache terdeteksi');
-    setDash('dash-log-hint', 'journal + /var/log · target 500 MB');
+    setDash('dash-cache-hint', cacheHint || tf('dashboard.noCache', null, 'tidak ada cache terdeteksi'));
+    setDash('dash-log-hint', tf('dashboard.logHint', null, 'journal + /var/log · target 500 MB'));
     const bar = byId('dash-cache-bar');
     if (bar) bar.style.width = Math.min(100, Math.round(cache / Math.max(r.bytes, 1) * 100)) + '%';
-    setDash('dash-tools', tools.length + ' tool dev terdeteksi');
+    setDash('dash-tools', tf('dashboard.tools', { n: tools.length }, tools.length + ' tool dev terdeteksi'));
     setDash('dash-tools-detail', tools.slice(0, 6).map(g => g.id.split('.').pop()).join(' · ') || '—');
 
     const items = [];
@@ -105,7 +189,7 @@
     const body = byId('dash-reclaim');
     if (!body) return;
     if (!top.length) {
-      body.innerHTML = '<tr><td colspan="4" class="tiny dim" style="padding:14px">Tidak ada item.</td></tr>';
+      body.innerHTML = '<tr><td colspan="4" class="tiny dim" style="padding:14px">' + esc(tf('dashboard.noItems', null, 'Tidak ada item.')) + '</td></tr>';
       return;
     }
     body.innerHTML = top.map(({ it, g }) => {
@@ -122,20 +206,23 @@
     if (dashBusy) return;
     dashBusy = true;
     const btn = byId('dash-refresh');
-    if (btn) { btn.disabled = true; btn.textContent = 'Memindai…'; }
+    if (btn) { btn.disabled = true; btn.textContent = tf('dashboard.scanning', null, 'Memindai…'); }
     try {
       await ensureHome();
-      const volP = bridge.DiskStatus().then(renderDisk).catch(() => {});
+      const volP = (bridge.DiskVolumes ? bridge.DiskVolumes() : Promise.resolve(null))
+        .then(mounts => { if (!renderMounts(mounts)) return bridge.DiskStatus().then(renderDisk); })
+        .catch(() => bridge.DiskStatus().then(renderDisk).catch(() => {}));
       const nixP = bridge.NixStatus().then(renderNix).catch(() => {});
       const treeP = bridge.AnalysisTree(home, 1).then(renderHome).catch(() => {});
+      const insightP = (bridge.Insight ? bridge.Insight() : Promise.resolve(null)).then(renderInsight).catch(() => {});
       const r = await window.cleanlie.ensureScan(!!force);
       renderReport(r || window.cleanlie.report());
-      await Promise.allSettled([volP, nixP, treeP]);
+      await Promise.allSettled([volP, nixP, treeP, insightP]);
     } catch (e) {
-      toast('Dashboard gagal: ' + errMsg(e));
+      toast(tf('dashboard.scanFail', null, 'Dashboard gagal: ') + errMsg(e));
     } finally {
       dashBusy = false;
-      if (btn) { btn.disabled = false; btn.textContent = 'Scan ulang'; }
+      if (btn) { btn.disabled = false; btn.textContent = tf('dashboard.refresh', null, 'Scan ulang'); }
     }
   }
 
@@ -148,8 +235,8 @@
   async function loadTree(path) {
     const seq = ++treeSeq;
     treePath = path;
-    loadingBody('an-tree-body', 3, 'Memuat disk usage…');
-    const map = byId('an-map'); if (map) map.innerHTML = '<div class="small dim">Memuat…</div>';
+    loadingBody('an-tree-body', 3, tf('analysis.loadingTree', null, 'Memuat disk usage…'));
+    const map = byId('an-map'); if (map) map.innerHTML = '<div class="small dim">' + esc(tf('analysis.loading', null, 'Memuat…')) + '</div>';
     try {
       const tr = await bridge.AnalysisTree(path, 1);
       if (seq !== treeSeq) return;
@@ -159,7 +246,7 @@
       renderTree();
     } catch (e) {
       if (seq !== treeSeq) return;
-      loadingBody('an-tree-body', 3, 'Gagal: ' + errMsg(e));
+      loadingBody('an-tree-body', 3, tf('analysis.fail', null, 'Gagal: ') + errMsg(e));
     }
   }
 
@@ -176,7 +263,7 @@
           + '<td class="path mono" title="' + esc(n.path) + '">' + icon + esc(n.name) + (n.dir ? '/' : '') + '</td>'
           + '<td class="r num">' + human(n.bytes) + '</td>'
           + '<td><div class="sizebar"><i style="width:' + pct + '%"></i></div></td></tr>';
-      }).join('') : '<tr><td colspan="3" class="tiny dim" style="padding:18px 16px">Folder kosong.</td></tr>';
+      }).join('') : '<tr><td colspan="3" class="tiny dim" style="padding:18px 16px">' + esc(tf('analysis.emptyFolder', null, 'Folder kosong.')) + '</td></tr>';
     }
     const crumb = byId('an-crumb');
     if (crumb) {
@@ -197,15 +284,15 @@
       map.innerHTML = kids.filter(n => n.dir).slice(0, 4).map((n, i) =>
         '<div class="tm ' + colors[i] + '"' + (n.dir ? ' data-an-path="' + esc(n.path) + '" style="cursor:pointer"' : '') + '>'
         + '<b>' + esc(n.name) + '</b><span>' + human(n.bytes) + ' · ' + Math.round(n.bytes / total * 100) + '%</span></div>'
-      ).join('') || '<div class="small dim">Tidak ada subfolder.</div>';
+      ).join('') || '<div class="small dim">' + esc(tf('analysis.noSubfolder', null, 'Tidak ada subfolder.')) + '</div>';
     }
   }
 
   /* ---------------- analysis: overview ---------------- */
   async function loadOverview() {
-    loadingBody('an-large-body', 5, 'Memindai file besar…');
-    loadingBody('an-stale-body', 4, 'Memindai file lama…');
-    loadingBody('an-art-body', 5, 'Memindai artefak build…');
+    loadingBody('an-large-body', 5, tf('analysis.scanLarge', null, 'Memindai file besar…'));
+    loadingBody('an-stale-body', 4, tf('analysis.scanStale', null, 'Memindai file lama…'));
+    loadingBody('an-art-body', 5, tf('analysis.scanArtifacts', null, 'Memindai artefak build…'));
     try {
       overview = await bridge.AnalysisOverview(home);
       loaded.overview = true;
@@ -213,7 +300,7 @@
       renderStale();
       renderArtifacts();
     } catch (e) {
-      loadingBody('an-large-body', 5, 'Gagal: ' + errMsg(e));
+      loadingBody('an-large-body', 5, tf('analysis.fail', null, 'Gagal: ') + errMsg(e));
     }
   }
 
@@ -232,14 +319,14 @@
         + '<td class="r num">' + human(f.bytes) + '</td>'
         + '<td class="tiny dim">' + esc(f.modTime) + '</td>'
         + '<td class="r"><button class="btn ghost" data-an-open="' + esc(f.path) + '">Buka folder</button></td></tr>';
-    }).join('') : '<tr><td colspan="5" class="tiny dim" style="padding:18px 16px">Tidak ada file ≥ ' + human(min) + '.</td></tr>';
+    }).join('') : '<tr><td colspan="5" class="tiny dim" style="padding:18px 16px">' + esc(tf('analysis.noLarge', { size: human(min) }, 'Tidak ada file ≥ ' + human(min) + '.')) + '</td></tr>';
     updateSel();
   }
 
   function renderStale() {
     if (!overview) return;
     const rows = overview.stale || [];
-    setDash('an-stale-summary', 'Tidak diubah > 365 hari · ' + rows.length + ' file');
+    setDash('an-stale-summary', tf('analysis.staleSummary', { days: 365, n: rows.length }, 'Tidak diubah > 365 hari · ' + rows.length + ' file'));
     const body = byId('an-stale-body');
     if (body) body.innerHTML = rows.length ? rows.map(f => {
       const id = 'stale:' + f.path;
@@ -247,7 +334,7 @@
         + '<td class="path mono" title="' + esc(f.path) + '">' + esc(short(f.path)) + '</td>'
         + '<td class="r num">' + human(f.bytes) + '</td>'
         + '<td class="tiny dim">' + esc(f.modTime) + ' · ' + f.ageDays + ' hari</td></tr>';
-    }).join('') : '<tr><td colspan="4" class="tiny dim" style="padding:18px 16px">Tidak ada file lama.</td></tr>';
+    }).join('') : '<tr><td colspan="4" class="tiny dim" style="padding:18px 16px">' + esc(tf('analysis.noStale', null, 'Tidak ada file lama.')) + '</td></tr>';
     updateSel();
   }
 
@@ -265,14 +352,14 @@
         + '<td><span class="mono small">' + esc(a.name) + '</span> ' + chip + '</td>'
         + '<td class="r num">' + human(a.bytes) + '</td>'
         + '<td class="tiny dim">' + esc(a.modTime) + ' · ' + a.ageDays + ' hari</td></tr>';
-    }).join('') : '<tr><td colspan="5" class="tiny dim" style="padding:18px 16px">Tidak ada artefak.</td></tr>';
+    }).join('') : '<tr><td colspan="5" class="tiny dim" style="padding:18px 16px">' + esc(tf('analysis.noArtifacts', null, 'Tidak ada artefak.')) + '</td></tr>';
     updateSel();
   }
 
   /* ---------------- analysis: duplicates ---------------- */
   async function loadDups() {
     const el = byId('an-dup-body');
-    if (el) el.innerHTML = '<div class="small dim">Membaca isi file untuk mencari duplikat…</div>';
+    if (el) el.innerHTML = '<div class="small dim">' + esc(tf('analysis.scanDups', null, 'Membaca isi file untuk mencari duplikat…')) + '</div>';
     try {
       dups = await bridge.AnalysisDuplicates(home);
       loaded.dups = true;
@@ -286,12 +373,14 @@
     if (!dups) return;
     const count = dups.groupCount || (dups.groups || []).length;
     const shown = (dups.groups || []).length;
-    byId('an-dup-summary').textContent = count + ' grup · ' + human(dups.wasted || 0) + ' bisa dibebaskan'
-      + (shown < count ? ' · menampilkan ' + shown + ' teratas' : '');
+    byId('an-dup-summary').textContent = tf('analysis.groupCount', { n: count }, count + ' grup') + ' · '
+      + tf('analysis.wasted', { size: human(dups.wasted || 0) }, human(dups.wasted || 0) + ' bisa dibebaskan')
+      + (dups.hardlinks ? ' · ' + tf('analysis.hardlinks', { n: dups.hardlinks }, dups.hardlinks + ' hardlink dilewati') : '')
+      + (shown < count ? ' · ' + tf('analysis.topShown', { n: shown }, 'menampilkan ' + shown + ' teratas') : '');
     const body = byId('an-dup-body');
     if (!body) return;
     if (!dups.groups || !dups.groups.length) {
-      body.innerHTML = '<div class="small dim">Tidak ada file identik ≥ 1 MiB.</div>';
+      body.innerHTML = '<div class="small dim">' + esc(tf('analysis.noDuplicates', null, 'Tidak ada file identik ≥ 1 MiB.')) + '</div>';
       updateSel();
       return;
     }
@@ -317,7 +406,7 @@
 
   function updateSel() {
     const set = (id, prefix, label) => {
-      const el = byId(id); if (el) el.textContent = countSel(prefix) + ' dipilih';
+      const el = byId(id); if (el) el.textContent = tf('analysis.selectedCount', { n: countSel(prefix) }, countSel(prefix) + ' dipilih');
       const b = byId(id.replace('-sel', '-trash'));
       if (b) b.disabled = countSel(prefix) === 0;
     };
@@ -344,10 +433,10 @@
 
   function openAnalysisModal(prefix, label) {
     const ids = [...sel].filter(id => id.startsWith(prefix + ':'));
-    if (!ids.length) { toast('Pilih item dulu'); return; }
+    if (!ids.length) { toast(tf('analysis.pickFirst', null, 'Pilih item dulu')); return; }
     const paths = ids.map(id => id.slice(prefix.length + 1));
     const total = paths.length;
-    byId('m-title').textContent = 'Pindahkan ' + total + ' item ke Trash?';
+    byId('m-title').textContent = tf('analysis.moveTitle', { n: total }, 'Pindahkan ' + total + ' item ke Trash?');
     byId('m-sub').textContent = 'Item masuk ke trash freedesktop dan bisa di-restore. Guard path yang sama dengan layar Bersihkan tetap dipakai.';
     byId('m-body').innerHTML = '<div class="row" style="gap:8px;margin-bottom:10px">'
       + '<span class="pill">' + total + ' item</span><span class="pill">' + esc(label) + '</span><span class="pill">mode: <b>trash</b></span></div>'
@@ -365,7 +454,7 @@
         showAnalysisResult(res, ids, prefix);
       } catch (e) {
         ok.disabled = false; ok.textContent = 'Ya, pindahkan';
-        toast('Gagal: ' + errMsg(e));
+        toast(tf('analysis.fail', null, 'Gagal: ') + errMsg(e));
       }
     });
     byId('backdrop').classList.add('open');
@@ -383,7 +472,7 @@
     ).join('');
     byId('m-body').innerHTML = '<div class="row" style="gap:8px;margin-bottom:10px"><span class="pill">' + ids.length + ' item</span>'
       + '<span class="pill"><b>' + human(freed) + '</b> dibebaskan</span></div>'
-      + (rows || '<div class="small dim">Tidak ada item yang berubah.</div>')
+      + (rows || '<div class="small dim">' + esc(tf('analysis.noChange', null, 'Tidak ada item yang berubah.')) + '</div>')
       + (res.auditError ? '<div class="small" style="color:var(--danger);margin-top:8px">Audit: ' + esc(res.auditError) + '</div>' : '');
     const old = byId('m-ok');
     const ok = old.cloneNode(true);
@@ -416,6 +505,7 @@
   };
 
   rebind(byId('dash-refresh'), () => refreshDashboard(true));
+  rebind(byId('dash-export'), () => doExport());
 
   document.querySelectorAll('#tabs button').forEach(b => b.addEventListener('click', () => {
     ensureAnalysis(b.dataset.tab);
@@ -464,6 +554,16 @@
     }
   });
 
+  window.addEventListener('cleanlie:lang', () => {
+    if (lastVolume) renderDisk(lastVolume);
+    if (lastNix) renderNix(lastNix);
+    if (lastInsight) renderInsight(lastInsight);
+    if (lastReport) renderReport(lastReport);
+    if (tree) renderTree();
+    if (overview) { renderLarge(); renderStale(); renderArtifacts(); }
+    if (dups) renderDups();
+  });
+
   /* ---------------- boot ---------------- */
   const baseNavigate = navigate;
   navigate = function (view) {
@@ -471,6 +571,11 @@
     if (view === 'dashboard') refreshDashboard(false);
     if (view === 'analysis') ensureAnalysis(activeTab);
   };
+  const diskSel = byId('dash-disk-select');
+  if (diskSel) diskSel.addEventListener('change', () => {
+    const m = (lastMounts || []).find(x => x.path === diskSel.value);
+    if (m) { lastMountPath = m.path; renderDisk(m); }
+  });
   if (current === 'dashboard') refreshDashboard(false);
   if (current === 'analysis') ensureAnalysis(activeTab);
 })();

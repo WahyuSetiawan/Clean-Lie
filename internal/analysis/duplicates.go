@@ -72,6 +72,8 @@ func FindDuplicates(ctx context.Context, opts Options) (Duplicates, error) {
 		if st, ok := info.Sys().(*syscall.Stat_t); ok {
 			key := [2]uint64{uint64(st.Dev), st.Ino}
 			if seen[key] {
+				out.Hardlinks++
+				out.HardlinkBytes += info.Size()
 				return nil
 			}
 			seen[key] = true

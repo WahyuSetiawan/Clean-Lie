@@ -19,6 +19,10 @@
 | M5 Analisis + dashboard | ✅ 2026-11-25 | tree `~` depth 2 **179.182.256.128 B** vs `du` selisih 0,0013%; `~/.cache` **1,70 s**; duplikat 1.715 grup/16,70 GiB; 9 paket Go hijau; UI smoke dashboard + analisis hijau |
 | M6 Settings + packaging | ✅ 2026-11-25 | config round-trip + fallback hijau; **10 paket Go** hijau; UI smoke settings/tema/i18n hijau; `nix build .#cleanlie` 0.6.0 + desktop/ikon; `desktop-file-validate` hanya hint kategori |
 | M7 direnv | ✅ 2026-11-26 | `internal/direnv` + layar direnv; **11 paket Go** hijau; UI smoke tambah folder→scan→pilih→trash hijau; `--direnv-scan --path` JSON; `nix build` 0.7.0 |
+| M8 Trust | ✅ 2026-11-27 | `internal/trash` + `preview` + Riwayat; **13 paket Go** hijau; UI smoke Riwayat/Trash/Preview/Undo hijau; `scripts/verify-trash.sh` hijau; `nix build` 0.8.0 |
+| M9 Visibilitas | ✅ 2026-11-27 | `internal/insight` + `notify`; **15 paket Go** hijau; UI smoke kartu minggu/sparkline/ekspor/toggle notifikasi hijau; `--insight`/`--report` hijau; `nix build` 0.9.0 |
+| M10 Otomasi | ✅ 2026-11-27 | aturan kustom + hardlink + `internal/schedule`; **16 paket Go** hijau; UI smoke aturan kustom/Otomasi hijau; `--auto-clean`/`--schedule-*` hijau; `nix build` 0.10.0 |
+| M11 Polish | ✅ 2026-11-27 | `internal/singleinstance` + `fsx.ClassifyHealth`; i18n dinamis; workflow test; **17 paket Go** hijau; UI smoke chip/EN hijau; `nix build` 0.11.0 |
 
 ## Aturan main
 
@@ -404,6 +408,34 @@
 ### T7.4 — Docs + rilis
 - `docs/implementation/m7-direnv.md`, README, CHANGELOG, versi 0.7.0.
 - **Acceptance:** `nix build .#cleanlie` 0.7.0; `go test ./internal/... .` hijau.
+
+---
+
+## M8 — Trust: Trash Manager, Undo, Riwayat, Preview (adendum)
+
+Detail task, acceptance, dan urutan ada di
+[`cleanlie-m8-trust.md`](cleanlie-m8-trust.md). Ringkas: T8.1 `internal/trash`,
+T8.2 ukuran, T8.3 restore/hapus/empty/resolve, T8.4 `MoveToTrash` →
+`trash.Resolve`, T8.5 audit batch + sesi, T8.6 binding, T8.7 preview, T8.8 UI
+Riwayat, T8.9 UI preview, T8.10 CLI/script/docs/rilis 0.8.0.
+
+---
+
+## M9 — Visibilitas: Insight, Ekspor, Notifikasi (adendum)
+
+Detail task, acceptance, dan urutan ada di
+[`cleanlie-m9-visibility.md`](cleanlie-m9-visibility.md). Ringkas: T9.1
+`internal/insight`, T9.2 `internal/notify` + config, T9.3 binding/CLI, T9.4
+dashboard minggu ini + ekspor, T9.5 Riwayat/Pengaturan/i18n, T9.6 docs/rilis 0.9.0.
+
+---
+
+## M10 — Otomasi & Cakupan (adendum)
+
+Detail task, acceptance, dan urutan ada di
+[`cleanlie-m10-automation.md`](cleanlie-m10-automation.md). Ringkas: T10.1 aturan
+kustom, T10.2 hardlink counter, T10.3 `internal/schedule` + CLI, T10.4
+`--auto-clean`, T10.5 binding + kartu Otomasi, T10.6 docs/rilis 0.10.0.
 
 ---
 

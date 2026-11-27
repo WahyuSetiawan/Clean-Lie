@@ -1,4 +1,8 @@
 /* ================= M2–M4: core bersama (bridge, helper DOM, state scan) ================= */
+window.__tf = function (key, vars, fallback) {
+  const s = (window.__t && window.__t(key)) || fallback || key;
+  return String(s).replace(/\{(\w+)\}/g, (m, k) => (vars && vars[k] != null) ? String(vars[k]) : m);
+};
 window.cleanlie = (() => {
   const bridge = window.go && window.go.main && window.go.main.App;
 

@@ -1,6 +1,6 @@
 # Cleanlie v1 — Plan (GUI cleaner untuk NixOS)
 
-> Status: **M7 selesai** (direnv scan) · v1 + direnv lengkap
+> Status: **M11 selesai** (Polish: single instance, disk health, i18n dinamis, CI) · v1 + direnv + M8–M11 lengkap
 > Target mesin: NixOS 26.11, Hyprland/Wayland, uid 1000 (`juragankoding`)
 
 ## 1. Ringkasan
@@ -379,8 +379,12 @@ tanpa membuka window. Ini yang dipakai di integration test.
 | **M5** ✅ | `internal/analysis` (tree, large, dup, stale) + `artifacts.go` + 4 layar analisis + dashboard kartu & top-reclaim | semua layar terisi data nyata | 1 d |
 | **M6** ✅ | Pengaturan + persistensi (default tanpa centang untuk item ⚠/⛔), laporan hasil, i18n ID/EN, tema, packaging flake (`package.cleanlie`), ikon, README | `nix build .#cleanlie` → binary + desktop item | 0.5 d |
 | **M7** ✅ | `internal/direnv` (cari `.direnv` per proyek + cache global) + layar direnv + root config + CLI `--direnv-scan` | tambah folder → scan → ukuran cocok `du`, trash lewat guard M2 | 0.5 d |
+| **M8** ✅ | Trash Manager (home+volume), restore aman, Undo sesi, Riwayat 8, preview, CLI trash/undo — lihat [`cleanlie-m8-trust.md`](cleanlie-m8-trust.md) | list→restore→undo→delete→empty hijau; UI smoke Riwayat hijau; versi 0.8.0 | 2,7 d |
+| **M9** ✅ | Insight mingguan + tren disk + ekspor md/json/csv + notifikasi desktop — lihat [`cleanlie-m9-visibility.md`](cleanlie-m9-visibility.md) | `--insight`/`--report` hijau; UI smoke kartu minggu + ekspor; versi 0.9.0 | 1,5 d |
+| **M10** ✅ | Aturan kustom, hardlink-aware duplicate, timer auto-clean user systemd, `--auto-clean` safe+trash — lihat [`cleanlie-m10-automation.md`](cleanlie-m10-automation.md) | config custom round-trip; hardlink test; `--auto-clean`/`--schedule-*` hijau; UI smoke Otomasi; versi 0.10.0 | 1,5 d |
+| **M11** ✅ | Single instance GUI, kesehatan disk, i18n teks dinamis, CI test/lint/build — lihat [`cleanlie-m11-polish.md`](cleanlie-m11-polish.md) | acquire ganda `ErrRunning`; tabel health hijau; UI smoke chip + EN dinamis; workflow test; versi 0.11.0 | 1,35 d |
 
-Total ~6 hari kerja. Urutan wajib M1 → M2 sebelum M3/M4/M5 (engine & planner dipakai bersama).
+Total ~13,05 hari kerja (M0–M11). Urutan wajib M1 → M2 sebelum M3/M4/M5 (engine & planner dipakai bersama).
 
 ## 10. Packaging Nix
 
