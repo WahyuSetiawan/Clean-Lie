@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/Juragan-Koding/cleanlie/internal/clean"
+	"github.com/Juragan-Koding/cleanlie/internal/insight"
 	"github.com/Juragan-Koding/cleanlie/internal/rules"
 	"github.com/Juragan-Koding/cleanlie/internal/trash"
 )
@@ -209,4 +210,41 @@ func TestRunCLIHistoryJSON(t *testing.T) {
 	if len(page.Sessions) != 1 || page.Sessions[0].Batch != "batch-test" {
 		t.Fatalf("page = %+v", page)
 	}
+}
+
+func TestRunCLIInsightAndReport(t *testing.T) {
+	t.Setenv("XDG_STATE_HOME", t.TempDir())
+	t.Setenv("XDG_DATA_HOME", t.TempDir())
+	t.Setenv("HOME", t.TempDir())
+
+	out := captureStdout(t, func() {
+		handled, code := runCLI([]string{"--insight", "--json"})
+		if !handled || code != 0 {
+			t.Fatalf("insight handled=%v code=%d", handled, code)
+		}
+	})
+	var rep insight.Report
+	if err := json.Unmarshal([]byte(out), &rep); err != nil {
+		t.Fatalf("JSON insight tidak valid: %v\n%s", err, out)
+	}
+	if rep.Week.Days != 7 || rep.Version == "" {
+		t.Fatalf("report = %+v", rep)
+	}
+
+	md := captureStdout(t, func() {
+		handled, code := runCLI([]string{"--report", "md"})
+		if !handled || code != 0 {
+			t.Fatalf("report handled=%v code=%d", handled, code)
+		}
+	})
+	if !strings.Contains(md, "Cleanlie") || !strings.Contains(md, "Tren disk") {
+		t.Fatalf("md = %s", md)
+	}
+
+	captureStdout(t, func() {
+		handled, code := runCLI([]string{"--report", "xml"})
+		if !handled || code != 2 {
+			t.Fatalf("format asing handled=%v code=%d", handled, code)
+		}
+	})
 }

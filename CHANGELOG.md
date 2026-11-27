@@ -4,6 +4,32 @@ Semua perubahan penting pada Cleanlie. Format mengikuti
 [Keep a Changelog](https://keepachangelog.com/id/1.1.0/) dan versi mengikuti
 [Semantic Versioning](https://semver.org/lang/id/).
 
+## [0.9.0] — 2026-11-27
+
+### Ditambahkan — M9 Visibilitas: insight, ekspor, notifikasi
+
+- `internal/insight`: snapshot disk harian di `trend.jsonl` (satu titik per tanggal,
+  maks 90 hari, tulis atomik), ringkasan 7 hari dari audit (dibebaskan vs dipindah ke
+  trash), dan laporan `md`/`json`/`csv`.
+- Dashboard **Minggu ini**: freed, moved, sesi, trash, sparkline tren, dan tombol
+  **Ekspor** ke `~/.local/state/cleanlie/reports/`.
+- Tombol **Ekspor laporan** di Riwayat dengan format Markdown/JSON/CSV.
+- Binding `Insight()` dan `ExportReport(format)`; CLI `--insight` dan
+  `--report md|json|csv` (read-only, aman untuk integrasi).
+- `internal/notify`: notifikasi desktop `notify-send` (best-effort) setelah Clean,
+  AnalysisClean, DirenvClean, GC, hapus generasi, dan vacuum journal. Config baru
+  `notify` (default aktif) + toggle di Pengaturan.
+- `Session.RemovedBytes` untuk memisahkan ruang yang dipindah ke trash dari yang
+  benar-benar dibebaskan.
+- Test `internal/insight`, `internal/notify`, binding export, CLI, dan UI smoke
+  (kartu minggu, sparkline, ekspor dashboard/riwayat, toggle notifikasi).
+
+### Catatan
+
+- Versi aplikasi menjadi **0.9.0** (`Makefile`, `flake.nix`, `package.nix`, `main.go`).
+- Snapshot tren hanya membaca `statfs("/")`; tidak memindai home/Nix. Laporan tidak
+  pernah memuat isi file, hanya path yang sudah terlihat di UI.
+
 ## [Unreleased]
 
 ### Ditambahkan — dukungan macOS

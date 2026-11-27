@@ -17,7 +17,7 @@
       darwinSystems = [ "aarch64-darwin" ];
       eachLinux = f: nixpkgs.lib.genAttrs linuxSystems (system: f nixpkgs.legacyPackages.${system});
       each = f: nixpkgs.lib.genAttrs (linuxSystems ++ darwinSystems) (system: f nixpkgs.legacyPackages.${system});
-      version = "0.8.0";
+      version = "0.9.0";
 
       devShellFor =
         pkgs:
@@ -57,7 +57,7 @@
         in
         if pkgs.stdenv.hostPlatform.isLinux then
           pkgs.mkShell {
-            packages = commonPackages ++ [ wails ] ++ runtimeLibs;
+            packages = commonPackages ++ [ wails pkgs.libnotify ] ++ runtimeLibs;
 
             env = {
               CGO_ENABLED = "1";

@@ -20,6 +20,7 @@
 | M6 Settings + packaging | ✅ 2026-11-25 | config round-trip + fallback hijau; **10 paket Go** hijau; UI smoke settings/tema/i18n hijau; `nix build .#cleanlie` 0.6.0 + desktop/ikon; `desktop-file-validate` hanya hint kategori |
 | M7 direnv | ✅ 2026-11-26 | `internal/direnv` + layar direnv; **11 paket Go** hijau; UI smoke tambah folder→scan→pilih→trash hijau; `--direnv-scan --path` JSON; `nix build` 0.7.0 |
 | M8 Trust | ✅ 2026-11-27 | `internal/trash` + `preview` + Riwayat; **13 paket Go** hijau; UI smoke Riwayat/Trash/Preview/Undo hijau; `scripts/verify-trash.sh` hijau; `nix build` 0.8.0 |
+| M9 Visibilitas | ✅ 2026-11-27 | `internal/insight` + `notify`; **15 paket Go** hijau; UI smoke kartu minggu/sparkline/ekspor/toggle notifikasi hijau; `--insight`/`--report` hijau; `nix build` 0.9.0 |
 
 ## Aturan main
 
@@ -415,6 +416,15 @@ Detail task, acceptance, dan urutan ada di
 T8.2 ukuran, T8.3 restore/hapus/empty/resolve, T8.4 `MoveToTrash` →
 `trash.Resolve`, T8.5 audit batch + sesi, T8.6 binding, T8.7 preview, T8.8 UI
 Riwayat, T8.9 UI preview, T8.10 CLI/script/docs/rilis 0.8.0.
+
+---
+
+## M9 — Visibilitas: Insight, Ekspor, Notifikasi (adendum)
+
+Detail task, acceptance, dan urutan ada di
+[`cleanlie-m9-visibility.md`](cleanlie-m9-visibility.md). Ringkas: T9.1
+`internal/insight`, T9.2 `internal/notify` + config, T9.3 binding/CLI, T9.4
+dashboard minggu ini + ekspor, T9.5 Riwayat/Pengaturan/i18n, T9.6 docs/rilis 0.9.0.
 
 ---
 

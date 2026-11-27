@@ -9,7 +9,7 @@
     id: {
       'brand.tagline': 'cleaner untuk NixOS',
       'brand.tagline.macos': 'cleaner untuk macOS',
-      'side.note': 'M8 · trust & trash',
+      'side.note': 'M9 · insight & laporan',
       'nav.dashboard': 'Dashboard',
       'nav.cleanup': 'Bersihkan',
       'nav.analysis': 'Analisis',
@@ -69,6 +69,7 @@
       'history.emptyOk': 'Kosongkan',
       'history.deleteOk': 'Hapus permanen',
       'history.restoreOk': 'Pulihkan',
+      'history.export': 'Ekspor laporan',
       'settings.openHistory': 'Lihat riwayat',
       'settings.openFolder': 'Folder',
       'direnv.roots': 'Folder proyek',
@@ -109,6 +110,8 @@
       'settings.permanent': 'Hapus permanen',
       'settings.autoSafe': 'Item aman otomatis dicentang',
       'settings.autoSafeHint': 'Item ⚠/⛔ tidak pernah otomatis',
+      'settings.notify': 'Notifikasi desktop',
+      'settings.notifyHint': 'Kabari saat pembersihan atau GC selesai',
       'settings.journalTarget': 'Target journal',
       'settings.journalTargetHint': 'Vacuum system dan user journal',
       'settings.analysis': 'Analisis',
@@ -174,6 +177,12 @@
       'analysis.project': 'Proyek',
       'analysis.artifact': 'Artefak',
       'dashboard.disk': 'Disk /',
+      'dashboard.week': 'Minggu ini',
+      'dashboard.freed': 'dibebaskan',
+      'dashboard.moved': 'dipindah ke trash',
+      'dashboard.sessions': 'sesi',
+      'dashboard.trash': 'trash',
+      'dashboard.export': 'Ekspor',
       'dashboard.nix': 'Nix store',
       'dashboard.cache': 'Cache dev',
       'dashboard.log': 'Log & journal',
@@ -200,7 +209,7 @@
     en: {
       'brand.tagline': 'cleaner for NixOS',
       'brand.tagline.macos': 'cleaner for macOS',
-      'side.note': 'M8 · trust & trash',
+      'side.note': 'M9 · insight & laporan',
       'nav.dashboard': 'Dashboard',
       'nav.cleanup': 'Clean',
       'nav.analysis': 'Analysis',
@@ -260,6 +269,7 @@
       'history.emptyOk': 'Empty',
       'history.deleteOk': 'Delete permanently',
       'history.restoreOk': 'Restore',
+      'history.export': 'Export report',
       'settings.openHistory': 'View history',
       'settings.openFolder': 'Folder',
       'direnv.roots': 'Project folders',
@@ -300,6 +310,8 @@
       'settings.permanent': 'Delete permanently',
       'settings.autoSafe': 'Auto-select safe items',
       'settings.autoSafeHint': '⚠/⛔ items are never auto-selected',
+      'settings.notify': 'Desktop notifications',
+      'settings.notifyHint': 'Notify when cleaning or GC finishes',
       'settings.journalTarget': 'Journal target',
       'settings.journalTargetHint': 'Vacuum system and user journal',
       'settings.analysis': 'Analysis',
@@ -365,6 +377,12 @@
       'analysis.project': 'Project',
       'analysis.artifact': 'Artifact',
       'dashboard.disk': 'Disk /',
+      'dashboard.week': 'This week',
+      'dashboard.freed': 'freed',
+      'dashboard.moved': 'moved to trash',
+      'dashboard.sessions': 'sessions',
+      'dashboard.trash': 'trash',
+      'dashboard.export': 'Export',
       'dashboard.nix': 'Nix store',
       'dashboard.cache': 'Dev cache',
       'dashboard.log': 'Logs & journal',
@@ -399,7 +417,7 @@
 
   const DEFAULTS = {
     theme: 'system', language: 'id', showRisky: false, deleteMode: 'trash',
-    autoSelectSafe: true, showRisky: true, journalTarget: '500M', largeBytes: 100 * MIB,
+    autoSelectSafe: true, showRisky: true, notify: true, journalTarget: '500M', largeBytes: 100 * MIB,
     staleDays: 365, artifactRoots: [], direnvRoots: [], excluded: []
   };
   let state = Object.assign({}, DEFAULTS);
@@ -475,6 +493,7 @@
     if (lang) lang.value = state.language;
     setToggle(byId('show-risky'), state.showRisky);
     setToggle(byId('auto-safe'), state.autoSelectSafe);
+    setToggle(byId('notify-desktop'), state.notify);
     const del = byId('delete-mode');
     if (del) del.value = state.deleteMode;
     const journal = byId('journal-target');
@@ -529,6 +548,7 @@
       showRisky: !!(byId('show-risky') && byId('show-risky').classList.contains('on')),
       deleteMode: (byId('delete-mode') && byId('delete-mode').value) || state.deleteMode,
       autoSelectSafe: !!(byId('auto-safe') && byId('auto-safe').classList.contains('on')),
+      notify: !!(byId('notify-desktop') && byId('notify-desktop').classList.contains('on')),
       journalTarget: ((byId('journal-target') && byId('journal-target').value) || '500M').trim(),
       largeBytes: Math.round(num('large-mb', 100) * MIB),
       staleDays: Math.round(num('stale-days', 365)),
@@ -608,7 +628,7 @@
       applyLanguage(lang.value);
       markDirty();
     });
-    ['show-risky', 'auto-safe'].forEach(id => {
+    ['show-risky', 'auto-safe', 'notify-desktop'].forEach(id => {
       const el = byId(id);
       if (el) el.addEventListener('click', () => {
         setToggle(el, !el.classList.contains('on'));

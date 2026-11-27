@@ -3,6 +3,7 @@ package main
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/Juragan-Koding/cleanlie/internal/clean"
@@ -153,5 +154,32 @@ func TestUndoSession(t *testing.T) {
 	}
 	if _, err := os.Stat(target); err != nil {
 		t.Fatalf("target tidak kembali: %v", err)
+	}
+}
+
+func TestInsightAndExportReport(t *testing.T) {
+	home := trashHome(t)
+	trashEntry(t, home, "one")
+	a := NewApp("test", "0.9.0")
+	rep, err := a.Insight()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if rep.Week.Days != 7 || len(rep.Trash.Entries) != 1 {
+		t.Fatalf("report = %+v", rep)
+	}
+	path, err := a.ExportReport("md")
+	if err != nil {
+		t.Fatal(err)
+	}
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(data), "Cleanlie") {
+		t.Fatalf("laporan = %s", data)
+	}
+	if _, err := a.ExportReport("xml"); err == nil {
+		t.Fatal("format asing harus ditolak")
 	}
 }

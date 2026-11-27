@@ -16,6 +16,7 @@ import (
 	"github.com/Juragan-Koding/cleanlie/internal/config"
 	"github.com/Juragan-Koding/cleanlie/internal/direnv"
 	"github.com/Juragan-Koding/cleanlie/internal/fsx"
+	"github.com/Juragan-Koding/cleanlie/internal/insight"
 	"github.com/Juragan-Koding/cleanlie/internal/nix"
 	"github.com/Juragan-Koding/cleanlie/internal/privileged"
 	"github.com/Juragan-Koding/cleanlie/internal/rules"
@@ -40,6 +41,7 @@ func runCLI(args []string) (handled bool, code int) {
 			"--trash-list", "-trash-list", "--trash-restore", "-trash-restore",
 			"--trash-delete", "-trash-delete", "--trash-empty", "-trash-empty",
 			"--history", "-history", "--undo", "-undo",
+			"--insight", "-insight", "--report", "-report",
 			"--version", "-version", "--help", "-help", "-h":
 			headless = true
 		}
@@ -75,6 +77,8 @@ func runCLI(args []string) (handled bool, code int) {
 		undoBatch  = fs.String("undo", "", "undo satu sesi berdasarkan batch")
 		limit      = fs.Int("limit", 50, "jumlah sesi/entry maksimum")
 		yes        = fs.Bool("yes", false, "izinkan tindakan destruktif tanpa prompt")
+		insightOut = fs.Bool("insight", false, "ringkasan mingguan + tren disk (JSON)")
+		reportFmt  = fs.String("report", "", "cetak laporan: md, json, atau csv")
 	)
 	fs.Usage = func() {
 		fmt.Fprintf(os.Stderr, `Cleanlie %s
@@ -97,6 +101,8 @@ Pemakaian:
   cleanlie --trash-empty           kosongkan trash (butuh --yes)
   cleanlie --history               riwayat sesi (JSON; --limit)
   cleanlie --undo BATCH            undo sesi trash (butuh --yes)
+  cleanlie --insight               ringkasan mingguan + tren (JSON)
+  cleanlie --report md|json|csv    cetak laporan ke stdout
   cleanlie --version
 
 Opsi destruktif selalu butuh --yes; --dry-run menampilkan rencana.
@@ -111,6 +117,25 @@ Opsi:
 	}
 	if *showVer {
 		fmt.Printf("cleanlie %s (%s)\n", version, commit)
+		return true, 0
+	}
+
+	if *insightOut || *reportFmt != "" {
+		rep, err := insight.Collect(context.Background(), version, time.Now())
+		if err != nil {
+			fmt.Fprintln(os.Stderr, "cleanlie:", err)
+			return true, 1
+		}
+		if *reportFmt != "" {
+			out, err := insight.Render(rep, *reportFmt)
+			if err != nil {
+				fmt.Fprintln(os.Stderr, "cleanlie:", err)
+				return true, 2
+			}
+			fmt.Print(out)
+			return true, 0
+		}
+		printJSON(rep)
 		return true, 0
 	}
 

@@ -14,7 +14,7 @@ func TestLoadMissingUsesDefaults(t *testing.T) {
 	if warn != "" {
 		t.Fatalf("warning = %q", warn)
 	}
-	if c.Theme != ThemeSystem || c.Language != LanguageID || c.DeleteMode != DeleteTrash || !c.AutoSelectSafe {
+	if c.Theme != ThemeSystem || c.Language != LanguageID || c.DeleteMode != DeleteTrash || !c.AutoSelectSafe || !c.Notify {
 		t.Fatalf("default = %+v", c)
 	}
 	if c.LargeBytes != 100<<20 || c.StaleDays != 365 {

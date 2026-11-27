@@ -244,6 +244,7 @@ func (a *App) AnalysisClean(req AnalysisCleanRequest) (clean.Result, error) {
 		}
 		a.analysisMu.Unlock()
 		a.invalidateAfterMutation()
+		a.notifyCleanResult("Cleanlie — pembersihan analisis selesai", res)
 	}
 	return res, nil
 }

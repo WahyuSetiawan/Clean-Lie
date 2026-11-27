@@ -255,6 +255,23 @@
     } finally { busy = false; }
   }
 
+  async function exportReport() {
+    if (!bridge || !bridge.ExportReport) return;
+    const sel = byId('history-export-format');
+    const btn = byId('history-export');
+    const format = sel ? sel.value : 'md';
+    if (btn) btn.disabled = true;
+    try {
+      const path = await bridge.ExportReport(format);
+      note('Laporan: ' + path);
+      if (window.toast) toast('Laporan diekspor: ' + path);
+    } catch (e) {
+      if (window.toast) toast('Ekspor gagal: ' + errText(e));
+    } finally {
+      if (btn) btn.disabled = false;
+    }
+  }
+
   async function ensureHistory(force) {
     if (force) { loadedSessions = false; loadedTrash = false; }
     if (active === 'activity') { if (!loadedSessions) await loadSessions(); }
@@ -272,6 +289,7 @@
   /* ---------------- events ---------------- */
   document.querySelectorAll('#history-tabs button').forEach(b => b.addEventListener('click', () => switchTab(b.dataset.htab)));
   C.rebind(byId('history-refresh'), () => { ensureHistory(true); });
+  C.rebind(byId('history-export'), exportReport);
   C.rebind(byId('history-open-trash'), async () => {
     if (!bridge) return;
     try { await bridge.OpenTrash(); } catch (e) { if (window.toast) toast('Gagal membuka trash: ' + errText(e)); }

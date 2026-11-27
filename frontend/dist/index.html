@@ -124,6 +124,25 @@
 
           <div class="grid" style="align-content:start">
             <div class="card">
+              <div class="row"><h3 data-i18n="dashboard.week">Minggu ini</h3><div class="spacer"></div><span class="tiny dim" id="dash-week-range">—</span></div>
+              <div class="grid g2" style="margin-top:12px;gap:10px">
+                <div><div class="big" id="dash-week-freed">—</div><div class="tiny dim" data-i18n="dashboard.freed">dibebaskan</div></div>
+                <div><div class="big" id="dash-week-moved">—</div><div class="tiny dim" data-i18n="dashboard.moved">dipindah ke trash</div></div>
+                <div><div class="big" id="dash-week-sessions">—</div><div class="tiny dim" data-i18n="dashboard.sessions">sesi</div></div>
+                <div><div class="big" id="dash-week-trash">—</div><div class="tiny dim" data-i18n="dashboard.trash">trash</div></div>
+              </div>
+              <svg id="dash-spark" viewBox="0 0 100 36" preserveAspectRatio="none" style="width:100%;height:46px;margin-top:12px;display:block"></svg>
+              <div class="row" style="margin-top:12px;gap:8px">
+                <select id="dash-export-format" style="max-width:140px">
+                  <option value="md">Markdown</option>
+                  <option value="json">JSON</option>
+                  <option value="csv">CSV</option>
+                </select>
+                <button class="btn ghost" id="dash-export" data-i18n="dashboard.export">Ekspor</button>
+                <span class="tiny dim" id="dash-export-path"></span>
+              </div>
+            </div>
+            <div class="card">
               <div class="row"><h3 data-i18n="dashboard.status">Status</h3><div class="spacer"></div><button class="btn ghost" id="dash-refresh" data-i18n="dashboard.refresh">Scan ulang</button></div>
               <div style="margin-top:12px;display:flex;flex-direction:column;gap:10px">
                 <div class="row"><span class="chip safe" id="st-polkit-chip">ok</span><span class="small" id="st-polkit">Polkit agent terdeteksi</span><span class="spacer"></span><span class="tiny dim" id="st-polkit-detail">aksi root via pkexec</span></div>
@@ -467,6 +486,12 @@
           <span class="small muted" id="history-note" role="status"></span>
           <div class="spacer"></div>
           <button class="btn ghost" id="history-refresh" data-i18n="history.refresh">Muat ulang</button>
+          <select id="history-export-format" style="max-width:130px" aria-label="Format laporan">
+            <option value="md">Markdown</option>
+            <option value="json">JSON</option>
+            <option value="csv">CSV</option>
+          </select>
+          <button class="btn ghost" id="history-export" data-i18n="history.export">Ekspor laporan</button>
           <button class="btn ghost" id="history-open-trash" data-i18n="history.openTrash">Buka folder trash</button>
         </div>
 
@@ -545,6 +570,10 @@
             <div class="field">
               <div class="label"><b data-i18n="settings.autoSafe">Item aman otomatis dicentang</b><span data-i18n="settings.autoSafeHint">Item ⚠/⛔ tidak pernah otomatis</span></div>
               <div class="ctrl"><button class="toggle" id="auto-safe" role="switch" aria-checked="true" aria-label="Item aman otomatis dicentang"></button></div>
+            </div>
+            <div class="field">
+              <div class="label"><b data-i18n="settings.notify">Notifikasi desktop</b><span data-i18n="settings.notifyHint">Kabari saat pembersihan atau GC selesai</span></div>
+              <div class="ctrl"><button class="toggle" id="notify-desktop" role="switch" aria-checked="true" aria-label="Notifikasi desktop"></button></div>
             </div>
             <div class="field">
               <div class="label"><b data-i18n="settings.journalTarget">Target journal</b><span data-i18n="settings.journalTargetHint">Vacuum system dan user journal</span></div>

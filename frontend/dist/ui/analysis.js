@@ -51,6 +51,53 @@
     setDash('dash-nix-gens', 'journal ' + human(st.journalBytes || 0) + ' · ' + (st.storePaths || 0).toLocaleString('id-ID') + ' path');
   }
 
+  function renderSpark(points) {
+    const svg = byId('dash-spark');
+    if (!svg) return;
+    if (!points || points.length < 2) {
+      svg.innerHTML = '<text x="50" y="21" text-anchor="middle" font-size="8" fill="#64748b">belum ada data tren</text>';
+      return;
+    }
+    const vals = points.map(p => Number(p.free) || 0);
+    const min = Math.min(...vals), max = Math.max(...vals);
+    const span = Math.max(max - min, 1);
+    const pts = vals.map((v, i) => {
+      const x = (i / (vals.length - 1)) * 100;
+      const y = 34 - ((v - min) / span) * 30;
+      return x.toFixed(2) + ',' + y.toFixed(2);
+    }).join(' ');
+    svg.innerHTML = '<polyline points="' + pts + '" fill="none" stroke="var(--accent)" stroke-width="1.6" vector-effect="non-scaling-stroke"/>';
+  }
+
+  function renderInsight(rep) {
+    if (!rep) return;
+    const w = rep.week || {};
+    setDash('dash-week-freed', human(w.freedBytes || 0));
+    setDash('dash-week-moved', human(w.movedBytes || 0) + ' · ' + (w.removed || 0) + ' item');
+    setDash('dash-week-sessions', String(w.sessions || 0));
+    setDash('dash-week-trash', (w.trashEntries || 0) + ' · ' + human(w.trashBytes || 0));
+    const trend = rep.trend || [];
+    setDash('dash-week-range', trend.length ? trend[0].date + ' → ' + trend[trend.length - 1].date : 'belum ada data');
+    renderSpark(trend);
+  }
+
+  async function doExport() {
+    if (!bridge || !bridge.ExportReport) { toast('Ekspor hanya tersedia di aplikasi.'); return; }
+    const sel = byId('dash-export-format');
+    const btn = byId('dash-export');
+    const format = sel ? sel.value : 'md';
+    if (btn) { btn.disabled = true; btn.textContent = 'Mengekspor…'; }
+    try {
+      const path = await bridge.ExportReport(format);
+      setDash('dash-export-path', path || '');
+      toast('Laporan diekspor: ' + path);
+    } catch (e) {
+      toast('Ekspor gagal: ' + errMsg(e));
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = 'Ekspor'; }
+    }
+  }
+
   function renderHome(tr) {
     setDash('dash-home-size', human(tr.bytes) + ' · ' + (tr.files || 0).toLocaleString('id-ID') + ' file');
     const map = byId('dash-map'), legend = byId('dash-legend');
@@ -128,9 +175,10 @@
       const volP = bridge.DiskStatus().then(renderDisk).catch(() => {});
       const nixP = bridge.NixStatus().then(renderNix).catch(() => {});
       const treeP = bridge.AnalysisTree(home, 1).then(renderHome).catch(() => {});
+      const insightP = (bridge.Insight ? bridge.Insight() : Promise.resolve(null)).then(renderInsight).catch(() => {});
       const r = await window.cleanlie.ensureScan(!!force);
       renderReport(r || window.cleanlie.report());
-      await Promise.allSettled([volP, nixP, treeP]);
+      await Promise.allSettled([volP, nixP, treeP, insightP]);
     } catch (e) {
       toast('Dashboard gagal: ' + errMsg(e));
     } finally {
@@ -416,6 +464,7 @@
   };
 
   rebind(byId('dash-refresh'), () => refreshDashboard(true));
+  rebind(byId('dash-export'), () => doExport());
 
   document.querySelectorAll('#tabs button').forEach(b => b.addEventListener('click', () => {
     ensureAnalysis(b.dataset.tab);

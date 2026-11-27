@@ -31,6 +31,7 @@ type Config struct {
 	ShowRisky      bool     `json:"showRisky"`
 	DeleteMode     string   `json:"deleteMode"`
 	AutoSelectSafe bool     `json:"autoSelectSafe"`
+	Notify         bool     `json:"notify"`
 	JournalTarget  string   `json:"journalTarget"`
 	LargeBytes     int64    `json:"largeBytes"`
 	StaleDays      int      `json:"staleDays"`
@@ -47,6 +48,7 @@ func Default() Config {
 		ShowRisky:      true,
 		DeleteMode:     DeleteTrash,
 		AutoSelectSafe: true,
+		Notify:         true,
 		JournalTarget:  "500M",
 		LargeBytes:     100 << 20,
 		StaleDays:      365,

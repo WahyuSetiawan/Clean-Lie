@@ -16,6 +16,7 @@ type Session struct {
 	Mode            Mode    `json:"mode"`
 	StartedAt       string  `json:"startedAt"`
 	Removed         int     `json:"removed"`
+	RemovedBytes    int64   `json:"removedBytes"`
 	Failed          int     `json:"failed"`
 	Restorable      int     `json:"restorable"`
 	Freed           int64   `json:"freed"`
@@ -92,6 +93,7 @@ func groupSessions(entries []Entry, tailTruncated bool) SessionPage {
 		}
 		if e.Status == StatusRemoved {
 			s.Removed++
+			s.RemovedBytes += e.BytesBefore
 		}
 		if e.Status == StatusFailed {
 			s.Failed++

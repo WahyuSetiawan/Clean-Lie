@@ -54,6 +54,8 @@ let direnvRemoved = null;
 let direnvCleanReq = null;
 let direnvPickCalls = 0;
 let previewCleanupID = null;
+let insightCalls = 0;
+let exportFormat = null;
 let direnvPickPath = '/home/u/Projects';
 let savedSettings = null;
 let resetSettingsCalls = 0;
@@ -61,7 +63,7 @@ let settingsView = {
   path: '/home/u/.config/cleanlie/config.json',
   config: {
     theme: 'system', language: 'id', showRisky: true, deleteMode: 'trash',
-    autoSelectSafe: true, journalTarget: '500M', largeBytes: 104857600,
+    autoSelectSafe: true, notify: true, journalTarget: '500M', largeBytes: 104857600,
     staleDays: 365, artifactRoots: [], direnvRoots: [], excluded: []
   }
 };
@@ -169,6 +171,17 @@ const dom = new JSDOM(html, {
         return { action: 'wipe', target: name, preview: 'emulator -avd ' + name + ' -wipe-data', exitCode: 0, freed: 0 };
       },
       DiskStatus: async () => ({ total: 200000000000, free: 80000000000, used: 120000000000 }),
+      Insight: async () => {
+        insightCalls++;
+        return {
+          version: '0.9.0', generatedAt: '2026-11-27T12:00:00Z',
+          disk: { total: 200000000000, free: 80000000000, used: 120000000000 },
+          week: { days: 7, since: '2026-11-20T12:00:00Z', sessions: 3, removed: 4, failed: 0, movedBytes: 4500000000, freedBytes: 1500000000, restorable: 2, restorableBytes: 1500000, trashEntries: 2, trashBytes: 1500000 },
+          trend: [{ date: '2026-11-26', free: 78000000000, used: 122000000000 }, { date: '2026-11-27', free: 80000000000, used: 120000000000 }],
+          sessions: [], trash: { entries: [] }
+        };
+      },
+      ExportReport: async format => { exportFormat = format; return '/home/u/.local/state/cleanlie/reports/cleanlie-20261127-120000.' + format; },
       AnalysisTree: async (root, depth) => {
         analysisTreeCalls++;
         return {
@@ -259,7 +272,7 @@ const dom = new JSDOM(html, {
           path: settingsView.path,
           config: {
             theme: 'system', language: 'id', showRisky: true, deleteMode: 'trash',
-            autoSelectSafe: true, journalTarget: '500M', largeBytes: 104857600,
+            autoSelectSafe: true, notify: true, journalTarget: '500M', largeBytes: 104857600,
             staleDays: 365, artifactRoots: [], direnvRoots: [], excluded: []
           }
         };
@@ -384,6 +397,14 @@ try {
   assert.match($('dash-cache-size').textContent, /2 MiB/, 'cache dev dari report');
   assert.match($('dash-nix-size').textContent, /65\.19 GiB/, 'Nix store dari NixStatus');
   assert.equal(d.querySelectorAll('#dash-reclaim tr').length, 3, 'reclaim top item');
+  assert.equal($('dash-week-sessions').textContent, '3', 'sesi minggu ini dari Insight');
+  assert.notEqual($('dash-week-freed').textContent, '—', 'freed minggu ini terisi');
+  assert.ok(insightCalls >= 1, 'Insight dipanggil');
+  assert.equal(d.querySelectorAll('#dash-spark polyline').length, 1, 'sparkline tren digambar');
+  $('dash-export').click();
+  await sleep(100);
+  assert.equal(exportFormat, 'md', 'ekspor dashboard memakai format terpilih');
+  assert.match($('dash-export-path').textContent, /reports\/cleanlie-/, 'path laporan tampil');
 
   d.querySelector('#nav button[data-view="analysis"]').click();
   await sleep(300);
@@ -457,6 +478,10 @@ try {
   await sleep(300);
   assert.equal(d.querySelectorAll('#history-sessions tr').length, 2, '1 sesi + detail item');
   assert.equal($('nav-history-count').textContent, '1', 'badge riwayat terisi');
+  $('history-export-format').value = 'json';
+  $('history-export').click();
+  await sleep(100);
+  assert.equal(exportFormat, 'json', 'ekspor riwayat memakai format terpilih');
   d.querySelector('#history-tabs button[data-htab="trash"]').click();
   await sleep(300);
   assert.equal(d.querySelectorAll('#history-trash-body tr').length, 2, '2 item trash tampil');
@@ -534,6 +559,7 @@ try {
   assert.equal(savedSettings.staleDays, 30);
   assert.equal(JSON.stringify(savedSettings.artifactRoots), '["~/Projects","~/work"]');
   assert.equal(JSON.stringify(savedSettings.excluded), '["~/Downloads"]');
+  assert.equal(savedSettings.notify, true, 'notifikasi desktop tersimpan');
   assert.match($('settings-status').textContent, /Settings saved/);
 
   $('settings-reset').click();
