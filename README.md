@@ -1,262 +1,304 @@
-# Cleanlie
+<p align="center">
+  <img src="docs/screenshots/dashboard.png" width="900" alt="Dashboard Cleanlie: disk, Nix store, cache dev, log, dan pemakaian home dalam satu layar">
+</p>
 
-Disk cleaner & analyzer GUI untuk NixOS dan macOS. Go + Wails v2, UI statis (tanpa Node).
+<h1 align="center">Cleanlie</h1>
 
-> Status: **M7 — direnv**. Scan katalog, dry-run CLI, eksekusi hapus
-> (trash/perm), audit, layar Nix (store, generasi, dead paths, GC, vacuum journal,
-> fallback pkexec/sudo), layar Android (AVD/SDK, saran >90 hari, hapus/wipe/uninstall),
-> layar Analisis (tree, file besar, duplikat, file lama, artefak), layar **direnv**
-> (folder `.direnv` per proyek + cache global), Dashboard nyata,
-> Pengaturan persisten, tema system/light/dark, dan i18n ID/EN sudah jalan. Build
-> macOS memakai WKWebView, katalog `~/Library`, Trash `~/.Trash`, dan prompt admin
-> `osascript`. Lihat
-> [`docs/tasks/cleanlie-v1.md`](docs/tasks/cleanlie-v1.md),
-> [`docs/implementation/`](docs/implementation/) (m1–m7), dan
-> [`CHANGELOG.md`](CHANGELOG.md).
+<p align="center">
+  <b>Disk cleaner untuk mesin dev yang serius.</b><br>
+  Nix store, cache tool, Android SDK, direnv, dan file besar — terlihat, terukur,
+  dan bisa dibersihkan tanpa <code>rm -rf</code> buta.
+</p>
 
-## Kenapa
+<p align="center">
+  Go + Wails v2 · UI statis (tanpa Node) · Linux/NixOS & macOS · dry-run + trash · audit log
+</p>
 
-Mesin ini punya `/nix/store` 82 GB (≈34 GB dead paths), cache tool dev 24.8 GB,
-Android SDK/AVD 28.2 GB, dan journal 4 GB. Cleanlie menyatukan pembersihan itu dengan
-dry-run + trash (bisa restore), bukan `rm -rf` buta.
+---
 
-## Jalankan (dev)
+Cleanlie menjawab satu pertanyaan yang sering bikin malas bersih-bersih:
+**"80 GB di disk ini, punyaku yang mana?"**
+
+Alih-alih menebak folder, Cleanlie memetakan pemakaian disk, mencocokkannya dengan
+katalog rule yang sadar-tool (npm, pnpm, Gradle, uv, pub, Go, Cargo, Android, Nix,
+direnv), lalu menunjukkan mana yang aman dibuang, mana yang butuh konfirmasi, dan
+mana yang sedang dipakai proses berjalan.
+
+Semua aksi default-nya **dry-run** dan **trash** — bisa di-restore. Ukuran yang
+dihapus diukur ulang, bukan diasumsikan.
+
+## Kenapa Cleanlie
+
+- **Satu dashboard, bukan sepuluh `du -sh`.** Disk, Nix store, cache dev, journal,
+  dan pemakaian home dalam satu layar.
+- **Sadar tool, bukan sekadar folder besar.** Tahu bedanya `~/.npm/_cacache`
+  (aman) dengan `node_modules` proyek yang sedang jalan (jangan disentuh).
+- **Nix-native.** Generasi, closure, dead paths, GC, dan vacuum journal — dengan
+  guard yang mengerti profile dan generasi `current`.
+- **Android SDK/AVD ikut kelihatan.** AVD jarang dipakai, system image yatim, NDK
+  dan build-tools lama: semua ada ukurannya.
+- **direnv & nix-direnv.** Cache `.direnv` per proyek plus cache global, dengan
+  penanda proyek yang masih aktif.
+- **Aman by default.** Trash dulu, whitelist root, protected path, proses berjalan
+  di-skip, dan konfirmasi ketik `GC` untuk aksi Nix.
+- **Native di kedua platform.** Linux memakai polkit + systemd journal; macOS
+  memakai prompt admin `osascript`, katalog `~/Library`, dan Trash Finder.
+- **Bisa diotomasi.** Mode headless `--json` untuk CI, cron, atau sekadar cek
+  sebelum update.
+- **Akurat.** Tree disk usage dibandingkan dengan `du` (selisih ±0,001% pada mesin
+  uji); ukuran memakai blok disk, bukan panjang file.
+
+## Sekilas
+
+| **Bersihkan** | **Nix** |
+| --- | --- |
+| ![Layar Bersihkan: kategori cache dev, item, risiko, dan aksi](docs/screenshots/cleanup.png) | ![Layar Nix: store, dead paths, generasi, journal](docs/screenshots/nix.png) |
+| **Android** | **Analisis** |
+| ![Layar Android: AVD, system image, NDK, build-tools](docs/screenshots/android.png) | ![Layar Analisis: tree disk usage dengan peta proporsi](docs/screenshots/analysis.png) |
+| **direnv** | **Pengaturan** |
+| ![Layar direnv: cache .direnv per proyek dan cache global](docs/screenshots/direnv.png) | ![Layar Pengaturan: tema, bahasa, ambang, root scan, pengecualian](docs/screenshots/settings.png) |
+
+## Fitur
+
+### Bersihkan
+Katalog rule per ekosistem: Node (npm/npx/pnpm), JVM (Gradle/Maven), Python
+(uv/pip), Dart/Flutter, Rust/Go, Android, cache aplikasi, log/journal, dan trash.
+Tiap item punya ukuran, tingkat risiko, dan perintah resmi yang disarankan
+(`npm cache clean`, `uv cache prune`, `go clean -cache`, …). Pilih item → lihat
+ringkasan → konfirmasi → masuk trash.
+
+### Nix
+Ukuran store dan jumlah path, dead paths dari `nix-store --gc --print-dead`,
+daftar generasi per profile (system, home-manager, user) beserta closure dan umur,
+saran hapus untuk generasi lama, GC, dan vacuum journal ke target. Aksi root lewat
+polkit (`pkexec`) bila tersedia; kalau tidak, perintah `sudo` siap-copy ditampilkan
+dan tidak dieksekusi diam-diam.
+
+### Android
+AVD dengan API, ABI, ukuran, dan "terakhir dipakai"; system image beserta AVD yang
+memakainya; NDK, build-tools, dan platform. Hapus AVD lewat `avdmanager`, uninstall
+paket lewat `sdkmanager`, wipe data lewat `emulator -wipe-data` — semuanya ditolak
+saat emulator sedang berjalan. UI mengirim nama AVD/ID paket, bukan path.
+
+### Analisis
+Tree disk usage interaktif dengan peta proporsi, file terbesar, file lama, artefak
+build (`node_modules`, `target`, `build`, `dist`, `.direnv`, …), dan pencarian
+duplikat berbasis hash. Read-only saat memindai; tombol trash memakai guard yang
+sama dengan layar Bersihkan.
+
+### direnv
+Cari folder `.direnv` di root proyek pilihanmu, hitung ukurannya, tandai proyek
+yang masih aktif, dan bersihkan cache global `direnv`/`nix-direnv` yang menumpuk.
+
+### Dashboard & Pengaturan
+Ringkasan disk, Nix, cache, log, dan home; tema system/light/dark; i18n ID/EN;
+ambang file besar/lama; root scan tambahan; dan daftar pengecualian yang tidak
+pernah dipindai maupun dihapus.
+
+## Keamanan
+
+1. **Dry-run dulu.** Eksekusi hanya dari plan yang sudah ditampilkan.
+2. **Trash default.** `gio trash` di Linux / `~/.Trash` di macOS (bisa restore);
+   permanen harus dicentang eksplisit.
+3. **Whitelist + protected path.** Item di luar aturan ditolak, bukan "dilewati diam-diam".
+4. **Proses berjalan di-skip.** Cache tool yang sedang dipakai tidak dipaksa hapus.
+5. **Generasi Nix `current` tidak pernah bisa dipilih.** GC/hapus generasi wajib konfirmasi ketik `GC`.
+6. **`freed` diukur ulang** (before − after) dan dicatat di `~/.local/state/cleanlie/history.jsonl`.
+7. **Aksi root eksplisit.** `pkexec` (Linux) atau dialog `osascript` (macOS) dengan
+   path absolut; tanpa agent, perintah `sudo` hanya ditampilkan.
+8. **Path pengecualian dijaga dua kali** — saat scan dan saat `Clean`.
+
+## Mulai
+
+Butuh Nix dengan flakes. Dev shell Linux membawa Go, Wails, GTK3, WebKitGTK,
+Node, dan jq; dev shell macOS membawa Go, Wails, Node, dan jq (WKWebView dari
+sistem).
 
 ```sh
-direnv allow       # sekali saja; butuh direnv + nix-direnv
-# shell otomatis: go, gopls, wails, gtk3, webkitgtk 4.1, node, jq
-make dev           # wails dev (hot reload)
-make build         # bin/cleanlie
-make test
+git clone https://github.com/WahyuSetiawan/Clean-Lie
+cd Clean-Lie
+direnv allow        # sekali saja; butuh direnv + nix-direnv
+make dev            # wails dev, hot reload
 ```
 
-Atau tanpa shell interaktif:
+Tanpa shell interaktif:
 
 ```sh
 nix develop -c make build
 ./bin/cleanlie
 ```
 
-## macOS
-
-Dev shell di macOS tidak memuat GTK/WebKitGTK karena Wails memakai WKWebView
-sistem. Isinya `go`, `gopls`, `wails` 2.17.1, `node`, dan `jq`:
-
-```sh
-direnv allow        # devShell aarch64-darwin
-make build          # bin/cleanlie
-make test
-make app            # Cleanlie.app via `wails build` (butuh wails di PATH)
-```
-
-Yang berbeda di macOS:
-
-- **Aksi root** memakai dialog admin native `osascript` (setara `pkexec`), bukan
-  polkit. Kalau prompt dibatalkan, UI menampilkan perintah `sudo` siap-copy.
-- **Katalog clean** menambahkan `~/Library/Caches`, `~/Library/Logs`,
-  `~/Library/Developer/Xcode` (DerivedData, iOS DeviceSupport, Archives),
-  CoreSimulator, Homebrew cache, dan tool dev yang menyimpan cache di
-  `~/Library` (Go, gopls, uv, pip, pnpm, Playwright, Cypress). Rule systemd
-  journal/`/var/log`/`/var/tmp` tidak dimuat.
-- **Trash** memakai `~/.Trash` milik Finder (tanpa metadata `.trashinfo`).
-- **Layar Nix** tetap ada bila Nix terpasang (multi-user/determinate); bagian
-  journal disembunyikan karena macOS tidak punya systemd.
-- **Guard proses** membaca `ps` (macOS tidak punya `/proc`), jadi item cache
-  browser/IDE/emulator tetap diblokir saat aplikasinya berjalan.
-
-Catatan: `package.nix`/`nix build .#cleanlie` tetap Linux-only (butuh GTK3,
-WebKitGTK, systemd, polkit). Di macOS pakai `make build`/`make app`.
-
-## Build paket
+Atau langsung sebagai paket:
 
 ```sh
 nix build .#cleanlie
 ./result/bin/cleanlie
+
+nix profile install .#cleanlie
+# lalu jalankan "Cleanlie" dari launcher
 ```
 
-Hasil build juga memasang desktop entry dan ikon:
-`result/share/applications/cleanlie.desktop` dan
-`result/share/icons/hicolor/scalable/apps/cleanlie.svg`. Untuk memasang ke profil:
+`make build` menghasilkan `bin/cleanlie`, `make run` build + jalankan, dan
+`make test` menjalankan seluruh test Go.
+
+### macOS
+
+Dev shell `aarch64-darwin` tidak memuat GTK/WebKitGTK karena Wails memakai WKWebView
+sistem. Isinya `go`, `gopls`, `wails` 2.17.1, `node`, dan `jq`.
 
 ```sh
-nix profile install .#cleanlie
-# lalu jalankan "Cleanlie" dari launcher Hyprland
+direnv allow
+make build     # bin/cleanlie
+make test
+make app       # Cleanlie.app via `wails build`
 ```
 
-Wrapper sudah membawa PATH untuk `nix`, `journalctl`, `pkexec`, `gio`, `xdg-open`
-(karena `pkexec` membuang environment sesi).
+Yang berbeda di macOS:
 
-## Pakai di konfigurasi Nix
+- **Aksi root** memakai dialog admin native `osascript` (setara `pkexec`). Kalau
+  prompt dibatalkan, UI menampilkan perintah `sudo` siap-copy.
+- **Katalog clean** menambahkan `~/Library/Caches`, `~/Library/Logs`,
+  `~/Library/Developer/Xcode` (DerivedData, iOS DeviceSupport, Archives),
+  CoreSimulator, cache Homebrew, serta cache tool dev di `~/Library` (Go, gopls,
+  uv, pip, pnpm, Playwright, Cypress). Rule journal/`/var/log` tidak dimuat.
+- **Trash** memakai `~/.Trash` Finder (tanpa `.trashinfo`).
+- **Guard proses** membaca `ps` (tanpa `/proc`), jadi cache aplikasi yang sedang
+  berjalan tetap diblokir.
+- **Layar Nix** tetap ada bila Nix terpasang; kartu journal disembunyikan.
+
+`nix build .#cleanlie` tetap Linux-only (butuh GTK3, WebKitGTK, systemd, polkit);
+di macOS pakai `make build`/`make app`.
+
+## Pakai di NixOS
 
 Flake ini mengekspor `packages.<system>.cleanlie`, `overlays.default`, dan
-`nixosModules.default`, jadi bisa dipakai dari flake NixOS/Home Manager lain.
-
-Tambah input di `~/.nix/flake.nix`:
+`nixosModules.default`.
 
 ```nix
 inputs.cleanlie.url = "github:WahyuSetiawan/Clean-Lie";
 ```
 
-Pilih salah satu cara berikut.
+Pilih salah satu:
 
-1. Lewat overlay (paling fleksibel):
+```nix
+# 1. overlay
+flake.overlays.cleanlie = inputs.cleanlie.overlays.default;
+environment.systemPackages = [ pkgs.cleanlie ];
 
-   ```nix
-   # myNix/overlays/default.nix
-   flake.overlays.cleanlie = inputs.cleanlie.overlays.default;
-   ```
+# 2. langsung dari input
+environment.systemPackages = [
+  inputs.cleanlie.packages.${pkgs.stdenv.hostPlatform.system}.default
+];
 
-   lalu di `environment.systemPackages`:
-
-   ```nix
-   environment.systemPackages = [ pkgs.cleanlie ];
-   ```
-
-2. Langsung dari input:
-
-   ```nix
-   environment.systemPackages = [
-     inputs.cleanlie.packages.${pkgs.stdenv.hostPlatform.system}.default
-   ];
-   ```
-
-3. Modul NixOS (overlay + package sekaligus):
-
-   ```nix
-   imports = [ inputs.cleanlie.nixosModules.default ];
-   ```
-
-Setelah menambah input, jalankan `nix flake lock` di repo konfigurasi. Untuk update
-Cleanlie saja: `nix flake update cleanlie`.
-
-## CI / Cachix
-
-Workflow `.github/workflows/cachix.yml` build `.#cleanlie` di setiap push ke `main`
-dan mengunggah closure ke cache Cachix `juragankoding-cachix` (akun juragan-koding).
-
-Sekali saja: tambahkan repository secret `CACHIX_AUTH_TOKEN` (Settings → Secrets and
-variables → Actions). Token dibuat di <https://app.cachix.org/personal-auth-tokens>.
-Workflow juga bisa dijalankan manual lewat **Actions → Cachix → Run workflow**.
-
-Untuk memakai cache di mesin lain:
-
-```sh
-cachix use juragankoding-cachix
-# atau tambahkan ke nix.settings.substituters + trusted-public-keys
+# 3. modul NixOS (overlay + package sekaligus)
+imports = [ inputs.cleanlie.nixosModules.default ];
 ```
 
-## Mode headless (tanpa GUI)
+Setelah menambah input, jalankan `nix flake lock`. Update Cleanlie saja:
+`nix flake update cleanlie`.
+
+Paket memasang desktop entry dan ikon:
+`result/share/applications/cleanlie.desktop`,
+`result/share/icons/hicolor/scalable/apps/cleanlie.svg`. Wrapper membawa PATH untuk
+`nix`, `journalctl`, `pkexec`, `gio`, dan `xdg-open` (karena `pkexec` membuang
+environment sesi).
+
+## Headless (tanpa GUI)
+
+Semua mode berikut **read-only** dan mengeluarkan JSON:
 
 ```sh
-./bin/cleanlie --dry-run              # laporan teks, tidak menghapus
-./bin/cleanlie --dry-run --json       # JSON untuk integrasi / verifikasi
-./bin/cleanlie --scan-only --path DIR # ukur satu direktori
-./bin/cleanlie --nix-status           # store, generasi, journal (JSON; ~8 s)
-./bin/cleanlie --nix-dead             # dry-run GC: jumlah + ukuran dead path (JSON; ~32 s)
-./bin/cleanlie --android-status       # AVD + paket SDK (JSON; ~0,14 s)
-./bin/cleanlie --analysis-tree         # tree disk usage (JSON; ~5 s; --path, --depth)
-./bin/cleanlie --analysis-overview     # file besar/lama/artefak (JSON; ~19 s)
-./bin/cleanlie --analysis-dups         # file duplikat (JSON; ~51 s)
-./bin/cleanlie --direnv-scan --path DIR # folder .direnv di DIR (JSON)
+./bin/cleanlie --dry-run                 # laporan teks, tidak menghapus
+./bin/cleanlie --dry-run --json          # JSON untuk integrasi
+./bin/cleanlie --scan-only --path DIR    # ukur satu direktori
+./bin/cleanlie --nix-status              # store, generasi, journal
+./bin/cleanlie --nix-dead                # dry-run GC: jumlah + ukuran dead path
+./bin/cleanlie --android-status          # AVD + paket SDK
+./bin/cleanlie --analysis-tree           # tree disk usage (--path, --depth)
+./bin/cleanlie --analysis-overview       # file besar/lama/artefak
+./bin/cleanlie --analysis-dups           # file duplikat
+./bin/cleanlie --direnv-scan --path DIR  # folder .direnv di DIR
 ./bin/cleanlie --version
 
-make verify                           # bandingkan ukuran vs `du` (toleransi 2%)
+make verify                              # bandingkan ukuran vs `du` (toleransi 2%)
 ```
 
-Semua mode di atas read-only. Eksekusi hapus ada di GUI (layar **Bersihkan**): pilih item,
-konfirmasi dialog, lalu `gio trash` (default) atau permanen dengan checkbox. Layar **Nix**
-menghapus generasi/GC/vacuum journal lewat pkexec bila ada polkit agent, atau menampilkan
-perintah `sudo` siap-copy bila tidak ada. Layar **Android** menghapus AVD lewat
-`avdmanager`, paket SDK lewat `sdkmanager`, dan wipe data lewat `emulator -wipe-data`
-(headless), semuanya dengan gate checkbox dan tanpa mengirim path dari UI. Hasil menyimpan
-`freed` terukur dan audit log di `~/.local/state/cleanlie/history.jsonl`.
-
-Gate M3: `--nix-dead` dan `nix-collect-garbage --dry-run` harus memberi jumlah path yang sama
-(624 pada mesin target, 2026-11-25).
-
-Gate M4: hapus AVD lewat fixture harus menghilangkan folder `.avd` + `.ini` dan memberi
-`freed > 0`; pada mesin target `test_devices` 5,01 GiB terdeteksi, sedangkan saran otomatis
-hanya `system-images;android-35;google_apis;x86_64` (3,50 GiB, 154 hari, tidak dipakai).
-
-Layar **Analisis** dan **Dashboard** read-only saat memindai. Tree `~` depth 2 pada mesin
-target 179.182.256.128 B (selisih 0,0013% dari `du --exclude=.git`), `~/.cache` 1,7 s;
-duplikat 1.715 grup/16,70 GiB (tampil 100 grup teratas). Tombol trash di analisis memakai
-guard yang sama dengan layar Bersihkan; UI hanya mengirim ID hasil analisis, bukan path.
-
-## Test UI (opsional, tanpa build Node)
+Contoh cron mingguan yang cuma melapor:
 
 ```sh
-cd frontend/test && npm install && npm test
+./bin/cleanlie --dry-run --json > /var/log/cleanlie.json
 ```
 
-jsdom menjalankan `frontend/dist/index.html` (aset `dist/ui/*` di-inline otomatis) dengan binding Go tiruan: scan → pilih → gate
-permanen → trash → hasil → layar Nix → gate `GC` → hasil GC → layar Android → pilih saran →
-gate hapus/uninstall → hasil → wipe → hasil → dashboard → analisis (tree, drill-down, file
-besar, duplikat, artefak) → direnv (tambah folder, scan, pilih aman, trash). Ini juga menjaga agar `window.go` (binding Wails) tidak tertimpa.
+Eksekusi hapus ada di GUI: pilih item → konfirmasi → trash/perm. Hasilnya menyimpan
+`freed` terukur dan audit log, jadi kamu bisa melihat apa yang pernah dibuang.
+
+## Test
+
+```sh
+make test                                  # Go: unit + integrasi
+cd frontend/test && npm install && npm test # jsdom: alur UI dengan binding tiruan
+```
+
+Test UI menjalankan `frontend/dist/index.html` dengan `window.go` tiruan: scan →
+pilih → gate permanen → trash → hasil, Nix → gate `GC`, Android → hapus/uninstall/
+wipe, dashboard, analisis (tree, drill-down, duplikat, artefak), dan direnv.
+Ini juga menjaga agar binding Wails tidak tertimpa.
+
+Screenshot README dibuat ulang secara deterministik dari UI yang sama:
+
+```sh
+node docs/screenshots/harness/shoot.mjs   # butuh Chromium/Brave + ImageMagick
+```
+
+Harness mengisi `window.go` dengan data contoh (bukan data mesin siapa pun), jadi
+gambarnya bisa di-regenerate kapan saja tanpa membocorkan path pribadi.
 
 ## Struktur
 
 ```
 main.go                 # wails.Run + embed frontend/dist + dispatch CLI
-cli.go                  # --dry-run / --scan-only / --json / Nix / Android / analisis / direnv
-app.go                  # binding Go → window.go.main.App (Diagnostics + cache)
-app_clean.go            # ScanJunk/CancelScan/Clean/History + event progress
-app_nix.go              # NixStatus/NixDeadPaths/NixPreview/aksi + cache 2 menit
-app_android.go          # AndroidStatus/Refresh/DeleteAVD/Uninstall/Wipe/Preview
-app_analysis.go         # tree/overview/duplikat, cache 60 s, target ID, trash analisis
-app_direnv.go           # scan .direnv per proyek + cache global, root config, trash
-app_settings.go         # Settings/SaveSettings/ResetSettings + guard path dikecualikan
-internal/fsx/           # walker paralel (blok disk, hardlink, one-fs) + usage/statfs
-internal/rules/         # katalog rule + Plan read-only (linux, devtools, android, nix)
-internal/clean/         # guard, trash freedesktop, deteksi proses, eksekutor, audit
-internal/nix/           # generasi, closure, dead paths, aksi GC/vacuum
-internal/android/       # parser AVD/SDK + aksi avdmanager/sdkmanager/wipe
-internal/analysis/      # tree, file besar/lama, artefak, duplikat (read-only)
-internal/direnv/        # cari .direnv per proyek + cache direnv/nix-direnv (read-only)
-internal/config/        # config.json: tema, bahasa, ambang, exclusion, scan roots
-internal/privileged/    # pkexec dengan path absolut, fallback sudo siap-copy
-internal/tools/         # jalankan perintah resmi dengan preview + timeout
-frontend/dist/          # UI statis (sumber desain: docs/wireframe)
-frontend/test/          # smoke test jsdom (opsional, bukan bagian build)
-packaging/              # desktop entry + ikon SVG
-flake.nix               # devShell, package, overlay, nixosModules
-package.nix             # derivasi buildGoModule (dipakai flake + overlay)
-docs/plan|tasks|wireframe|implementation
+cli.go                  # --dry-run / --json / Nix / Android / analisis / direnv
+app.go                  # binding Go → window.go.main.App
+app_clean.go            # ScanJunk/CancelScan/Clean/History
+app_nix.go              # NixStatus/NixDeadPaths/NixPreview + aksi
+app_android.go          # AndroidStatus/Refresh/DeleteAVD/Uninstall/Wipe
+app_analysis.go         # tree/overview/duplikat + trash analisis
+app_direnv.go           # scan .direnv + cache global + root config
+app_settings.go         # Settings/SaveSettings/ResetSettings
+internal/fsx/           # walker paralel (blok disk, hardlink, one-fs)
+internal/rules/         # katalog rule + plan read-only
+internal/clean/         # guard, trash freedesktop, deteksi proses, audit
+internal/nix/           # generasi, closure, dead paths, GC/vacuum
+internal/android/       # parser AVD/SDK + aksi resmi
+internal/analysis/      # tree, file besar/lama, artefak, duplikat
+internal/direnv/        # .direnv per proyek + cache global
+internal/config/        # config.json
+internal/privileged/    # pkexec + fallback sudo siap-copy
+internal/tools/         # eksekusi perintah resmi + preview + timeout
+frontend/dist/          # UI statis (tanpa build Node)
+frontend/test/          # smoke test jsdom
+packaging/              # desktop entry + ikon
+flake.nix|package.nix   # devShell, package, overlay, nixosModules
+docs/                   # plan, task, wireframe, implementation, screenshot
 ```
 
-## Prinsip keamanan (v1)
+## Dokumentasi
 
-1. Dry-run dulu; eksekusi hanya dari plan yang sudah ditampilkan.
-2. Hapus default ke **trash** (`gio trash`), `permanent` harus eksplisit.
-3. Whitelist root + protected list; item di luar aturan ditolak.
-4. Cache tool yang prosesnya berjalan di-skip, bukan dipaksa.
-5. GC & hapus generasi Nix wajib konfirmasi ketik `GC`; generasi current tidak pernah bisa dipilih.
-6. `freed` diukur ulang (before − after), bukan diasumsikan; audit log di
-   `~/.local/state/cleanlie/history.jsonl`.
-7. Aksi root memakai `pkexec` dengan path absolut bila ada polkit agent; tanpa agent,
-   perintah `sudo` siap-copy ditampilkan dan tidak dieksekusi diam-diam.
-8. Aksi Android memakai perintah resmi (`avdmanager`, `sdkmanager`, `emulator`), menolak
-   saat emulator berjalan, dan memvalidasi path di dalam `~/.android/avd`/SDK. UI mengirim
-   nama AVD atau ID paket, bukan path.
-9. Path di **Pengecualian** tidak dipindai dan tidak bisa dihapus, termasuk item lama yang
-   masih ada di cache scan (guard kedua di `Clean`).
+- [`docs/tasks/cleanlie-v1.md`](docs/tasks/cleanlie-v1.md) — rencana & gate v1
+- [`docs/implementation/`](docs/implementation/) — catatan implementasi M1–M7
+- [`CHANGELOG.md`](CHANGELOG.md) — riwayat perubahan
 
-## Pengaturan
+## Platform
 
-Preferensi disimpan di `~/.config/cleanlie/config.json` (XDG) dan dibaca saat app mulai.
-File yang hilang/rusak jatuh ke default dengan warning di layar Pengaturan. Field yang tersedia:
-tema (`system`/`light`/`dark`), bahasa (`id`/`en`), tampilkan item berisiko, mode hapus default,
-auto-centang item aman, target journal, ambang file besar (MB), ambang file lama (hari), root scan
-tambahan, dan path yang dikecualikan. Tombol **Simpan pengaturan** menulis atomik; **Kembalikan
-default** mengembalikan semuanya.
+- **Linux/NixOS** — target utama: GTK3 + WebKitGTK, polkit, systemd journal,
+  paket Nix (`nix build .#cleanlie`), dan modul NixOS.
+- **macOS (aarch64)** — WKWebView, `osascript`, katalog `~/Library`, dan Trash
+  Finder; build lewat `make build`/`make app`.
 
-## Catatan Wayland/Hyprland
-
-GTK3/WebKitGTK di Wayland bisa melaporkan viewport negatif setelah window di-tile
-(UI bertumpuk, sisa window hitam). Binary otomatis memakai XWayland bila
-`WAYLAND_DISPLAY` dan `DISPLAY` tersedia; set `GDK_BACKEND=wayland` untuk memaksa
-Wayland. `WEBKIT_DISABLE_COMPOSITING_MODE=1` juga diset di devShell. Tanpa polkit
-agent, aksi root otomatis jatuh ke dialog perintah `sudo` siap-copy.
+Di Wayland/Hyprland, GTK3/WebKitGTK bisa melaporkan viewport negatif setelah window
+di-tile; binary otomatis memakai XWayland bila `WAYLAND_DISPLAY` dan `DISPLAY`
+tersedia. Set `GDK_BACKEND=wayland` untuk memaksa Wayland
+(`WEBKIT_DISABLE_COMPOSITING_MODE=1` sudah diset di devShell).
 
 ## Lisensi
 
